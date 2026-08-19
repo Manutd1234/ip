@@ -34,6 +34,8 @@ public class Wangsa {
                         printTaskList(tasks, taskCount);
                     } else if (isStatusCommand(command)) {
                         updateTaskStatus(command, tasks, taskCount);
+                    } else if (isDeleteCommand(command)) {
+                        taskCount = deleteTask(command, tasks, taskCount);
                     } else if (isTaskCommand(command)) {
                         Task task = createTask(command);
                         if (taskCount >= MAX_TASKS) {
@@ -62,6 +64,11 @@ public class Wangsa {
     private static boolean isStatusCommand(String command) {
         return command.equals("mark") || command.startsWith("mark ")
                 || command.equals("unmark") || command.startsWith("unmark ");
+    }
+
+    /** Returns whether the command is a delete command. */
+    private static boolean isDeleteCommand(String command) {
+        return command.equals("delete") || command.startsWith("delete ");
     }
 
     /** Returns whether the command is a supported task-creation command prefix. */
@@ -159,5 +166,37 @@ public class Wangsa {
             System.out.println("OK, I've marked this task as not done yet:");
         }
         System.out.println("  " + task);
+    }
+
+    /** Deletes a task, shifts later tasks forward, and returns the new count. */
+    private static int deleteTask(String command, Task[] tasks, int taskCount)
+            throws WangsaException {
+        String[] parts = command.split("\\s+");
+        if (parts.length != 2) {
+            throw new WangsaException("OOPS!!! delete expects one task number.");
+        }
+
+        int taskNumber;
+        try {
+            taskNumber = Integer.parseInt(parts[1]);
+        } catch (NumberFormatException exception) {
+            throw new WangsaException("OOPS!!! Task number must be a whole number.");
+        }
+
+        if (taskNumber < 1 || taskNumber > taskCount) {
+            throw new WangsaException("OOPS!!! Task number must be between 1 and " + taskCount + ".");
+        }
+
+        Task removedTask = tasks[taskNumber - 1];
+        for (int i = taskNumber - 1; i < taskCount - 1; i++) {
+            tasks[i] = tasks[i + 1];
+        }
+        tasks[taskCount - 1] = null;
+        int newTaskCount = taskCount - 1;
+
+        System.out.println("Noted. I've removed this task:");
+        System.out.println("  " + removedTask);
+        System.out.println("Now you have " + newTaskCount + " tasks in the list.");
+        return newTaskCount;
     }
 }
