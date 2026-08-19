@@ -38,12 +38,31 @@ public class Task {
     }
 
     /**
+     * Returns the one-letter type marker used by specialized task classes.
+     *
+     * @return an empty marker for a generic task
+     */
+    public String getTypeIcon() {
+        return "";
+    }
+
+    /**
+     * Returns task-specific details appended to the description.
+     *
+     * @return an empty string for a generic task
+     */
+    protected String getDetails() {
+        return "";
+    }
+
+    /**
      * Returns the task in the format shown to the user.
      *
      * @return the status marker and task description
      */
     @Override
     public String toString() {
-        return "[" + getStatusIcon() + "] " + description;
+        String typeMarker = getTypeIcon().isEmpty() ? "" : "[" + getTypeIcon() + "]";
+        return typeMarker + "[" + getStatusIcon() + "] " + description + getDetails();
     }
 }

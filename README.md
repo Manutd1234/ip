@@ -20,14 +20,23 @@ Prerequisites: JDK 25, update Intellij to the most recent version.
    Hello! I'm Wangsa.
    What can I do for you?
    ____________________________________________________________
-   list
+   todo read book
+   ____________________________________________________________
+   Got it. I've added this task:
+     [T][ ] read book
+   Now you have 1 tasks in the list.
    ____________________________________________________________
    list
+   ____________________________________________________________
+   Here are the tasks in your list:
+   1.[T][ ] read book
    ____________________________________________________________
    bye
    ____________________________________________________________
    Bye. Hope to see you again soon!
    ____________________________________________________________
    ```
+
+Tasks can be added with `todo DESCRIPTION`, `deadline DESCRIPTION /by DATE_OR_TIME`, or `event DESCRIPTION /from START /to END`. Use `list` to display tasks, `mark N` or `unmark N` to change completion status, and `bye` to exit.
 
 **Warning:** Keep the `src\main\java` folder as the root folder for Java files (i.e., don't rename those folders or move Java files to another folder outside of this folder path), as this is the default location some tools (e.g., Gradle) expect to find Java files.

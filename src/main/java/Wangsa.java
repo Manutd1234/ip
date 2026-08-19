@@ -34,9 +34,16 @@ public class Wangsa {
                 } else if (command.startsWith("mark ") || command.startsWith("unmark ")) {
                     updateTaskStatus(command, tasks, taskCount);
                 } else if (taskCount < MAX_TASKS) {
-                    tasks[taskCount] = new Task(command);
-                    taskCount++;
-                    System.out.println("added: " + command);
+                    Task task = createTask(command);
+                    if (task == null) {
+                        System.out.println("Sorry, I couldn't understand that task.");
+                    } else {
+                        tasks[taskCount] = task;
+                        taskCount++;
+                        System.out.println("Got it. I've added this task:");
+                        System.out.println("  " + task);
+                        System.out.println("Now you have " + taskCount + " tasks in the list.");
+                    }
                 } else {
                     System.out.println("Sorry, your task list is full.");
                 }
@@ -44,6 +51,40 @@ public class Wangsa {
                 System.out.println(SEPARATOR);
             }
         }
+    }
+
+    /** Creates the appropriate task subtype from a command. */
+    private static Task createTask(String command) {
+        if (command.startsWith("todo ")) {
+            return new Todo(command.substring("todo ".length()));
+        }
+
+        if (command.startsWith("deadline ")) {
+            String content = command.substring("deadline ".length());
+            int byMarker = content.indexOf(" /by ");
+            if (byMarker < 0) {
+                return null;
+            }
+            String description = content.substring(0, byMarker);
+            String by = content.substring(byMarker + " /by ".length());
+            return new Deadline(description, by);
+        }
+
+        if (command.startsWith("event ")) {
+            String content = command.substring("event ".length());
+            int fromMarker = content.indexOf(" /from ");
+            int toMarker = content.indexOf(" /to ", fromMarker + " /from ".length());
+            if (fromMarker < 0 || toMarker < 0) {
+                return null;
+            }
+            String description = content.substring(0, fromMarker);
+            String from = content.substring(fromMarker + " /from ".length(), toMarker);
+            String to = content.substring(toMarker + " /to ".length());
+            return new Event(description, from, to);
+        }
+
+        // Preserve Level-2 behavior: unrecognized text is a todo task.
+        return new Todo(command);
     }
 
     /** Prints all stored tasks in their current order and status. */
