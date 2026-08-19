@@ -7,14 +7,9 @@ public class Event extends Task {
 
     /** Creates an event with its description, start text, and end text. */
     public Event(String description, String from, String to) {
-        super(description);
+        super(description, TaskType.EVENT);
         this.from = from;
         this.to = to;
-    }
-
-    @Override
-    public String getTypeIcon() {
-        return "E";
     }
 
     @Override

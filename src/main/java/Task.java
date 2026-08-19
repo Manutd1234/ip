@@ -8,14 +8,23 @@ public class Task {
     /** Whether the task has been marked as done. */
     protected boolean isDone;
 
+    /** The kind of task, used to select its display marker. */
+    protected final TaskType type;
+
     /**
      * Creates an unfinished task with the given description.
      *
      * @param description the task text
      */
     public Task(String description) {
+        this(description, TaskType.TODO);
+    }
+
+    /** Creates an unfinished task of the supplied type. */
+    protected Task(String description, TaskType type) {
         this.description = description;
         this.isDone = false;
+        this.type = type;
     }
 
     /** Marks this task as done. */
@@ -40,16 +49,16 @@ public class Task {
     /**
      * Returns the one-letter type marker used by specialized task classes.
      *
-     * @return an empty marker for a generic task
+     * @return the task type's display marker
      */
     public String getTypeIcon() {
-        return "";
+        return type.getIcon();
     }
 
     /**
      * Returns task-specific details appended to the description.
      *
-     * @return an empty string for a generic task
+     * @return an empty string for a task without extra details
      */
     protected String getDetails() {
         return "";
