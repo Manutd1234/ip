@@ -29,23 +29,28 @@ public class Wangsa {
                     break;
                 }
 
-                if (command.equals("list")) {
-                    printTaskList(tasks, taskCount);
-                } else if (command.startsWith("mark ") || command.startsWith("unmark ")) {
-                    updateTaskStatus(command, tasks, taskCount);
-                } else if (taskCount < MAX_TASKS) {
-                    Task task = createTask(command);
-                    if (task == null) {
-                        System.out.println("Sorry, I couldn't understand that task.");
-                    } else {
+                try {
+                    if (command.equals("list")) {
+                        printTaskList(tasks, taskCount);
+                    } else if (isStatusCommand(command)) {
+                        updateTaskStatus(command, tasks, taskCount);
+                    } else if (isTaskCommand(command)) {
+                        Task task = createTask(command);
+                        if (taskCount >= MAX_TASKS) {
+                            throw new WangsaException("OOPS!!! Your task list is full (maximum 100 tasks).");
+                        }
                         tasks[taskCount] = task;
                         taskCount++;
                         System.out.println("Got it. I've added this task:");
                         System.out.println("  " + task);
                         System.out.println("Now you have " + taskCount + " tasks in the list.");
+                    } else if (command.isEmpty()) {
+                        throw new WangsaException("OOPS!!! Please enter a command.");
+                    } else {
+                        throw new WangsaException("OOPS!!! I'm sorry, but I don't know what that means :-(");
                     }
-                } else {
-                    System.out.println("Sorry, your task list is full.");
+                } catch (WangsaException exception) {
+                    System.out.println(exception.getMessage());
                 }
 
                 System.out.println(SEPARATOR);
@@ -53,38 +58,69 @@ public class Wangsa {
         }
     }
 
-    /** Creates the appropriate task subtype from a command. */
-    private static Task createTask(String command) {
-        if (command.startsWith("todo ")) {
-            return new Todo(command.substring("todo ".length()));
+    /** Returns whether the command is a valid task-status command prefix. */
+    private static boolean isStatusCommand(String command) {
+        return command.equals("mark") || command.startsWith("mark ")
+                || command.equals("unmark") || command.startsWith("unmark ");
+    }
+
+    /** Returns whether the command is a supported task-creation command prefix. */
+    private static boolean isTaskCommand(String command) {
+        return command.equals("todo") || command.startsWith("todo ")
+                || command.equals("deadline") || command.startsWith("deadline ")
+                || command.equals("event") || command.startsWith("event ");
+    }
+
+    /** Creates the appropriate task subtype or reports malformed task input. */
+    private static Task createTask(String command) throws WangsaException {
+        if (command.equals("todo") || command.startsWith("todo ")) {
+            String description = textAfterKeyword(command, "todo");
+            if (description.isEmpty()) {
+                throw new WangsaException("OOPS!!! The description of a todo cannot be empty.");
+            }
+            return new Todo(description);
         }
 
-        if (command.startsWith("deadline ")) {
-            String content = command.substring("deadline ".length());
-            int byMarker = content.indexOf(" /by ");
+        if (command.equals("deadline") || command.startsWith("deadline ")) {
+            String content = textAfterKeyword(command, "deadline");
+            int byMarker = content.indexOf(" /by");
             if (byMarker < 0) {
-                return null;
+                throw new WangsaException("OOPS!!! A deadline must include a description and a /by date or time.");
             }
-            String description = content.substring(0, byMarker);
-            String by = content.substring(byMarker + " /by ".length());
+            String description = content.substring(0, byMarker).trim();
+            String by = content.substring(byMarker + " /by".length()).trim();
+            if (description.isEmpty()) {
+                throw new WangsaException("OOPS!!! The description of a deadline cannot be empty.");
+            }
+            if (by.isEmpty()) {
+                throw new WangsaException("OOPS!!! A deadline needs a value after /by.");
+            }
             return new Deadline(description, by);
         }
 
-        if (command.startsWith("event ")) {
-            String content = command.substring("event ".length());
-            int fromMarker = content.indexOf(" /from ");
-            int toMarker = content.indexOf(" /to ", fromMarker + " /from ".length());
-            if (fromMarker < 0 || toMarker < 0) {
-                return null;
-            }
-            String description = content.substring(0, fromMarker);
-            String from = content.substring(fromMarker + " /from ".length(), toMarker);
-            String to = content.substring(toMarker + " /to ".length());
-            return new Event(description, from, to);
+        String content = textAfterKeyword(command, "event");
+        int fromMarker = content.indexOf(" /from");
+        int toMarker = fromMarker < 0 ? -1 : content.indexOf(" /to", fromMarker + " /from".length());
+        if (fromMarker < 0 || toMarker < 0) {
+            throw new WangsaException("OOPS!!! An event must include a description, /from start, and /to end.");
         }
+        String description = content.substring(0, fromMarker).trim();
+        String from = content.substring(fromMarker + " /from".length(), toMarker).trim();
+        String to = content.substring(toMarker + " /to".length()).trim();
+        if (description.isEmpty()) {
+            throw new WangsaException("OOPS!!! The description of an event cannot be empty.");
+        }
+        if (from.isEmpty() || to.isEmpty()) {
+            throw new WangsaException("OOPS!!! An event needs values after /from and /to.");
+        }
+        return new Event(description, from, to);
+    }
 
-        // Preserve Level-2 behavior: unrecognized text is a todo task.
-        return new Todo(command);
+    /** Returns the trimmed text after a command keyword. */
+    private static String textAfterKeyword(String command, String keyword) {
+        return command.length() == keyword.length()
+                ? ""
+                : command.substring(keyword.length()).trim();
     }
 
     /** Prints all stored tasks in their current order and status. */
@@ -95,20 +131,23 @@ public class Wangsa {
         }
     }
 
-    /** Updates a task's completion status for a mark or unmark command. */
-    private static void updateTaskStatus(String command, Task[] tasks, int taskCount) {
-        String[] parts = command.split(" ", 2);
+    /** Updates a task's completion status or reports an invalid task number. */
+    private static void updateTaskStatus(String command, Task[] tasks, int taskCount)
+            throws WangsaException {
+        String[] parts = command.split("\\s+");
+        if (parts.length != 2) {
+            throw new WangsaException("OOPS!!! " + parts[0] + " expects one task number.");
+        }
+
         int taskNumber;
         try {
             taskNumber = Integer.parseInt(parts[1]);
-        } catch (NumberFormatException | ArrayIndexOutOfBoundsException exception) {
-            System.out.println("Sorry, that task number is invalid.");
-            return;
+        } catch (NumberFormatException exception) {
+            throw new WangsaException("OOPS!!! Task number must be a whole number.");
         }
 
         if (taskNumber < 1 || taskNumber > taskCount) {
-            System.out.println("Sorry, that task number is invalid.");
-            return;
+            throw new WangsaException("OOPS!!! Task number must be between 1 and " + taskCount + ".");
         }
 
         Task task = tasks[taskNumber - 1];
