@@ -15,7 +15,7 @@ public class Wangsa {
         System.out.println("What can I do for you?");
         System.out.println(SEPARATOR);
 
-        String[] tasks = new String[MAX_TASKS];
+        Task[] tasks = new Task[MAX_TASKS];
         int taskCount = 0;
 
         try (Scanner scanner = new Scanner(System.in)) {
@@ -30,12 +30,11 @@ public class Wangsa {
                 }
 
                 if (command.equals("list")) {
-                    System.out.println("Here are the tasks in your list:");
-                    for (int i = 0; i < taskCount; i++) {
-                        System.out.println((i + 1) + ". " + tasks[i]);
-                    }
+                    printTaskList(tasks, taskCount);
+                } else if (command.startsWith("mark ") || command.startsWith("unmark ")) {
+                    updateTaskStatus(command, tasks, taskCount);
                 } else if (taskCount < MAX_TASKS) {
-                    tasks[taskCount] = command;
+                    tasks[taskCount] = new Task(command);
                     taskCount++;
                     System.out.println("added: " + command);
                 } else {
@@ -45,5 +44,40 @@ public class Wangsa {
                 System.out.println(SEPARATOR);
             }
         }
+    }
+
+    /** Prints all stored tasks in their current order and status. */
+    private static void printTaskList(Task[] tasks, int taskCount) {
+        System.out.println("Here are the tasks in your list:");
+        for (int i = 0; i < taskCount; i++) {
+            System.out.println((i + 1) + "." + tasks[i]);
+        }
+    }
+
+    /** Updates a task's completion status for a mark or unmark command. */
+    private static void updateTaskStatus(String command, Task[] tasks, int taskCount) {
+        String[] parts = command.split(" ", 2);
+        int taskNumber;
+        try {
+            taskNumber = Integer.parseInt(parts[1]);
+        } catch (NumberFormatException | ArrayIndexOutOfBoundsException exception) {
+            System.out.println("Sorry, that task number is invalid.");
+            return;
+        }
+
+        if (taskNumber < 1 || taskNumber > taskCount) {
+            System.out.println("Sorry, that task number is invalid.");
+            return;
+        }
+
+        Task task = tasks[taskNumber - 1];
+        if (parts[0].equals("mark")) {
+            task.markAsDone();
+            System.out.println("Nice! I've marked this task as done:");
+        } else {
+            task.markAsNotDone();
+            System.out.println("OK, I've marked this task as not done yet:");
+        }
+        System.out.println("  " + task);
     }
 }
