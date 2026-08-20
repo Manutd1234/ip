@@ -12,6 +12,16 @@ public class Event extends Task {
         this.to = to;
     }
 
+    /** Returns the event's start date or time. */
+    public String getFrom() {
+        return from;
+    }
+
+    /** Returns the event's end date or time. */
+    public String getTo() {
+        return to;
+    }
+
     @Override
     protected String getDetails() {
         return " (from: " + from + " to: " + to + ")";
