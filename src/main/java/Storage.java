@@ -2,6 +2,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -83,7 +85,7 @@ public class Storage {
         fields.add(escapeField(task.getDescription()));
 
         if (task.getType() == TaskType.DEADLINE) {
-            fields.add(escapeField(((Deadline) task).getBy()));
+            fields.add(((Deadline) task).getBy().toString());
         } else if (task.getType() == TaskType.EVENT) {
             Event event = (Event) task;
             fields.add(escapeField(event.getFrom()));
@@ -124,7 +126,7 @@ public class Storage {
             if (fields.get(3).isEmpty()) {
                 throw invalidLine(lineNumber, "deadline value cannot be empty");
             }
-            task = new Deadline(description, fields.get(3));
+            task = new Deadline(description, parseDeadlineDate(fields.get(3), lineNumber));
             break;
         case "E":
             requireFieldCount(fields, 5, lineNumber);
@@ -141,6 +143,15 @@ public class Storage {
             task.markAsDone();
         }
         return task;
+    }
+
+    /** Parses a stored ISO deadline date while retaining line-specific diagnostics. */
+    private LocalDate parseDeadlineDate(String value, int lineNumber) throws StorageException {
+        try {
+            return LocalDate.parse(value);
+        } catch (DateTimeParseException exception) {
+            throw invalidLine(lineNumber, "deadline date must be valid and use yyyy-MM-dd format");
+        }
     }
 
     /** Ensures that a saved task has exactly the fields expected for its type. */
