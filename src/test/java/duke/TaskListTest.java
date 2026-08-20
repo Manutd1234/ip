@@ -55,4 +55,18 @@ class TaskListTest {
         assertThrows(WangsaException.class, () -> tasks.add(new Todo("overflow")));
         assertEquals(100, tasks.size());
     }
+
+    @Test
+    void find_matchesDescriptionCaseInsensitivelyInOriginalOrder() throws WangsaException {
+        Task first = new Todo("Read the book");
+        Task second = new Todo("Return the book");
+        Task other = new Todo("Attend meeting");
+        TaskList tasks = new TaskList();
+        tasks.add(first);
+        tasks.add(second);
+        tasks.add(other);
+
+        assertEquals(List.of(first, second), tasks.find("BOOK"));
+        assertEquals(List.of(), tasks.find("missing"));
+    }
 }

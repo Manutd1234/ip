@@ -17,6 +17,7 @@ public class Parser {
         /** Mark a task complete. */ MARK,
         /** Mark a task incomplete. */ UNMARK,
         /** Delete a task. */ DELETE,
+        /** Search task descriptions. */ FIND,
         /** Add a task. */ ADD_TASK
     }
 
@@ -38,6 +39,8 @@ public class Parser {
             return CommandType.UNMARK;
         } else if (command.equals("delete") || command.startsWith("delete ")) {
             return CommandType.DELETE;
+        } else if (command.equals("find") || command.startsWith("find ")) {
+            return CommandType.FIND;
         } else if (isTaskCommand(command)) {
             return CommandType.ADD_TASK;
         } else if (command.isEmpty()) {
@@ -82,6 +85,19 @@ public class Parser {
         } catch (NumberFormatException exception) {
             throw new WangsaException("OOPS!!! Task number must be a whole number.");
         }
+    }
+
+    /** Extracts the keyword used to search task descriptions.
+     * @param command full find command
+     * @return non-empty search keyword
+     * @throws WangsaException if the keyword is missing
+     */
+    public String parseSearchKeyword(String command) throws WangsaException {
+        String keyword = textAfterKeyword(command, "find");
+        if (keyword.isEmpty()) {
+            throw new WangsaException("OOPS!!! Find needs a keyword to search for.");
+        }
+        return keyword;
     }
 
     /** Returns whether the command starts with a supported task keyword. */

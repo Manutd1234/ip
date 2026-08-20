@@ -19,6 +19,7 @@ class ParserTest {
         assertEquals(Parser.CommandType.MARK, parser.parseCommandType("mark 1"));
         assertEquals(Parser.CommandType.UNMARK, parser.parseCommandType("unmark 1"));
         assertEquals(Parser.CommandType.DELETE, parser.parseCommandType("delete 1"));
+        assertEquals(Parser.CommandType.FIND, parser.parseCommandType("find book"));
         assertEquals(Parser.CommandType.ADD_TASK, parser.parseCommandType("todo read book"));
     }
 
@@ -48,5 +49,11 @@ class ParserTest {
         assertEquals(12, parser.parseTaskNumber("delete 12"));
         assertThrows(WangsaException.class, () -> parser.parseTaskNumber("mark"));
         assertThrows(WangsaException.class, () -> parser.parseTaskNumber("mark one"));
+    }
+
+    @Test
+    void parseSearchKeyword_requiresAndReturnsKeyword() throws WangsaException {
+        assertEquals("book", parser.parseSearchKeyword("find book"));
+        assertThrows(WangsaException.class, () -> parser.parseSearchKeyword("find"));
     }
 }
