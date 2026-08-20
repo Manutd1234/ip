@@ -94,9 +94,11 @@ public class TaskList {
         return tasks.remove(taskNumber - 1);
     }
 
-    /** Finds tasks whose descriptions contain the keyword, ignoring case.
-     * @param keyword text to search for
-     * @return matching tasks in their original order
+    /**
+     * Finds tasks whose descriptions contain the keyword, ignoring case.
+     *
+     * @param keyword text to search for.
+     * @return matching tasks in their original order.
      */
     public List<Task> find(String keyword) {
         String normalizedKeyword = keyword.toLowerCase(Locale.ROOT);

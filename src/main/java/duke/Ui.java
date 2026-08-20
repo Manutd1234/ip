@@ -75,8 +75,10 @@ public class Ui implements AutoCloseable {
         }
     }
 
-    /** Displays tasks matching a search keyword.
-     * @param tasks matching tasks to display
+    /**
+     * Displays tasks matching a search keyword.
+     *
+     * @param tasks matching tasks to display.
      */
     public void showMatchingTasks(List<Task> tasks) {
         output.println("Here are the matching tasks in your list:");

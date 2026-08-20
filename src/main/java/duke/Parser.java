@@ -87,9 +87,11 @@ public class Parser {
         }
     }
 
-    /** Extracts the keyword used to search task descriptions.
-     * @param command full find command
-     * @return non-empty search keyword
+    /**
+     * Extracts the keyword used to search task descriptions.
+     *
+     * @param command full find command.
+     * @return non-empty search keyword.
      * @throws WangsaException if the keyword is missing
      */
     public String parseSearchKeyword(String command) throws WangsaException {

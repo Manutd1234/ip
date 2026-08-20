@@ -48,8 +48,11 @@ Use the Gradle wrapper from the project root:
 ```shell
 ./gradlew build
 ./gradlew run
+./gradlew jar
 ```
 
 The wrapper uses Gradle 9.1.0, which is configured for the project's Java 25 toolchain.
+The executable JAR is written to `build/libs/Wangsa.jar`; copy it to an empty
+folder and run it with `java -jar Wangsa.jar`.
 
 **Warning:** Keep the `src\main\java` folder as the root folder for Java files (i.e., don't rename those folders or move Java files to another folder outside of this folder path), as this is the default location some tools (e.g., Gradle) expect to find Java files.

@@ -21,6 +21,13 @@ application {
     mainClass = 'duke.Wangsa'
 }
 
+tasks.named('jar', Jar) {
+    archiveBaseName = 'Wangsa'
+    manifest {
+        attributes('Main-Class': application.mainClass.get())
+    }
+}
+
 tasks.named('run', JavaExec) {
     standardInput = System.in
 }
