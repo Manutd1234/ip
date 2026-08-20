@@ -41,4 +41,15 @@ Tasks can be added with `todo DESCRIPTION`, `deadline DESCRIPTION /by YYYY-MM-DD
 
 Wangsa automatically saves task-list changes to `data/wangsa.txt` and restores them the next time it starts.
 
+## Building and running with Gradle
+
+Use the Gradle wrapper from the project root:
+
+```shell
+./gradlew build
+./gradlew run
+```
+
+The wrapper uses Gradle 9.1.0, which is configured for the project's Java 25 toolchain.
+
 **Warning:** Keep the `src\main\java` folder as the root folder for Java files (i.e., don't rename those folders or move Java files to another folder outside of this folder path), as this is the default location some tools (e.g., Gradle) expect to find Java files.
