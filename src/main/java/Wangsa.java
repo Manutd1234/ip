@@ -1,103 +1,94 @@
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Scanner;
 
 /**
- * Entry point for the Wangsa chatbot.
+ * Coordinates Wangsa's user interface, parser, task list, and storage.
  */
 public class Wangsa {
-    private static final String SEPARATOR = "____________________________________________________________";
-    private static final String BANNER = "Wangsa";
     private static final Path DATA_FILE_PATH = Path.of("data", "wangsa.txt");
 
-    public static void main(String[] args) {
-        System.out.println(SEPARATOR);
-        System.out.println(BANNER);
-        System.out.println("Hello! I'm Wangsa.");
-        System.out.println("What can I do for you?");
-        System.out.println(SEPARATOR);
+    private final Storage storage;
+    private final Parser parser;
+    private final Ui ui;
 
-        Storage storage = new Storage(DATA_FILE_PATH);
-        Parser parser = new Parser();
-        TaskList tasks;
-        try {
-            tasks = new TaskList(storage.loadTasks());
-        } catch (StorageException | WangsaException exception) {
-            System.out.println(exception.getMessage());
-            System.out.println(SEPARATOR);
-            return;
-        }
+    /** Creates Wangsa with console interaction and storage at the supplied path. */
+    public Wangsa(Path dataFilePath) {
+        this(new Storage(dataFilePath), new Parser(), new Ui());
+    }
 
-        try (Scanner scanner = new Scanner(System.in)) {
-            while (scanner.hasNextLine()) {
-                String command = scanner.nextLine();
-                System.out.println(SEPARATOR);
+    /** Creates Wangsa with supplied collaborators, allowing isolated testing. */
+    Wangsa(Storage storage, Parser parser, Ui ui) {
+        this.storage = storage;
+        this.parser = parser;
+        this.ui = ui;
+    }
 
+    /** Runs the command loop until the user exits, input ends, or storage fails. */
+    public void run() {
+        try (ui) {
+            ui.showWelcome();
+
+            TaskList tasks;
+            try {
+                tasks = new TaskList(storage.loadTasks());
+            } catch (StorageException | WangsaException exception) {
+                ui.showError(exception.getMessage());
+                ui.showLine();
+                return;
+            }
+
+            while (ui.hasNextCommand()) {
+                String command = ui.readCommand();
+                ui.showLine();
                 try {
-                    Parser.CommandType commandType = parser.parseCommandType(command);
-                    if (commandType == Parser.CommandType.BYE) {
-                        System.out.println("Bye. Hope to see you again soon!");
-                        System.out.println(SEPARATOR);
+                    if (executeCommand(command, tasks)) {
+                        ui.showLine();
                         return;
-                    } else if (commandType == Parser.CommandType.LIST) {
-                        printTaskList(tasks);
-                    } else if (commandType == Parser.CommandType.MARK
-                            || commandType == Parser.CommandType.UNMARK) {
-                        int taskNumber = parser.parseTaskNumber(command);
-                        boolean isMarked = commandType == Parser.CommandType.MARK;
-                        Task updatedTask = isMarked ? tasks.mark(taskNumber) : tasks.unmark(taskNumber);
-                        storage.saveTasks(tasks.getTasks());
-                        printStatusUpdate(isMarked, updatedTask);
-                    } else if (commandType == Parser.CommandType.DELETE) {
-                        Task removedTask = tasks.delete(parser.parseTaskNumber(command));
-                        storage.saveTasks(tasks.getTasks());
-                        printDeletion(removedTask, tasks.size());
-                    } else if (commandType == Parser.CommandType.ADD_TASK) {
-                        Task task = parser.parseTask(command);
-                        tasks.add(task);
-                        storage.saveTasks(tasks.getTasks());
-                        System.out.println("Got it. I've added this task:");
-                        System.out.println("  " + task);
-                        System.out.println("Now you have " + tasks.size() + " tasks in the list.");
-                    } else {
-                        throw new IllegalStateException("Unsupported command type: " + commandType);
                     }
                 } catch (WangsaException exception) {
-                    System.out.println(exception.getMessage());
+                    ui.showError(exception.getMessage());
                 } catch (StorageException exception) {
-                    System.out.println(exception.getMessage());
-                    System.out.println(SEPARATOR);
+                    ui.showError(exception.getMessage());
+                    ui.showLine();
                     return;
                 }
-
-                System.out.println(SEPARATOR);
+                ui.showLine();
             }
         }
     }
 
-    /** Prints all stored tasks in their current order and status. */
-    private static void printTaskList(TaskList taskList) {
-        List<Task> tasks = taskList.getTasks();
-        System.out.println("Here are the tasks in your list:");
-        for (int i = 0; i < tasks.size(); i++) {
-            System.out.println((i + 1) + "." + tasks.get(i));
-        }
-    }
-
-    /** Confirms a successful task-status update after it has been saved. */
-    private static void printStatusUpdate(boolean isMarked, Task task) {
-        if (isMarked) {
-            System.out.println("Nice! I've marked this task as done:");
+    /** Executes one parsed command and returns whether it requests an exit. */
+    private boolean executeCommand(String command, TaskList tasks)
+            throws WangsaException, StorageException {
+        Parser.CommandType commandType = parser.parseCommandType(command);
+        if (commandType == Parser.CommandType.BYE) {
+            ui.showGoodbye();
+            return true;
+        } else if (commandType == Parser.CommandType.LIST) {
+            ui.showTaskList(tasks.getTasks());
+        } else if (commandType == Parser.CommandType.MARK
+                || commandType == Parser.CommandType.UNMARK) {
+            int taskNumber = parser.parseTaskNumber(command);
+            boolean isMarked = commandType == Parser.CommandType.MARK;
+            Task updatedTask = isMarked ? tasks.mark(taskNumber) : tasks.unmark(taskNumber);
+            storage.saveTasks(tasks.getTasks());
+            ui.showTaskStatusUpdate(updatedTask, isMarked);
+        } else if (commandType == Parser.CommandType.DELETE) {
+            Task removedTask = tasks.delete(parser.parseTaskNumber(command));
+            storage.saveTasks(tasks.getTasks());
+            ui.showTaskDeleted(removedTask, tasks.size());
+        } else if (commandType == Parser.CommandType.ADD_TASK) {
+            Task task = parser.parseTask(command);
+            tasks.add(task);
+            storage.saveTasks(tasks.getTasks());
+            ui.showTaskAdded(task, tasks.size());
         } else {
-            System.out.println("OK, I've marked this task as not done yet:");
+            throw new IllegalStateException("Unsupported command type: " + commandType);
         }
-        System.out.println("  " + task);
+        return false;
     }
 
-    /** Confirms a successful deletion after the updated task list has been saved. */
-    private static void printDeletion(Task removedTask, int taskCount) {
-        System.out.println("Noted. I've removed this task:");
-        System.out.println("  " + removedTask);
-        System.out.println("Now you have " + taskCount + " tasks in the list.");
+    /** Starts Wangsa using its default relative data-file path. */
+    public static void main(String[] args) {
+        new Wangsa(DATA_FILE_PATH).run();
     }
 }
