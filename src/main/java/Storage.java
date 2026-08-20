@@ -21,49 +21,38 @@ public class Storage {
     }
 
     /**
-     * Loads saved tasks into the supplied array.
+     * Loads and returns the tasks stored in the data file.
      *
-     * @param tasks destination array for the loaded tasks
-     * @return the number of tasks loaded
+     * @return the saved tasks in their original order
      * @throws StorageException if the file cannot be read or contains invalid data
      */
-    public int loadTasks(Task[] tasks) throws StorageException {
+    public List<Task> loadTasks() throws StorageException {
         if (Files.notExists(filePath)) {
-            return 0;
+            return new ArrayList<>();
         }
 
         try {
             List<String> lines = Files.readAllLines(filePath, StandardCharsets.UTF_8);
-            if (lines.size() > tasks.length) {
-                throw new StorageException("OOPS!!! The saved task list contains more than "
-                        + tasks.length + " tasks.");
-            }
-
             List<Task> loadedTasks = new ArrayList<>();
             for (int i = 0; i < lines.size(); i++) {
                 loadedTasks.add(parseTask(lines.get(i), i + 1));
             }
-
-            for (int i = 0; i < loadedTasks.size(); i++) {
-                tasks[i] = loadedTasks.get(i);
-            }
-            return loadedTasks.size();
+            return loadedTasks;
         } catch (IOException exception) {
             throw new StorageException("OOPS!!! I couldn't read saved tasks from " + filePath + ".", exception);
         }
     }
 
     /**
-     * Writes the active portion of the task array to disk.
+     * Writes the supplied tasks to disk.
      *
      * @param tasks tasks to save
-     * @param taskCount number of active entries in the array
      * @throws StorageException if the data folder or file cannot be written
      */
-    public void saveTasks(Task[] tasks, int taskCount) throws StorageException {
+    public void saveTasks(List<Task> tasks) throws StorageException {
         List<String> lines = new ArrayList<>();
-        for (int i = 0; i < taskCount; i++) {
-            lines.add(formatTask(tasks[i]));
+        for (Task task : tasks) {
+            lines.add(formatTask(task));
         }
 
         try {
