@@ -2,6 +2,7 @@ package duke;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Owns Wangsa's ordered task collection and the operations that change it.
@@ -91,6 +92,21 @@ public class TaskList {
     public Task delete(int taskNumber) throws WangsaException {
         getTask(taskNumber);
         return tasks.remove(taskNumber - 1);
+    }
+
+    /** Finds tasks whose descriptions contain the keyword, ignoring case.
+     * @param keyword text to search for
+     * @return matching tasks in their original order
+     */
+    public List<Task> find(String keyword) {
+        String normalizedKeyword = keyword.toLowerCase(Locale.ROOT);
+        List<Task> matches = new ArrayList<>();
+        for (Task task : tasks) {
+            if (task.getDescription().toLowerCase(Locale.ROOT).contains(normalizedKeyword)) {
+                matches.add(task);
+            }
+        }
+        return List.copyOf(matches);
     }
 
     /** Resolves a one-based task number or reports that it is outside the list. */

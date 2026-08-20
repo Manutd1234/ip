@@ -70,6 +70,8 @@ public class Wangsa {
             return true;
         } else if (commandType == Parser.CommandType.LIST) {
             ui.showTaskList(tasks.getTasks());
+        } else if (commandType == Parser.CommandType.FIND) {
+            ui.showMatchingTasks(tasks.find(parser.parseSearchKeyword(command)));
         } else if (commandType == Parser.CommandType.MARK
                 || commandType == Parser.CommandType.UNMARK) {
             int taskNumber = parser.parseTaskNumber(command);
