@@ -53,8 +53,10 @@ public class Parser {
             return parseTodo(command);
         } else if (command.equals("deadline") || command.startsWith("deadline ")) {
             return parseDeadline(command);
+        } else if (command.equals("event") || command.startsWith("event ")) {
+            return parseEvent(command);
         }
-        return parseEvent(command);
+        throw new WangsaException("OOPS!!! I'm sorry, but I don't know what that means :-(");
     }
 
     /**

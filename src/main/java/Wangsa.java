@@ -52,13 +52,15 @@ public class Wangsa {
                         Task removedTask = tasks.delete(parser.parseTaskNumber(command));
                         storage.saveTasks(tasks.getTasks());
                         printDeletion(removedTask, tasks.size());
-                    } else {
+                    } else if (commandType == Parser.CommandType.ADD_TASK) {
                         Task task = parser.parseTask(command);
                         tasks.add(task);
                         storage.saveTasks(tasks.getTasks());
                         System.out.println("Got it. I've added this task:");
                         System.out.println("  " + task);
                         System.out.println("Now you have " + tasks.size() + " tasks in the list.");
+                    } else {
+                        throw new IllegalStateException("Unsupported command type: " + commandType);
                     }
                 } catch (WangsaException exception) {
                     System.out.println(exception.getMessage());
