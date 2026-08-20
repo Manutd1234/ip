@@ -1,13 +1,13 @@
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.Scanner;
 
 /**
  * Entry point for the Wangsa chatbot.
  */
 public class Wangsa {
-    private static final int MAX_TASKS = 100;
     private static final String SEPARATOR = "____________________________________________________________";
     private static final String BANNER = "Wangsa";
     private static final Path DATA_FILE_PATH = Path.of("data", "wangsa.txt");
@@ -19,12 +19,11 @@ public class Wangsa {
         System.out.println("What can I do for you?");
         System.out.println(SEPARATOR);
 
-        Task[] tasks = new Task[MAX_TASKS];
         Storage storage = new Storage(DATA_FILE_PATH);
-        int taskCount;
+        TaskList tasks;
         try {
-            taskCount = storage.loadTasks(tasks);
-        } catch (StorageException exception) {
+            tasks = new TaskList(storage.loadTasks());
+        } catch (StorageException | WangsaException exception) {
             System.out.println(exception.getMessage());
             System.out.println(SEPARATOR);
             return;
@@ -43,27 +42,22 @@ public class Wangsa {
 
                 try {
                     if (command.equals("list")) {
-                        printTaskList(tasks, taskCount);
+                        printTaskList(tasks);
                     } else if (isStatusCommand(command)) {
-                        Task updatedTask = updateTaskStatus(command, tasks, taskCount);
-                        storage.saveTasks(tasks, taskCount);
+                        Task updatedTask = updateTaskStatus(command, tasks);
+                        storage.saveTasks(tasks.getTasks());
                         printStatusUpdate(command, updatedTask);
                     } else if (isDeleteCommand(command)) {
-                        Task removedTask = deleteTask(command, tasks, taskCount);
-                        taskCount--;
-                        storage.saveTasks(tasks, taskCount);
-                        printDeletion(removedTask, taskCount);
+                        Task removedTask = deleteTask(command, tasks);
+                        storage.saveTasks(tasks.getTasks());
+                        printDeletion(removedTask, tasks.size());
                     } else if (isTaskCommand(command)) {
                         Task task = createTask(command);
-                        if (taskCount >= MAX_TASKS) {
-                            throw new WangsaException("OOPS!!! Your task list is full (maximum 100 tasks).");
-                        }
-                        tasks[taskCount] = task;
-                        taskCount++;
-                        storage.saveTasks(tasks, taskCount);
+                        tasks.add(task);
+                        storage.saveTasks(tasks.getTasks());
                         System.out.println("Got it. I've added this task:");
                         System.out.println("  " + task);
-                        System.out.println("Now you have " + taskCount + " tasks in the list.");
+                        System.out.println("Now you have " + tasks.size() + " tasks in the list.");
                     } else if (command.isEmpty()) {
                         throw new WangsaException("OOPS!!! Please enter a command.");
                     } else {
@@ -158,15 +152,16 @@ public class Wangsa {
     }
 
     /** Prints all stored tasks in their current order and status. */
-    private static void printTaskList(Task[] tasks, int taskCount) {
+    private static void printTaskList(TaskList taskList) {
+        List<Task> tasks = taskList.getTasks();
         System.out.println("Here are the tasks in your list:");
-        for (int i = 0; i < taskCount; i++) {
-            System.out.println((i + 1) + "." + tasks[i]);
+        for (int i = 0; i < tasks.size(); i++) {
+            System.out.println((i + 1) + "." + tasks.get(i));
         }
     }
 
     /** Updates and returns a task, or reports an invalid task number. */
-    private static Task updateTaskStatus(String command, Task[] tasks, int taskCount)
+    private static Task updateTaskStatus(String command, TaskList tasks)
             throws WangsaException {
         String[] parts = command.split("\\s+");
         if (parts.length != 2) {
@@ -180,17 +175,10 @@ public class Wangsa {
             throw new WangsaException("OOPS!!! Task number must be a whole number.");
         }
 
-        if (taskNumber < 1 || taskNumber > taskCount) {
-            throw new WangsaException("OOPS!!! Task number must be between 1 and " + taskCount + ".");
-        }
-
-        Task task = tasks[taskNumber - 1];
         if (parts[0].equals("mark")) {
-            task.markAsDone();
-        } else {
-            task.markAsNotDone();
+            return tasks.mark(taskNumber);
         }
-        return task;
+        return tasks.unmark(taskNumber);
     }
 
     /** Confirms a successful task-status update after it has been saved. */
@@ -203,8 +191,8 @@ public class Wangsa {
         System.out.println("  " + task);
     }
 
-    /** Deletes and returns a task, shifting later tasks forward. */
-    private static Task deleteTask(String command, Task[] tasks, int taskCount)
+    /** Deletes and returns a numbered task. */
+    private static Task deleteTask(String command, TaskList tasks)
             throws WangsaException {
         String[] parts = command.split("\\s+");
         if (parts.length != 2) {
@@ -218,16 +206,7 @@ public class Wangsa {
             throw new WangsaException("OOPS!!! Task number must be a whole number.");
         }
 
-        if (taskNumber < 1 || taskNumber > taskCount) {
-            throw new WangsaException("OOPS!!! Task number must be between 1 and " + taskCount + ".");
-        }
-
-        Task removedTask = tasks[taskNumber - 1];
-        for (int i = taskNumber - 1; i < taskCount - 1; i++) {
-            tasks[i] = tasks[i + 1];
-        }
-        tasks[taskCount - 1] = null;
-        return removedTask;
+        return tasks.delete(taskNumber);
     }
 
     /** Confirms a successful deletion after the updated task list has been saved. */
