@@ -17,7 +17,10 @@ public class Storage {
 
     private final Path filePath;
 
-    /** Creates storage that reads from and writes to the supplied path. */
+    /**
+     * Creates storage that reads from and writes to the supplied path.
+     * @param filePath save-file location
+     */
     public Storage(Path filePath) {
         this.filePath = filePath;
     }

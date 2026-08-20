@@ -7,14 +7,17 @@ import java.time.format.DateTimeParseException;
  * Interprets user commands and converts their arguments into domain values.
  */
 public class Parser {
+    /** Creates a parser for Wangsa command lines. */
+    public Parser() {
+    }
     /** The supported actions that Wangsa can perform. */
     public enum CommandType {
-        BYE,
-        LIST,
-        MARK,
-        UNMARK,
-        DELETE,
-        ADD_TASK
+        /** Exit the application. */ BYE,
+        /** Display all tasks. */ LIST,
+        /** Mark a task complete. */ MARK,
+        /** Mark a task incomplete. */ UNMARK,
+        /** Delete a task. */ DELETE,
+        /** Add a task. */ ADD_TASK
     }
 
     /**

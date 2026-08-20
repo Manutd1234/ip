@@ -6,7 +6,10 @@ package duke;
 public class WangsaException extends Exception {
     private static final long serialVersionUID = 1L;
 
-    /** Creates an input error with the supplied user-facing message. */
+    /**
+     * Creates an input error with the supplied user-facing message.
+     * @param message user-facing explanation
+     */
     public WangsaException(String message) {
         super(message);
     }
