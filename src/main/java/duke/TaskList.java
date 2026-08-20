@@ -30,17 +30,26 @@ public class TaskList {
         this.tasks = new ArrayList<>(savedTasks);
     }
 
-    /** Returns the number of tasks currently stored. */
+    /** Returns the number of tasks currently stored.
+     * @return the task count
+     */
     public int size() {
         return tasks.size();
     }
 
-    /** Returns an unmodifiable snapshot of the tasks in their current order. */
+    /** Returns an unmodifiable snapshot of tasks in their current order.
+     * @return an immutable task snapshot
+     */
     public List<Task> getTasks() {
         return List.copyOf(tasks);
     }
 
-    /** Adds and returns a task, provided the list still has capacity. */
+    /**
+     * Adds and returns a task, provided the list still has capacity.
+     * @param task task to add
+     * @return the added task
+     * @throws WangsaException if the list is full
+     */
     public Task add(Task task) throws WangsaException {
         if (tasks.size() >= MAX_TASKS) {
             throw new WangsaException("OOPS!!! Your task list is full (maximum 100 tasks).");
@@ -49,21 +58,36 @@ public class TaskList {
         return task;
     }
 
-    /** Marks and returns the numbered task as done. */
+    /**
+     * Marks and returns the numbered task as done.
+     * @param taskNumber one-based task number
+     * @return the updated task
+     * @throws WangsaException if the number is invalid
+     */
     public Task mark(int taskNumber) throws WangsaException {
         Task task = getTask(taskNumber);
         task.markAsDone();
         return task;
     }
 
-    /** Marks and returns the numbered task as not done. */
+    /**
+     * Marks and returns the numbered task as not done.
+     * @param taskNumber one-based task number
+     * @return the updated task
+     * @throws WangsaException if the number is invalid
+     */
     public Task unmark(int taskNumber) throws WangsaException {
         Task task = getTask(taskNumber);
         task.markAsNotDone();
         return task;
     }
 
-    /** Deletes and returns the numbered task. */
+    /**
+     * Deletes and returns the numbered task.
+     * @param taskNumber one-based task number
+     * @return the removed task
+     * @throws WangsaException if the number is invalid
+     */
     public Task delete(int taskNumber) throws WangsaException {
         getTask(taskNumber);
         return tasks.remove(taskNumber - 1);

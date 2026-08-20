@@ -40,12 +40,16 @@ public class Ui implements AutoCloseable {
         showLine();
     }
 
-    /** Returns whether another command can be read. */
+    /** Returns whether another command can be read.
+     * @return whether another command is available
+     */
     public boolean hasNextCommand() {
         return scanner.hasNextLine();
     }
 
-    /** Reads and returns the next complete user command. */
+    /** Reads and returns the next complete user command.
+     * @return the command text
+     */
     public String readCommand() {
         return scanner.nextLine();
     }
@@ -60,7 +64,10 @@ public class Ui implements AutoCloseable {
         output.println("Bye. Hope to see you again soon!");
     }
 
-    /** Displays all tasks in their current order. */
+    /**
+     * Displays all tasks in their current order.
+     * @param tasks tasks to display
+     */
     public void showTaskList(List<Task> tasks) {
         output.println("Here are the tasks in your list:");
         for (int i = 0; i < tasks.size(); i++) {
@@ -68,14 +75,22 @@ public class Ui implements AutoCloseable {
         }
     }
 
-    /** Displays confirmation that a task has been added and saved. */
+    /**
+     * Displays confirmation that a task has been added and saved.
+     * @param task added task
+     * @param taskCount resulting task count
+     */
     public void showTaskAdded(Task task, int taskCount) {
         output.println("Got it. I've added this task:");
         output.println("  " + task);
         output.println("Now you have " + taskCount + " tasks in the list.");
     }
 
-    /** Displays confirmation that a task's completion status has been saved. */
+    /**
+     * Displays confirmation that a task's completion status has been saved.
+     * @param task updated task
+     * @param isMarked whether the task is now complete
+     */
     public void showTaskStatusUpdate(Task task, boolean isMarked) {
         if (isMarked) {
             output.println("Nice! I've marked this task as done:");
@@ -85,14 +100,21 @@ public class Ui implements AutoCloseable {
         output.println("  " + task);
     }
 
-    /** Displays confirmation that a task has been deleted and the change saved. */
+    /**
+     * Displays confirmation that a task has been deleted and the change saved.
+     * @param task removed task
+     * @param taskCount resulting task count
+     */
     public void showTaskDeleted(Task task, int taskCount) {
         output.println("Noted. I've removed this task:");
         output.println("  " + task);
         output.println("Now you have " + taskCount + " tasks in the list.");
     }
 
-    /** Displays an error that Wangsa can explain to the user. */
+    /**
+     * Displays an error that Wangsa can explain to the user.
+     * @param message user-facing error
+     */
     public void showError(String message) {
         output.println(message);
     }

@@ -22,7 +22,11 @@ public class Task {
         this(description, TaskType.TODO);
     }
 
-    /** Creates an unfinished task of the supplied type. */
+    /**
+     * Creates an unfinished task of the supplied type.
+     * @param description task text
+     * @param type task category
+     */
     protected Task(String description, TaskType type) {
         this.description = description;
         this.isDone = false;
@@ -39,17 +43,23 @@ public class Task {
         isDone = false;
     }
 
-    /** Returns the task text entered by the user. */
+    /** Returns the task text entered by the user.
+     * @return the task text entered by the user
+     */
     public String getDescription() {
         return description;
     }
 
-    /** Returns whether this task has been completed. */
+    /** Returns whether this task has been completed.
+     * @return whether this task has been completed
+     */
     public boolean isDone() {
         return isDone;
     }
 
-    /** Returns the kind of this task. */
+    /** Returns the kind of this task.
+     * @return the kind of this task
+     */
     public TaskType getType() {
         return type;
     }

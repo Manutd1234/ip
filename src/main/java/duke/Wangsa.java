@@ -12,7 +12,10 @@ public class Wangsa {
     private final Parser parser;
     private final Ui ui;
 
-    /** Creates Wangsa with console interaction and storage at the supplied path. */
+    /**
+     * Creates Wangsa with console interaction and storage at the supplied path.
+     * @param dataFilePath save-file location
+     */
     public Wangsa(Path dataFilePath) {
         this(new Storage(dataFilePath), new Parser(), new Ui());
     }
@@ -89,7 +92,10 @@ public class Wangsa {
         return false;
     }
 
-    /** Starts Wangsa using its default relative data-file path. */
+    /**
+     * Starts Wangsa using its default relative data-file path.
+     * @param args command-line arguments (unused)
+     */
     public static void main(String[] args) {
         new Wangsa(DATA_FILE_PATH).run();
     }
