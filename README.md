@@ -37,7 +37,7 @@ Prerequisites: JDK 25, update Intellij to the most recent version.
    ____________________________________________________________
    ```
 
-Tasks can be added with `todo DESCRIPTION`, `deadline DESCRIPTION /by DATE_OR_TIME`, or `event DESCRIPTION /from START /to END`. Use `list` to display tasks, `mark N` or `unmark N` to change completion status, `delete N` to remove a task, and `bye` to exit.
+Tasks can be added with `todo DESCRIPTION`, `deadline DESCRIPTION /by YYYY-MM-DD`, or `event DESCRIPTION /from START /to END`. Deadline dates are displayed in a friendlier form; for example, `2019-10-15` is shown as `Oct 15 2019`. Use `list` to display tasks, `mark N` or `unmark N` to change completion status, `delete N` to remove a task, and `bye` to exit.
 
 Wangsa automatically saves task-list changes to `data/wangsa.txt` and restores them the next time it starts.
 

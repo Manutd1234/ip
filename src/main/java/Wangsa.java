@@ -1,4 +1,6 @@
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Scanner;
 
 /**
@@ -112,7 +114,7 @@ public class Wangsa {
             String content = textAfterKeyword(command, "deadline");
             int byMarker = content.indexOf(" /by");
             if (byMarker < 0) {
-                throw new WangsaException("OOPS!!! A deadline must include a description and a /by date or time.");
+                throw new WangsaException("OOPS!!! A deadline must include a description and a /by date.");
             }
             String description = content.substring(0, byMarker).trim();
             String by = content.substring(byMarker + " /by".length()).trim();
@@ -122,7 +124,12 @@ public class Wangsa {
             if (by.isEmpty()) {
                 throw new WangsaException("OOPS!!! A deadline needs a value after /by.");
             }
-            return new Deadline(description, by);
+            try {
+                return new Deadline(description, LocalDate.parse(by));
+            } catch (DateTimeParseException exception) {
+                throw new WangsaException("OOPS!!! Deadline date must be valid and use yyyy-MM-dd format "
+                        + "(e.g., 2019-10-15).");
+            }
         }
 
         String content = textAfterKeyword(command, "event");
