@@ -39,4 +39,6 @@ Prerequisites: JDK 25, update Intellij to the most recent version.
 
 Tasks can be added with `todo DESCRIPTION`, `deadline DESCRIPTION /by DATE_OR_TIME`, or `event DESCRIPTION /from START /to END`. Use `list` to display tasks, `mark N` or `unmark N` to change completion status, `delete N` to remove a task, and `bye` to exit.
 
+Wangsa automatically saves task-list changes to `data/wangsa.txt` and restores them the next time it starts.
+
 **Warning:** Keep the `src\main\java` folder as the root folder for Java files (i.e., don't rename those folders or move Java files to another folder outside of this folder path), as this is the default location some tools (e.g., Gradle) expect to find Java files.

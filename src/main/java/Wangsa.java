@@ -1,3 +1,4 @@
+import java.nio.file.Path;
 import java.util.Scanner;
 
 /**
@@ -7,6 +8,7 @@ public class Wangsa {
     private static final int MAX_TASKS = 100;
     private static final String SEPARATOR = "____________________________________________________________";
     private static final String BANNER = "Wangsa";
+    private static final Path DATA_FILE_PATH = Path.of("data", "wangsa.txt");
 
     public static void main(String[] args) {
         System.out.println(SEPARATOR);
@@ -16,7 +18,15 @@ public class Wangsa {
         System.out.println(SEPARATOR);
 
         Task[] tasks = new Task[MAX_TASKS];
-        int taskCount = 0;
+        Storage storage = new Storage(DATA_FILE_PATH);
+        int taskCount;
+        try {
+            taskCount = storage.loadTasks(tasks);
+        } catch (StorageException exception) {
+            System.out.println(exception.getMessage());
+            System.out.println(SEPARATOR);
+            return;
+        }
 
         try (Scanner scanner = new Scanner(System.in)) {
             while (scanner.hasNextLine()) {
@@ -33,9 +43,14 @@ public class Wangsa {
                     if (command.equals("list")) {
                         printTaskList(tasks, taskCount);
                     } else if (isStatusCommand(command)) {
-                        updateTaskStatus(command, tasks, taskCount);
+                        Task updatedTask = updateTaskStatus(command, tasks, taskCount);
+                        storage.saveTasks(tasks, taskCount);
+                        printStatusUpdate(command, updatedTask);
                     } else if (isDeleteCommand(command)) {
-                        taskCount = deleteTask(command, tasks, taskCount);
+                        Task removedTask = deleteTask(command, tasks, taskCount);
+                        taskCount--;
+                        storage.saveTasks(tasks, taskCount);
+                        printDeletion(removedTask, taskCount);
                     } else if (isTaskCommand(command)) {
                         Task task = createTask(command);
                         if (taskCount >= MAX_TASKS) {
@@ -43,6 +58,7 @@ public class Wangsa {
                         }
                         tasks[taskCount] = task;
                         taskCount++;
+                        storage.saveTasks(tasks, taskCount);
                         System.out.println("Got it. I've added this task:");
                         System.out.println("  " + task);
                         System.out.println("Now you have " + taskCount + " tasks in the list.");
@@ -53,6 +69,10 @@ public class Wangsa {
                     }
                 } catch (WangsaException exception) {
                     System.out.println(exception.getMessage());
+                } catch (StorageException exception) {
+                    System.out.println(exception.getMessage());
+                    System.out.println(SEPARATOR);
+                    return;
                 }
 
                 System.out.println(SEPARATOR);
@@ -138,8 +158,8 @@ public class Wangsa {
         }
     }
 
-    /** Updates a task's completion status or reports an invalid task number. */
-    private static void updateTaskStatus(String command, Task[] tasks, int taskCount)
+    /** Updates and returns a task, or reports an invalid task number. */
+    private static Task updateTaskStatus(String command, Task[] tasks, int taskCount)
             throws WangsaException {
         String[] parts = command.split("\\s+");
         if (parts.length != 2) {
@@ -160,16 +180,24 @@ public class Wangsa {
         Task task = tasks[taskNumber - 1];
         if (parts[0].equals("mark")) {
             task.markAsDone();
-            System.out.println("Nice! I've marked this task as done:");
         } else {
             task.markAsNotDone();
+        }
+        return task;
+    }
+
+    /** Confirms a successful task-status update after it has been saved. */
+    private static void printStatusUpdate(String command, Task task) {
+        if (command.startsWith("mark")) {
+            System.out.println("Nice! I've marked this task as done:");
+        } else {
             System.out.println("OK, I've marked this task as not done yet:");
         }
         System.out.println("  " + task);
     }
 
-    /** Deletes a task, shifts later tasks forward, and returns the new count. */
-    private static int deleteTask(String command, Task[] tasks, int taskCount)
+    /** Deletes and returns a task, shifting later tasks forward. */
+    private static Task deleteTask(String command, Task[] tasks, int taskCount)
             throws WangsaException {
         String[] parts = command.split("\\s+");
         if (parts.length != 2) {
@@ -192,11 +220,13 @@ public class Wangsa {
             tasks[i] = tasks[i + 1];
         }
         tasks[taskCount - 1] = null;
-        int newTaskCount = taskCount - 1;
+        return removedTask;
+    }
 
+    /** Confirms a successful deletion after the updated task list has been saved. */
+    private static void printDeletion(Task removedTask, int taskCount) {
         System.out.println("Noted. I've removed this task:");
         System.out.println("  " + removedTask);
-        System.out.println("Now you have " + newTaskCount + " tasks in the list.");
-        return newTaskCount;
+        System.out.println("Now you have " + taskCount + " tasks in the list.");
     }
 }
