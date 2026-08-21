@@ -41,4 +41,9 @@ Tasks can be added with `todo DESCRIPTION`, `deadline DESCRIPTION /by DATE_OR_TI
 
 Wangsa automatically saves task-list changes to `data/wangsa.txt` and restores them the next time it starts.
 
+On the first run, Wangsa creates the `data` folder and save file when the
+first task is added. The path is relative to the project folder, so the same
+commands work across operating systems. The saved records retain each task's
+type, description, details, and completion status.
+
 **Warning:** Keep the `src\main\java` folder as the root folder for Java files (i.e., don't rename those folders or move Java files to another folder outside of this folder path), as this is the default location some tools (e.g., Gradle) expect to find Java files.
