@@ -55,4 +55,9 @@ The wrapper uses Gradle 9.1.0, which is configured for the project's Java 25 too
 The executable JAR is written to `build/libs/Wangsa.jar`; copy it to an empty
 folder and run it with `java -jar Wangsa.jar`.
 
+On the first run, Wangsa creates the `data` folder and save file when the
+first task is added. The path is relative to the project folder, so the same
+commands work across operating systems. The saved records retain each task's
+type, description, details, and completion status.
+
 **Warning:** Keep the `src\main\java` folder as the root folder for Java files (i.e., don't rename those folders or move Java files to another folder outside of this folder path), as this is the default location some tools (e.g., Gradle) expect to find Java files.
