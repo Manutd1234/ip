@@ -69,10 +69,7 @@ public class Ui implements AutoCloseable {
      * @param tasks tasks to display
      */
     public void showTaskList(List<Task> tasks) {
-        output.println("Here are the tasks in your list:");
-        for (int i = 0; i < tasks.size(); i++) {
-            output.println((i + 1) + "." + tasks.get(i));
-        }
+        showTasks("Here are the tasks in your list:", tasks);
     }
 
     /**
@@ -81,7 +78,12 @@ public class Ui implements AutoCloseable {
      * @param tasks matching tasks to display.
      */
     public void showMatchingTasks(List<Task> tasks) {
-        output.println("Here are the matching tasks in your list:");
+        showTasks("Here are the matching tasks in your list:", tasks);
+    }
+
+    /** Displays a heading followed by tasks in their current order. */
+    private void showTasks(String heading, List<Task> tasks) {
+        output.println(heading);
         for (int i = 0; i < tasks.size(); i++) {
             output.println((i + 1) + "." + tasks.get(i));
         }
