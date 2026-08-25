@@ -10,6 +10,7 @@ public class Parser {
     /** Creates a parser for Wangsa command lines. */
     public Parser() {
     }
+
     /** The supported actions that Wangsa can perform. */
     public enum CommandType {
         /** Exit the application. */ BYE,

@@ -10,9 +10,11 @@ import java.util.Scanner;
  */
 public class Ui implements AutoCloseable {
     private static final String SEPARATOR = "____________________________________________________________";
+
     private static final String BANNER = "Wangsa";
 
     private final Scanner scanner;
+
     private final PrintStream output;
 
     /** Creates a UI connected to the process's standard input and output. */
