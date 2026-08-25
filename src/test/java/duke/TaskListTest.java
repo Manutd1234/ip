@@ -69,4 +69,20 @@ class TaskListTest {
         assertEquals(List.of(first, second), tasks.find("BOOK"));
         assertEquals(List.of(), tasks.find("missing"));
     }
+
+    @Test
+    void addAll_addsBatchAtomicallyAndRejectsOverflow() throws WangsaException {
+        TaskList tasks = new TaskList();
+        Task first = new Todo("first");
+        Task second = new Todo("second");
+
+        tasks.addAll(first, second);
+        assertEquals(List.of(first, second), tasks.getTasks());
+
+        for (int i = 2; i < 100; i++) {
+            tasks.add(new Todo("task " + i));
+        }
+        assertThrows(WangsaException.class, () -> tasks.addAll(new Todo("overflow"), new Todo("extra")));
+        assertEquals(100, tasks.size());
+    }
 }
