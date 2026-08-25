@@ -1,6 +1,7 @@
 package duke;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -57,6 +58,19 @@ public class TaskList {
         }
         tasks.add(task);
         return task;
+    }
+
+    /**
+     * Adds several tasks as one capacity-checked operation.
+     *
+     * @param newTasks tasks to add
+     * @throws WangsaException if the combined list would exceed capacity
+     */
+    public void addAll(Task... newTasks) throws WangsaException {
+        if (newTasks.length > MAX_TASKS - tasks.size()) {
+            throw new WangsaException("OOPS!!! Your task list is full (maximum 100 tasks).");
+        }
+        tasks.addAll(Arrays.asList(newTasks));
     }
 
     /**
