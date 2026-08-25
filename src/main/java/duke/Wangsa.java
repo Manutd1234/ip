@@ -9,7 +9,9 @@ public class Wangsa {
     private static final Path DATA_FILE_PATH = Path.of("data", "wangsa.txt");
 
     private final Storage storage;
+
     private final Parser parser;
+
     private final Ui ui;
 
     /**
