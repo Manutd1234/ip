@@ -55,6 +55,10 @@ The wrapper uses Gradle 9.1.0, which is configured for the project's Java 25 too
 The executable JAR is written to `build/libs/Wangsa.jar`; copy it to an empty
 folder and run it with `java -jar Wangsa.jar`.
 
+`./gradlew run` launches the JavaFX desktop interface. The original text
+interface remains available through `duke.Wangsa` for command-line use and
+automated tests.
+
 On the first run, Wangsa creates the `data` folder and save file when the
 first task is added. The path is relative to the project folder, so the same
 commands work across operating systems. The saved records retain each task's
