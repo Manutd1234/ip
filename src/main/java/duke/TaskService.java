@@ -24,9 +24,25 @@ public final class TaskService {
      * @throws WangsaException if the saved task list is invalid
      */
     public TaskService(Storage storage, Parser parser) throws StorageException, WangsaException {
+        this(storage, parser, new TaskList(storage.loadTasks()));
+    }
+
+    /**
+     * Creates an empty service for use when previously saved data cannot be loaded.
+     *
+     * @param storage destination for future saves
+     * @param parser parser for future commands
+     * @return an empty task service
+     */
+    public static TaskService empty(Storage storage, Parser parser) {
+        return new TaskService(storage, parser, new TaskList());
+    }
+
+    /** Creates a service around an already prepared task list. */
+    private TaskService(Storage storage, Parser parser, TaskList tasks) {
         this.parser = parser;
         this.storage = storage;
-        this.tasks = new TaskList(storage.loadTasks());
+        this.tasks = tasks;
     }
 
     /** Returns a snapshot of all tasks in their current order.

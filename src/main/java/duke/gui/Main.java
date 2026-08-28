@@ -7,7 +7,7 @@ import duke.Parser;
 import duke.Storage;
 import duke.StorageException;
 import duke.Task;
-import duke.TaskList;
+import duke.TaskService;
 import duke.WangsaException;
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -26,15 +26,13 @@ import javafx.stage.Stage;
 public class Main extends Application {
     private static final Path DATA_FILE_PATH = Path.of("data", "wangsa.txt");
 
-    private final Storage storage = new Storage(DATA_FILE_PATH);
-
     private final Parser parser = new Parser();
 
     private TextArea transcript;
 
     private TextField commandField;
 
-    private TaskList tasks;
+    private TaskService taskService;
 
     /** Starts the JavaFX window and loads saved tasks. */
     @Override
@@ -65,10 +63,10 @@ public class Main extends Application {
     /** Loads persisted tasks and renders the initial task list. */
     private void loadTasks() {
         try {
-            tasks = new TaskList(storage.loadTasks());
-            append("Hello! I'm Wangsa.\n" + renderTasks(tasks.getTasks()));
+            taskService = new TaskService(new Storage(DATA_FILE_PATH), parser);
+            append("Hello! I'm Wangsa.\n" + renderTasks(taskService.getTasks()));
         } catch (StorageException | WangsaException exception) {
-            tasks = new TaskList();
+            taskService = TaskService.empty(new Storage(DATA_FILE_PATH), parser);
             append(exception.getMessage());
         }
     }
@@ -97,24 +95,22 @@ public class Main extends Application {
             javafx.application.Platform.exit();
             break;
         case LIST:
-            append(renderTasks(tasks.getTasks()));
+            append(renderTasks(taskService.getTasks()));
             break;
         case FIND:
-            append(renderTasks(tasks.find(parser.parseSearchKeyword(command))));
+            append(renderTasks(taskService.find(command)));
             break;
         case MARK:
         case UNMARK:
             updateStatus(command, commandType);
             break;
         case DELETE:
-            tasks.delete(parser.parseTaskNumber(command));
-            storage.saveTasks(tasks.getTasks());
-            append(renderTasks(tasks.getTasks()));
+            taskService.delete(command);
+            append(renderTasks(taskService.getTasks()));
             break;
         case ADD_TASK:
-            tasks.add(parser.parseTask(command));
-            storage.saveTasks(tasks.getTasks());
-            append(renderTasks(tasks.getTasks()));
+            taskService.add(command);
+            append(renderTasks(taskService.getTasks()));
             break;
         default:
             throw new IllegalStateException("Unsupported command type: " + commandType);
@@ -124,14 +120,12 @@ public class Main extends Application {
     /** Updates a task's completion status and persists the change. */
     private void updateStatus(String command, Parser.CommandType commandType)
             throws WangsaException, StorageException {
-        int taskNumber = parser.parseTaskNumber(command);
         if (commandType == Parser.CommandType.MARK) {
-            tasks.mark(taskNumber);
+            taskService.mark(command);
         } else {
-            tasks.unmark(taskNumber);
+            taskService.unmark(command);
         }
-        storage.saveTasks(tasks.getTasks());
-        append(renderTasks(tasks.getTasks()));
+        append(renderTasks(taskService.getTasks()));
     }
 
     /** Formats tasks for display in the transcript. */
