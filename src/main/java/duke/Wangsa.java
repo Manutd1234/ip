@@ -34,9 +34,9 @@ public class Wangsa {
         try (ui) {
             ui.showWelcome();
 
-            TaskList tasks;
+            TaskService tasks;
             try {
-                tasks = new TaskList(storage.loadTasks());
+                tasks = new TaskService(storage, parser);
             } catch (StorageException | WangsaException exception) {
                 ui.showError(exception.getMessage());
                 ui.showLine();
@@ -64,7 +64,7 @@ public class Wangsa {
     }
 
     /** Executes one parsed command and returns whether it requests an exit. */
-    private boolean executeCommand(String command, TaskList tasks)
+    private boolean executeCommand(String command, TaskService tasks)
             throws WangsaException, StorageException {
         Parser.CommandType commandType = parser.parseCommandType(command);
         switch (commandType) {
@@ -75,7 +75,7 @@ public class Wangsa {
             ui.showTaskList(tasks.getTasks());
             break;
         case FIND:
-            ui.showMatchingTasks(tasks.find(parser.parseSearchKeyword(command)));
+            ui.showMatchingTasks(tasks.find(command));
             break;
         case MARK:
         case UNMARK:
@@ -94,28 +94,23 @@ public class Wangsa {
     }
 
     /** Saves and displays a task status change. */
-    private void updateTaskStatus(String command, Parser.CommandType commandType, TaskList tasks)
+    private void updateTaskStatus(String command, Parser.CommandType commandType, TaskService tasks)
             throws WangsaException, StorageException {
-        int taskNumber = parser.parseTaskNumber(command);
         boolean isMarked = commandType == Parser.CommandType.MARK;
-        Task updatedTask = isMarked ? tasks.mark(taskNumber) : tasks.unmark(taskNumber);
-        storage.saveTasks(tasks.getTasks());
+        Task updatedTask = isMarked ? tasks.mark(command) : tasks.unmark(command);
         ui.showTaskStatusUpdate(updatedTask, isMarked);
     }
 
     /** Deletes, saves, and displays a task removal. */
-    private void deleteTask(String command, TaskList tasks) throws WangsaException, StorageException {
-        Task removedTask = tasks.delete(parser.parseTaskNumber(command));
-        storage.saveTasks(tasks.getTasks());
-        ui.showTaskDeleted(removedTask, tasks.size());
+    private void deleteTask(String command, TaskService tasks) throws WangsaException, StorageException {
+        Task removedTask = tasks.delete(command);
+        ui.showTaskDeleted(removedTask, tasks.getTasks().size());
     }
 
     /** Adds, saves, and displays a new task. */
-    private void addTask(String command, TaskList tasks) throws WangsaException, StorageException {
-        Task task = parser.parseTask(command);
-        tasks.add(task);
-        storage.saveTasks(tasks.getTasks());
-        ui.showTaskAdded(task, tasks.size());
+    private void addTask(String command, TaskService tasks) throws WangsaException, StorageException {
+        Task task = tasks.add(command);
+        ui.showTaskAdded(task, tasks.getTasks().size());
     }
 
     /**
