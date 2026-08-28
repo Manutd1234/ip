@@ -22,7 +22,12 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-/** Provides a graphical interface for Wangsa's task-management commands. */
+/**
+ * Provides a graphical interface for Wangsa's task-management commands.
+ *
+ * <p>The JavaFX layer owns controls and rendering only. {@link TaskService} owns the
+ * application state so a future interface can reuse the same task behavior.</p>
+ */
 public class Main extends Application {
     private static final Path DATA_FILE_PATH = Path.of("data", "wangsa.txt");
 

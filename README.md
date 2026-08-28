@@ -41,6 +41,8 @@ Tasks can be added with `todo DESCRIPTION`, `deadline DESCRIPTION /by YYYY-MM-DD
 
 Wangsa automatically saves task-list changes to `data/wangsa.txt` and restores them the next time it starts.
 
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the responsibilities of each layer and guidance for adding features.
+
 ## Building and running with Gradle
 
 Use the Gradle wrapper from the project root:

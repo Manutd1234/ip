@@ -11,6 +11,9 @@ import java.util.List;
 
 /**
  * Loads and saves Wangsa tasks using a human-readable text file.
+ *
+ * <p>This is the default {@link TaskRepository} implementation. The rest of the
+ * application uses the interface so the file format remains an implementation detail.</p>
  */
 public class Storage implements TaskRepository {
     private static final String FIELD_SEPARATOR = " | ";

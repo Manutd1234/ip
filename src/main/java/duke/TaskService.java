@@ -38,7 +38,16 @@ public final class TaskService {
         return new TaskService(repository, parser, new TaskList());
     }
 
-    /** Creates a service around an already prepared task list. */
+    /**
+     * Creates a service around an already prepared task list.
+     *
+     * <p>This constructor is used by the empty-service fallback so the UI can remain
+     * usable even when an existing save file cannot be loaded.</p>
+     *
+     * @param repository destination for future saves
+     * @param parser parser for future commands
+     * @param tasks task list managed by this service
+     */
     private TaskService(TaskRepository repository, Parser parser, TaskList tasks) {
         this.parser = parser;
         this.repository = repository;

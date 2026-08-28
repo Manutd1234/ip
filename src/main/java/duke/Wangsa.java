@@ -3,7 +3,11 @@ package duke;
 import java.nio.file.Path;
 
 /**
- * Coordinates Wangsa's user interface, parser, task list, and storage.
+ * Runs Wangsa's command-line adapter.
+ *
+ * <p>This class is intentionally responsible for input/output flow only. Command parsing,
+ * task mutations, and persistence are delegated to {@link Parser} and {@link TaskService},
+ * which keeps new interfaces from needing to duplicate business logic.</p>
  */
 public class Wangsa {
     private static final Path DATA_FILE_PATH = Path.of("data", "wangsa.txt");
@@ -63,7 +67,12 @@ public class Wangsa {
         }
     }
 
-    /** Executes one parsed command and returns whether it requests an exit. */
+    /**
+     * Executes one command and returns whether it requests an exit.
+     *
+     * <p>The switch selects presentation behavior, while all state-changing work is
+     * delegated to the shared service.</p>
+     */
     private boolean executeCommand(String command, TaskService tasks)
             throws WangsaException, StorageException {
         Parser.CommandType commandType = parser.parseCommandType(command);
