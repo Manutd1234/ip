@@ -11,37 +11,37 @@ import java.util.List;
 public final class TaskService {
     private final Parser parser;
 
-    private final Storage storage;
+    private final TaskRepository repository;
 
     private final TaskList tasks;
 
     /**
      * Creates a service and loads its task list from storage.
      *
-     * @param storage source and destination for saved tasks
+     * @param repository source and destination for saved tasks
      * @param parser parser for Wangsa commands
      * @throws StorageException if saved tasks cannot be loaded
      * @throws WangsaException if the saved task list is invalid
      */
-    public TaskService(Storage storage, Parser parser) throws StorageException, WangsaException {
-        this(storage, parser, new TaskList(storage.loadTasks()));
+    public TaskService(TaskRepository repository, Parser parser) throws StorageException, WangsaException {
+        this(repository, parser, new TaskList(repository.loadTasks()));
     }
 
     /**
      * Creates an empty service for use when previously saved data cannot be loaded.
      *
-     * @param storage destination for future saves
+     * @param repository destination for future saves
      * @param parser parser for future commands
      * @return an empty task service
      */
-    public static TaskService empty(Storage storage, Parser parser) {
-        return new TaskService(storage, parser, new TaskList());
+    public static TaskService empty(TaskRepository repository, Parser parser) {
+        return new TaskService(repository, parser, new TaskList());
     }
 
     /** Creates a service around an already prepared task list. */
-    private TaskService(Storage storage, Parser parser, TaskList tasks) {
+    private TaskService(TaskRepository repository, Parser parser, TaskList tasks) {
         this.parser = parser;
-        this.storage = storage;
+        this.repository = repository;
         this.tasks = tasks;
     }
 
@@ -74,7 +74,7 @@ public final class TaskService {
     public Task add(String command) throws WangsaException, StorageException {
         Task task = parser.parseTask(command);
         tasks.add(task);
-        storage.saveTasks(tasks.getTasks());
+        repository.saveTasks(tasks.getTasks());
         return task;
     }
 
@@ -88,7 +88,7 @@ public final class TaskService {
      */
     public Task mark(String command) throws WangsaException, StorageException {
         Task task = tasks.mark(parser.parseTaskNumber(command));
-        storage.saveTasks(tasks.getTasks());
+        repository.saveTasks(tasks.getTasks());
         return task;
     }
 
@@ -102,7 +102,7 @@ public final class TaskService {
      */
     public Task unmark(String command) throws WangsaException, StorageException {
         Task task = tasks.unmark(parser.parseTaskNumber(command));
-        storage.saveTasks(tasks.getTasks());
+        repository.saveTasks(tasks.getTasks());
         return task;
     }
 
@@ -116,7 +116,7 @@ public final class TaskService {
      */
     public Task delete(String command) throws WangsaException, StorageException {
         Task task = tasks.delete(parser.parseTaskNumber(command));
-        storage.saveTasks(tasks.getTasks());
+        repository.saveTasks(tasks.getTasks());
         return task;
     }
 }

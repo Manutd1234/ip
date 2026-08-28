@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Loads and saves Wangsa tasks using a human-readable text file.
  */
-public class Storage {
+public class Storage implements TaskRepository {
     private static final String FIELD_SEPARATOR = " | ";
 
     private final Path filePath;
