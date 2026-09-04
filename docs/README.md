@@ -40,7 +40,9 @@ Wangsa stores task data in the SQLite database at `data/wangsa.db` after every
 successful mutation. The database is created automatically on first launch. If a
 legacy `data/wangsa.txt` file exists, its tasks are imported once before SQLite
 becomes the source of truth. Task type, description, details, and completion status
-are restored on the next launch.
+are restored on the next launch. SQLite uses WAL mode, immediate write transactions,
+unique task positions, and task-type/detail constraints to keep concurrent updates
+and persisted records consistent.
 
 ## Building and running
 

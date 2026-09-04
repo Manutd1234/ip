@@ -32,6 +32,9 @@ User input
 - `TaskService` coordinates a complete use case, such as adding a task and saving it.
 - `TaskRepository` defines persistence without committing the application to a storage format.
 - `SqliteTaskRepository` implements `TaskRepository` using indexed, transactional SQLite rows.
+- SQLite uses WAL mode for reader/writer concurrency and immediate write transactions so position checks and
+  updates acquire the writer lock together. Unique position indexes and task-type checks protect ordering and
+  task-specific fields at the database boundary, including for databases created by earlier versions.
 - `Storage` remains the legacy text-file reader used for one-time migration from `data/wangsa.txt`.
 - `Ui` and `duke.gui.Main` format output for their respective interfaces.
 
@@ -54,6 +57,8 @@ structure so both interfaces behave identically.
 - A new persistence backend can implement `TaskRepository` without changing `TaskService`.
 - The SQLite repository keeps schema creation and transaction handling in one adapter, so a future
   remote database can replace it without leaking JDBC details into the domain or interfaces.
+- Schema initialization is idempotent: it adds missing indexes and validation triggers whenever an existing
+  database is opened, while malformed legacy rows are reported instead of being silently changed.
 - A new interface can construct a `TaskService` and reuse the existing parser and workflows.
 - A new task type should extend `Task`, define its own details, and be handled by `Parser` and
   `SqliteTaskRepository` for creation and persistence.

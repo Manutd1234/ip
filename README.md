@@ -64,7 +64,9 @@ automated tests.
 On the first run, Wangsa creates the `data` folder and SQLite database. Existing
 `data/wangsa.txt` files are migrated once, then the database becomes the source of
 truth. SQLite stores one indexed row per task and commits each update transactionally,
-while the saved records retain each task's type, description, details, and completion
+using WAL mode and immediate write transactions for predictable writer contention.
+Unique task positions and task-type/detail constraints keep the saved records
+consistent while retaining each task's type, description, details, and completion
 status.
 
 **Warning:** Keep the `src\main\java` folder as the root folder for Java files (i.e., don't rename those folders or move Java files to another folder outside of this folder path), as this is the default location some tools (e.g., Gradle) expect to find Java files.
