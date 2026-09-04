@@ -116,13 +116,9 @@ public class TaskList {
      */
     public List<Task> find(String keyword) {
         String normalizedKeyword = keyword.toLowerCase(Locale.ROOT);
-        List<Task> matches = new ArrayList<>();
-        for (Task task : tasks) {
-            if (task.getDescription().toLowerCase(Locale.ROOT).contains(normalizedKeyword)) {
-                matches.add(task);
-            }
-        }
-        return List.copyOf(matches);
+        return tasks.stream()
+                .filter(task -> task.getDescription().toLowerCase(Locale.ROOT).contains(normalizedKeyword))
+                .toList();
     }
 
     /** Resolves a one-based task number or reports that it is outside the list. */
