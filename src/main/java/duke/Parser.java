@@ -19,6 +19,7 @@ public class Parser {
         /** Mark a task incomplete. */ UNMARK,
         /** Delete a task. */ DELETE,
         /** Search task descriptions. */ FIND,
+        /** Sort tasks by their deadlines. */ SORT,
         /** Add a task. */ ADD_TASK
     }
 
@@ -42,6 +43,7 @@ public class Parser {
         case "unmark" -> CommandType.UNMARK;
         case "delete" -> CommandType.DELETE;
         case "find" -> CommandType.FIND;
+        case "sort" -> requireExactCommand(command, keyword, CommandType.SORT);
         case "todo", "deadline", "event" -> CommandType.ADD_TASK;
         default -> throw unknownCommand();
         };

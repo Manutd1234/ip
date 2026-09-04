@@ -211,7 +211,7 @@ public class Main extends Application {
         title.getStyleClass().add("cheatsheet-title");
         Label commands = new Label("ADD  todo <description>  ·  deadline <description> /by <yyyy-MM-dd>  ·  "
                 + "event <description> /from <start> /to <end>\n"
-                + "VIEW  list  ·  find <keyword>    STATUS  mark <#>  ·  unmark <#>    "
+                + "VIEW  list  ·  find <keyword>  ·  sort    STATUS  mark <#>  ·  unmark <#>    "
                 + "REMOVE  delete <#>    EXIT  bye");
         commands.setWrapText(true);
         commands.getStyleClass().add("cheatsheet-text");
@@ -315,6 +315,11 @@ public class Main extends Application {
             break;
         case FIND:
             appendAssistant(renderTasks(taskService.find(command)));
+            break;
+        case SORT:
+            taskService.sortByDeadline();
+            appendAssistant("Sorted by deadline; undated tasks are last.\n"
+                    + renderTasks(taskService.getTasks()));
             break;
         case MARK:
         case UNMARK:

@@ -72,6 +72,14 @@ public final class TaskService {
         return tasks.find(parser.parseSearchKeyword(command));
     }
 
+    /** Sorts tasks by deadline and saves the resulting order.
+     * @throws StorageException if the updated order cannot be saved
+     */
+    public void sortByDeadline() throws StorageException {
+        tasks.sortByDeadline();
+        repository.saveTasks(tasks.getTasks());
+    }
+
     /**
      * Parses, adds, and saves a task.
      *

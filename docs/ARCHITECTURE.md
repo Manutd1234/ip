@@ -34,6 +34,11 @@ User input
 - `Storage` implements `TaskRepository` using `data/wangsa.txt`.
 - `Ui` and `duke.gui.Main` format output for their respective interfaces.
 
+The `C-Sort` extension follows the same flow as other commands: `Parser` recognizes
+`sort`, `TaskService` persists the reordered snapshot, and each interface renders
+the resulting task order. `TaskList` keeps the sorting rule close to the task data
+structure so both interfaces behave identically.
+
 ## Adding a feature
 
 1. Add or update the domain model in the task classes when the feature introduces new task data or behavior.

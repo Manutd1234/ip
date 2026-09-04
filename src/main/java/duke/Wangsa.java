@@ -86,6 +86,9 @@ public class Wangsa {
         case FIND:
             ui.showMatchingTasks(tasks.find(command));
             break;
+        case SORT:
+            sortTasks(tasks);
+            break;
         case MARK:
         case UNMARK:
             updateTaskStatus(command, commandType, tasks);
@@ -120,6 +123,12 @@ public class Wangsa {
     private void addTask(String command, TaskService tasks) throws WangsaException, StorageException {
         Task task = tasks.add(command);
         ui.showTaskAdded(task, tasks.getTasks().size());
+    }
+
+    /** Sorts, saves, and displays tasks by deadline. */
+    private void sortTasks(TaskService tasks) throws StorageException {
+        tasks.sortByDeadline();
+        ui.showSortedTaskList(tasks.getTasks());
     }
 
     /**

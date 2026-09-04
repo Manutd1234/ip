@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -68,6 +69,20 @@ class TaskListTest {
 
         assertEquals(List.of(first, second), tasks.find("BOOK"));
         assertEquals(List.of(), tasks.find("missing"));
+    }
+
+    @Test
+    void sortByDeadline_ordersDeadlinesFirstAndKeepsUndatedTasksStable() throws WangsaException {
+        Task laterDeadline = new Deadline("later", LocalDate.of(2026, 10, 20));
+        Task todo = new Todo("todo");
+        Task event = new Event("event", "2pm", "4pm");
+        Task earlierDeadline = new Deadline("earlier", LocalDate.of(2026, 9, 20));
+        TaskList tasks = new TaskList();
+        tasks.addAll(laterDeadline, todo, event, earlierDeadline);
+
+        tasks.sortByDeadline();
+
+        assertEquals(List.of(earlierDeadline, laterDeadline, todo, event), tasks.getTasks());
     }
 
     @Test

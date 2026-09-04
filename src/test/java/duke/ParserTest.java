@@ -20,6 +20,7 @@ class ParserTest {
         assertEquals(Parser.CommandType.UNMARK, parser.parseCommandType("unmark 1"));
         assertEquals(Parser.CommandType.DELETE, parser.parseCommandType("delete 1"));
         assertEquals(Parser.CommandType.FIND, parser.parseCommandType("find book"));
+        assertEquals(Parser.CommandType.SORT, parser.parseCommandType("sort"));
         assertEquals(Parser.CommandType.ADD_TASK, parser.parseCommandType("todo read book"));
     }
 
