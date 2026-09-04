@@ -16,6 +16,7 @@ public class TaskList {
     /** Creates an empty task list. */
     public TaskList() {
         this.tasks = new ArrayList<>();
+        assertInvariant();
     }
 
     /**
@@ -30,6 +31,7 @@ public class TaskList {
                     + MAX_TASKS + " tasks.");
         }
         this.tasks = new ArrayList<>(savedTasks);
+        assertInvariant();
     }
 
     /** Returns the number of tasks currently stored.
@@ -53,10 +55,12 @@ public class TaskList {
      * @throws WangsaException if the list is full
      */
     public Task add(Task task) throws WangsaException {
+        assert task != null : "task must not be null";
         if (tasks.size() >= MAX_TASKS) {
             throw new WangsaException("OOPS!!! Your task list is full (maximum 100 tasks).");
         }
         tasks.add(task);
+        assertInvariant();
         return task;
     }
 
@@ -67,10 +71,12 @@ public class TaskList {
      * @throws WangsaException if the combined list would exceed capacity
      */
     public void addAll(Task... newTasks) throws WangsaException {
+        assert newTasks != null : "newTasks must not be null";
         if (newTasks.length > MAX_TASKS - tasks.size()) {
             throw new WangsaException("OOPS!!! Your task list is full (maximum 100 tasks).");
         }
         tasks.addAll(Arrays.asList(newTasks));
+        assertInvariant();
     }
 
     /**
@@ -128,5 +134,10 @@ public class TaskList {
                     + tasks.size() + ".");
         }
         return tasks.get(taskNumber - 1);
+    }
+
+    /** Checks invariants that should hold for every task-list state. */
+    private void assertInvariant() {
+        assert tasks.size() <= MAX_TASKS : "task list cannot exceed its capacity";
     }
 }
