@@ -36,6 +36,13 @@ application {
 
 tasks.named('jar', Jar) {
     archiveBaseName = 'Wangsa'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect { dependency ->
+            dependency.isDirectory() ? dependency : zipTree(dependency)
+        }
+    }
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'module-info.class'
     manifest {
         attributes('Main-Class': application.mainClass.get())
     }
