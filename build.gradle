@@ -47,6 +47,7 @@ tasks.named('run', JavaExec) {
 
 tasks.named('test', Test) {
     useJUnitPlatform()
+    enableAssertions = true
 }
 
 checkstyle {
