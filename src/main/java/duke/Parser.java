@@ -30,24 +30,21 @@ public class Parser {
      * @throws WangsaException if the command is empty or unknown
      */
     public CommandType parseCommandType(String command) throws WangsaException {
-        if (command.equals("bye")) {
-            return CommandType.BYE;
-        } else if (command.equals("list")) {
-            return CommandType.LIST;
-        } else if (command.equals("mark") || command.startsWith("mark ")) {
-            return CommandType.MARK;
-        } else if (command.equals("unmark") || command.startsWith("unmark ")) {
-            return CommandType.UNMARK;
-        } else if (command.equals("delete") || command.startsWith("delete ")) {
-            return CommandType.DELETE;
-        } else if (command.equals("find") || command.startsWith("find ")) {
-            return CommandType.FIND;
-        } else if (isTaskCommand(command)) {
-            return CommandType.ADD_TASK;
-        } else if (command.isEmpty()) {
+        if (command.isEmpty()) {
             throw new WangsaException("OOPS!!! Please enter a command.");
         }
-        throw new WangsaException("OOPS!!! I'm sorry, but I don't know what that means :-(");
+
+        String keyword = firstWord(command);
+        return switch (keyword) {
+        case "bye" -> requireExactCommand(command, keyword, CommandType.BYE);
+        case "list" -> requireExactCommand(command, keyword, CommandType.LIST);
+        case "mark" -> CommandType.MARK;
+        case "unmark" -> CommandType.UNMARK;
+        case "delete" -> CommandType.DELETE;
+        case "find" -> CommandType.FIND;
+        case "todo", "deadline", "event" -> CommandType.ADD_TASK;
+        default -> throw unknownCommand();
+        };
     }
 
     /**
@@ -103,11 +100,27 @@ public class Parser {
         return keyword;
     }
 
-    /** Returns whether the command starts with a supported task keyword. */
-    private boolean isTaskCommand(String command) {
-        return command.equals("todo") || command.startsWith("todo ")
-                || command.equals("deadline") || command.startsWith("deadline ")
-                || command.equals("event") || command.startsWith("event ");
+    /** Returns the first whitespace-delimited word in a command. */
+    private String firstWord(String command) {
+        int keywordEnd = 0;
+        while (keywordEnd < command.length() && !Character.isWhitespace(command.charAt(keywordEnd))) {
+            keywordEnd++;
+        }
+        return command.substring(0, keywordEnd);
+    }
+
+    /** Returns a command type only when a command that takes no arguments is exact. */
+    private CommandType requireExactCommand(String command, String keyword, CommandType commandType)
+            throws WangsaException {
+        if (!command.equals(keyword)) {
+            throw unknownCommand();
+        }
+        return commandType;
+    }
+
+    /** Creates the standard error for an unrecognized command. */
+    private WangsaException unknownCommand() {
+        return new WangsaException("OOPS!!! I'm sorry, but I don't know what that means :-(");
     }
 
     /** Creates a todo or reports its missing description. */
