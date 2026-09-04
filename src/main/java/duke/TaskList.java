@@ -1,7 +1,9 @@
 package duke;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -127,6 +129,11 @@ public class TaskList {
                 .toList();
     }
 
+    /** Sorts deadlines chronologically and keeps tasks without deadlines after them. */
+    public void sortByDeadline() {
+        tasks.sort(Comparator.comparing(this::getSortDate));
+    }
+
     /** Resolves a one-based task number or reports that it is outside the list. */
     private Task getTask(int taskNumber) throws WangsaException {
         if (taskNumber < 1 || taskNumber > tasks.size()) {
@@ -134,6 +141,11 @@ public class TaskList {
                     + tasks.size() + ".");
         }
         return tasks.get(taskNumber - 1);
+    }
+
+    /** Returns a task's deadline or a sentinel date that sorts undated tasks last. */
+    private LocalDate getSortDate(Task task) {
+        return task instanceof Deadline deadline ? deadline.getBy() : LocalDate.MAX;
     }
 
     /** Checks invariants that should hold for every task-list state. */

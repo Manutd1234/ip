@@ -83,6 +83,13 @@ public class Ui implements AutoCloseable {
         showTasks("Here are the matching tasks in your list:", tasks);
     }
 
+    /** Displays tasks ordered by deadline, with undated tasks after dated tasks.
+     * @param tasks sorted tasks to display
+     */
+    public void showSortedTaskList(List<Task> tasks) {
+        showTasks("Here are your tasks sorted by deadline (undated tasks last):", tasks);
+    }
+
     /** Displays a heading followed by tasks in their current order. */
     private void showTasks(String heading, List<Task> tasks) {
         output.println(heading);
