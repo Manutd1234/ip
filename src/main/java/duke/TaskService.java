@@ -76,8 +76,14 @@ public final class TaskService {
      * @throws StorageException if the updated order cannot be saved
      */
     public void sortByDeadline() throws StorageException {
+        List<Task> previousOrder = tasks.getTasks();
         tasks.sortByDeadline();
-        repository.saveTasks(tasks.getTasks());
+        try {
+            repository.saveTasks(tasks.getTasks());
+        } catch (StorageException exception) {
+            tasks.restoreOrder(previousOrder);
+            throw exception;
+        }
     }
 
     /**
@@ -91,7 +97,12 @@ public final class TaskService {
     public Task add(String command) throws WangsaException, StorageException {
         Task task = parser.parseTask(command);
         tasks.add(task);
-        repository.saveTasks(tasks.getTasks());
+        try {
+            repository.insertTask(task, tasks.size() - 1);
+        } catch (StorageException exception) {
+            rollbackAddedTask(exception);
+            throw exception;
+        }
         return task;
     }
 
@@ -104,8 +115,16 @@ public final class TaskService {
      * @throws StorageException if the updated list cannot be saved
      */
     public Task mark(String command) throws WangsaException, StorageException {
-        Task task = tasks.mark(parser.parseTaskNumber(command));
-        repository.saveTasks(tasks.getTasks());
+        int taskNumber = parser.parseTaskNumber(command);
+        Task task = tasks.get(taskNumber);
+        boolean wasDone = task.isDone();
+        task.markAsDone();
+        try {
+            repository.updateTask(task, taskNumber - 1);
+        } catch (StorageException exception) {
+            restoreStatus(task, wasDone);
+            throw exception;
+        }
         return task;
     }
 
@@ -118,8 +137,16 @@ public final class TaskService {
      * @throws StorageException if the updated list cannot be saved
      */
     public Task unmark(String command) throws WangsaException, StorageException {
-        Task task = tasks.unmark(parser.parseTaskNumber(command));
-        repository.saveTasks(tasks.getTasks());
+        int taskNumber = parser.parseTaskNumber(command);
+        Task task = tasks.get(taskNumber);
+        boolean wasDone = task.isDone();
+        task.markAsNotDone();
+        try {
+            repository.updateTask(task, taskNumber - 1);
+        } catch (StorageException exception) {
+            restoreStatus(task, wasDone);
+            throw exception;
+        }
         return task;
     }
 
@@ -132,8 +159,28 @@ public final class TaskService {
      * @throws StorageException if the updated list cannot be saved
      */
     public Task delete(String command) throws WangsaException, StorageException {
-        Task task = tasks.delete(parser.parseTaskNumber(command));
-        repository.saveTasks(tasks.getTasks());
+        int taskNumber = parser.parseTaskNumber(command);
+        Task task = tasks.get(taskNumber);
+        repository.deleteTask(taskNumber - 1);
+        tasks.delete(taskNumber);
         return task;
+    }
+
+    /** Removes an in-memory task after a failed persistence insert. */
+    private void rollbackAddedTask(StorageException exception) {
+        try {
+            tasks.delete(tasks.size());
+        } catch (WangsaException rollbackException) {
+            exception.addSuppressed(rollbackException);
+        }
+    }
+
+    /** Restores an in-memory status after a failed persistence update. */
+    private void restoreStatus(Task task, boolean wasDone) {
+        if (wasDone) {
+            task.markAsDone();
+        } else {
+            task.markAsNotDone();
+        }
     }
 }

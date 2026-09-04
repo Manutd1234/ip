@@ -10,25 +10,26 @@ import java.nio.file.Path;
  * which keeps new interfaces from needing to duplicate business logic.</p>
  */
 public class Wangsa {
-    private static final Path DATA_FILE_PATH = Path.of("data", "wangsa.txt");
+    private static final Path DATABASE_PATH = Path.of("data", "wangsa.db");
 
-    private final Storage storage;
+    private final TaskRepository repository;
 
     private final Parser parser;
 
     private final Ui ui;
 
     /**
-     * Creates Wangsa with console interaction and storage at the supplied path.
-     * @param dataFilePath save-file location
+     * Creates Wangsa with console interaction and a SQLite database at the supplied path.
+     * @param databasePath database location
      */
-    public Wangsa(Path dataFilePath) {
-        this(new Storage(dataFilePath), new Parser(), new Ui());
+    public Wangsa(Path databasePath) {
+        this(new SqliteTaskRepository(databasePath, databasePath.resolveSibling("wangsa.txt")),
+                new Parser(), new Ui());
     }
 
     /** Creates Wangsa with supplied collaborators, allowing isolated testing. */
-    Wangsa(Storage storage, Parser parser, Ui ui) {
-        this.storage = storage;
+    Wangsa(TaskRepository repository, Parser parser, Ui ui) {
+        this.repository = repository;
         this.parser = parser;
         this.ui = ui;
     }
@@ -40,7 +41,7 @@ public class Wangsa {
 
             TaskService tasks;
             try {
-                tasks = new TaskService(storage, parser);
+                tasks = new TaskService(repository, parser);
             } catch (StorageException | WangsaException exception) {
                 ui.showError(exception.getMessage());
                 ui.showLine();
@@ -132,10 +133,10 @@ public class Wangsa {
     }
 
     /**
-     * Starts Wangsa using its default relative data-file path.
+     * Starts Wangsa using its default relative database path.
      * @param args command-line arguments (unused)
      */
     public static void main(String[] args) {
-        new Wangsa(DATA_FILE_PATH).run();
+        new Wangsa(DATABASE_PATH).run();
     }
 }

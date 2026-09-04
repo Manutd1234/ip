@@ -50,4 +50,19 @@ class TaskServiceTest {
                 new TaskService(storage, new Parser()).getTasks().stream()
                         .map(Task::getDescription).toList());
     }
+
+    @Test
+    void taskOperations_usingSqliteRepository_persistIncrementalChanges() throws Exception {
+        Path databasePath = temporaryDirectory.resolve("wangsa.db");
+        TaskService service = new TaskService(new SqliteTaskRepository(databasePath, null), new Parser());
+
+        service.add("todo first");
+        service.add("todo second");
+        service.mark("mark 1");
+        service.delete("delete 2");
+
+        TaskService reloaded = new TaskService(new SqliteTaskRepository(databasePath, null), new Parser());
+        assertEquals(List.of("first"), reloaded.getTasks().stream().map(Task::getDescription).toList());
+        assertTrue(reloaded.getTasks().get(0).isDone());
+    }
 }

@@ -39,7 +39,7 @@ Prerequisites: JDK 25, update Intellij to the most recent version.
 
 Tasks can be added with `todo DESCRIPTION`, `deadline DESCRIPTION /by YYYY-MM-DD`, or `event DESCRIPTION /from START /to END`. Deadline dates are displayed in a friendlier form; for example, `2019-10-15` is shown as `Oct 15 2019`. Use `list` to display tasks, `find KEYWORD` to search, `sort` to order deadlines chronologically, `mark N` or `unmark N` to change completion status, `delete N` to remove a task, and `bye` to exit.
 
-Wangsa automatically saves task-list changes to `data/wangsa.txt` and restores them the next time it starts.
+Wangsa automatically saves task-list changes to the SQLite database at `data/wangsa.db` and restores them the next time it starts. Existing `data/wangsa.txt` files are imported automatically on the first database startup.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the responsibilities of each layer and guidance for adding features.
 
@@ -55,15 +55,16 @@ Use the Gradle wrapper from the project root:
 
 The wrapper uses Gradle 9.1.0, which is configured for the project's Java 25 toolchain.
 The executable JAR is written to `build/libs/Wangsa.jar`; copy it to an empty
-folder and run it with `java -jar Wangsa.jar`.
+folder and run it with `java --enable-native-access=ALL-UNNAMED -jar Wangsa.jar`.
 
 `./gradlew run` launches the JavaFX desktop interface. The original text
 interface remains available through `duke.Wangsa` for command-line use and
 automated tests.
 
-On the first run, Wangsa creates the `data` folder and save file when the
-first task is added. The path is relative to the project folder, so the same
-commands work across operating systems. The saved records retain each task's
-type, description, details, and completion status.
+On the first run, Wangsa creates the `data` folder and SQLite database. Existing
+`data/wangsa.txt` files are migrated once, then the database becomes the source of
+truth. SQLite stores one indexed row per task and commits each update transactionally,
+while the saved records retain each task's type, description, details, and completion
+status.
 
 **Warning:** Keep the `src\main\java` folder as the root folder for Java files (i.e., don't rename those folders or move Java files to another folder outside of this folder path), as this is the default location some tools (e.g., Gradle) expect to find Java files.

@@ -4,9 +4,10 @@ import java.nio.file.Path;
 import java.util.List;
 
 import duke.Parser;
-import duke.Storage;
+import duke.SqliteTaskRepository;
 import duke.StorageException;
 import duke.Task;
+import duke.TaskRepository;
 import duke.TaskService;
 import duke.WangsaException;
 import javafx.application.Application;
@@ -41,7 +42,9 @@ import javafx.stage.Stage;
  * language and a clear command conversation.</p>
  */
 public class Main extends Application {
-    private static final Path DATA_FILE_PATH = Path.of("data", "wangsa.txt");
+    private static final Path DATABASE_PATH = Path.of("data", "wangsa.db");
+
+    private static final Path LEGACY_DATA_FILE_PATH = Path.of("data", "wangsa.txt");
 
     private static final String STYLESHEET_PATH = "main.css";
 
@@ -269,15 +272,20 @@ public class Main extends Application {
     /** Loads persisted tasks and renders the initial conversation. */
     private void loadTasks() {
         try {
-            taskService = new TaskService(new Storage(DATA_FILE_PATH), parser);
+            taskService = new TaskService(createRepository(), parser);
             appendAssistant("Hey, trainer! I'm Wangsa, your Level-10 quest partner.\n"
                     + "Try `list`, `todo ...`, or `mark #` and I'll keep your day moving.");
             appendAssistant(renderTasks(taskService.getTasks()));
         } catch (StorageException | WangsaException exception) {
-            taskService = TaskService.empty(new Storage(DATA_FILE_PATH), parser);
+            taskService = TaskService.empty(createRepository(), parser);
             appendAssistant("I couldn't load the saved quest log, so I opened a fresh one.\n"
                     + exception.getMessage());
         }
+    }
+
+    /** Creates the default repository shared by the JavaFX workflows. */
+    private TaskRepository createRepository() {
+        return new SqliteTaskRepository(DATABASE_PATH, LEGACY_DATA_FILE_PATH);
     }
 
     /** Parses and executes the command currently entered in the command field. */

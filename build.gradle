@@ -20,6 +20,7 @@ dependencies {
     implementation("org.openjfx:javafx-controls:${javaFxVersion}:${javafxPlatform}")
     implementation("org.openjfx:javafx-fxml:${javaFxVersion}:${javafxPlatform}")
     implementation("org.openjfx:javafx-graphics:${javaFxVersion}:${javafxPlatform}")
+    implementation 'org.xerial:sqlite-jdbc:3.53.4.0'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.12.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
@@ -32,6 +33,7 @@ java {
 
 application {
     mainClass = 'duke.gui.Launcher'
+    applicationDefaultJvmArgs = ['--enable-native-access=ALL-UNNAMED']
 }
 
 tasks.named('jar', Jar) {
@@ -52,9 +54,14 @@ tasks.named('run', JavaExec) {
     standardInput = System.in
 }
 
+tasks.withType(JavaExec).configureEach {
+    jvmArgs '--enable-native-access=ALL-UNNAMED'
+}
+
 tasks.named('test', Test) {
     useJUnitPlatform()
     enableAssertions = true
+    jvmArgs '--enable-native-access=ALL-UNNAMED'
 }
 
 checkstyle {

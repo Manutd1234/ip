@@ -22,16 +22,17 @@ User input
   (domain state)   (persistence contract)
                          |
                          v
-                   duke.Storage
-                   (text-file format)
+             duke.SqliteTaskRepository
+             (transactional SQLite database)
 ```
 
 - `Task`, `Todo`, `Deadline`, `Event`, and `TaskType` model task data and display behavior.
 - `TaskList` owns ordering, capacity, search, and task mutations.
 - `Parser` translates command text into validated command types and task values.
 - `TaskService` coordinates a complete use case, such as adding a task and saving it.
-- `TaskRepository` defines persistence without committing the application to a file format.
-- `Storage` implements `TaskRepository` using `data/wangsa.txt`.
+- `TaskRepository` defines persistence without committing the application to a storage format.
+- `SqliteTaskRepository` implements `TaskRepository` using indexed, transactional SQLite rows.
+- `Storage` remains the legacy text-file reader used for one-time migration from `data/wangsa.txt`.
 - `Ui` and `duke.gui.Main` format output for their respective interfaces.
 
 The `C-Sort` extension follows the same flow as other commands: `Parser` recognizes
@@ -51,7 +52,10 @@ structure so both interfaces behave identically.
 ## Extension points
 
 - A new persistence backend can implement `TaskRepository` without changing `TaskService`.
+- The SQLite repository keeps schema creation and transaction handling in one adapter, so a future
+  remote database can replace it without leaking JDBC details into the domain or interfaces.
 - A new interface can construct a `TaskService` and reuse the existing parser and workflows.
-- A new task type should extend `Task`, define its own details, and be handled by `Parser` and `Storage` for creation and persistence.
+- A new task type should extend `Task`, define its own details, and be handled by `Parser` and
+  `SqliteTaskRepository` for creation and persistence.
 
 Keep commits focused by separating domain changes, service changes, interface changes, tests, and documentation where practical.

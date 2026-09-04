@@ -50,6 +50,15 @@ public class TaskList {
         return List.copyOf(tasks);
     }
 
+    /** Returns the task at a one-based display position.
+     * @param taskNumber one-based task number
+     * @return the task at the requested position
+     * @throws WangsaException if the number is invalid
+     */
+    public Task get(int taskNumber) throws WangsaException {
+        return getTask(taskNumber);
+    }
+
     /**
      * Adds and returns a task, provided the list still has capacity.
      * @param task task to add
@@ -132,6 +141,13 @@ public class TaskList {
     /** Sorts deadlines chronologically and keeps tasks without deadlines after them. */
     public void sortByDeadline() {
         tasks.sort(Comparator.comparing(this::getSortDate));
+    }
+
+    /** Restores a previously saved task order after a failed persistence operation. */
+    void restoreOrder(List<Task> previousOrder) {
+        tasks.clear();
+        tasks.addAll(previousOrder);
+        assertInvariant();
     }
 
     /** Resolves a one-based task number or reports that it is outside the list. */

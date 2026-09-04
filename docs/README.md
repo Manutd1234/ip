@@ -2,7 +2,7 @@
 
 Wangsa is a Pokémon-inspired personal assistant for keeping a small task list. It
 supports a command-line interface and a JavaFX desktop interface backed by the same
-task service and save file.
+task service and SQLite database.
 
 ## Adding tasks
 
@@ -36,9 +36,11 @@ Task numbers are one-based and refer to the order shown by `list`.
 
 ## Saving tasks
 
-Wangsa stores task data in `data/wangsa.txt` after every successful mutation. The
-file is created automatically when the first task is added. Task type, description,
-details, and completion status are restored on the next launch.
+Wangsa stores task data in the SQLite database at `data/wangsa.db` after every
+successful mutation. The database is created automatically on first launch. If a
+legacy `data/wangsa.txt` file exists, its tasks are imported once before SQLite
+becomes the source of truth. Task type, description, details, and completion status
+are restored on the next launch.
 
 ## Building and running
 
@@ -48,7 +50,7 @@ Run these commands from the project root:
 ./gradlew clean build
 ./gradlew run
 ./gradlew jar
-java -jar build/libs/Wangsa.jar
+java --enable-native-access=ALL-UNNAMED -jar build/libs/Wangsa.jar
 ```
 
 The JAR bundles the platform-specific JavaFX runtime selected by Gradle, so it can
