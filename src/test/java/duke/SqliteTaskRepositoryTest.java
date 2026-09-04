@@ -6,6 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -75,6 +80,64 @@ class SqliteTaskRepositoryTest {
         assertThrows(StorageException.class, () -> repository.saveTasks(List.of(new Task(null))));
 
         assertEquals(List.of("original"), descriptions(repository.loadTasks()));
+    }
+
+    @Test
+    void schema_enforcesUniquePositionsAndTaskSpecificFields() throws Exception {
+        Path databasePath = temporaryDirectory.resolve("wangsa.db");
+        SqliteTaskRepository repository = new SqliteTaskRepository(databasePath, null);
+        repository.saveTasks(List.of(new Todo("existing")));
+
+        try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + databasePath);
+                PreparedStatement duplicatePosition = connection.prepareStatement(
+                        "INSERT INTO tasks (task_type, is_done, description, position) "
+                                + "VALUES ('T', 0, 'duplicate', 0)")) {
+            assertThrows(SQLException.class, duplicatePosition::executeUpdate);
+        }
+
+        try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + databasePath);
+                PreparedStatement mismatchedFields = connection.prepareStatement(
+                        "INSERT INTO tasks (task_type, is_done, description, deadline, position) "
+                                + "VALUES ('T', 0, 'invalid', '2026-09-20', 1)")) {
+            assertThrows(SQLException.class, mismatchedFields::executeUpdate);
+        }
+    }
+
+    @Test
+    void loadTasks_upgradesExistingSchema() throws Exception {
+        Path databasePath = temporaryDirectory.resolve("wangsa.db");
+        try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + databasePath);
+                Statement statement = connection.createStatement()) {
+            statement.executeUpdate("CREATE TABLE tasks ("
+                    + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                    + "task_type TEXT NOT NULL CHECK (task_type IN ('T', 'D', 'E')), "
+                    + "is_done INTEGER NOT NULL CHECK (is_done IN (0, 1)), "
+                    + "description TEXT NOT NULL, deadline TEXT, event_from TEXT, event_to TEXT, "
+                    + "position INTEGER NOT NULL CHECK (position >= 0))");
+            statement.executeUpdate("INSERT INTO tasks (task_type, is_done, description, position) "
+                    + "VALUES ('T', 0, 'existing task', 0)");
+        }
+
+        SqliteTaskRepository repository = new SqliteTaskRepository(databasePath, null);
+        assertEquals(List.of("existing task"), descriptions(repository.loadTasks()));
+    }
+
+    @Test
+    void loadTasks_rejectsInconsistentRowsFromExistingSchema() throws Exception {
+        Path databasePath = temporaryDirectory.resolve("wangsa.db");
+        try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + databasePath);
+                Statement statement = connection.createStatement()) {
+            statement.executeUpdate("CREATE TABLE tasks ("
+                    + "id INTEGER PRIMARY KEY AUTOINCREMENT, task_type TEXT NOT NULL, is_done INTEGER NOT NULL, "
+                    + "description TEXT NOT NULL, deadline TEXT, event_from TEXT, event_to TEXT, "
+                    + "position INTEGER NOT NULL)");
+            statement.executeUpdate("INSERT INTO tasks (task_type, is_done, description, deadline, position) "
+                    + "VALUES ('T', 0, 'invalid', '2026-09-20', 0)");
+        }
+
+        StorageException exception = assertThrows(StorageException.class,
+                () -> new SqliteTaskRepository(databasePath, null).loadTasks());
+        assertTrue(exception.getMessage().contains("todo deadline must be empty"));
     }
 
     /** Returns task descriptions for concise order assertions. */

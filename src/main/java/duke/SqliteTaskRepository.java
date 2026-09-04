@@ -15,6 +15,8 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.sqlite.SQLiteConfig;
+
 /**
  * Persists Wangsa tasks in a local SQLite database.
  *
@@ -35,10 +37,16 @@ public final class SqliteTaskRepository implements TaskRepository {
             + "deadline TEXT, "
             + "event_from TEXT, "
             + "event_to TEXT, "
-            + "position INTEGER NOT NULL CHECK (position >= 0)"
+            + "position INTEGER NOT NULL CHECK (position >= 0), "
+            + "CHECK ((task_type = 'T' AND deadline IS NULL AND event_from IS NULL AND event_to IS NULL) "
+            + "OR (task_type = 'D' AND deadline IS NOT NULL AND event_from IS NULL AND event_to IS NULL) "
+            + "OR (task_type = 'E' AND deadline IS NULL AND event_from IS NOT NULL AND event_to IS NOT NULL))"
             + ")";
 
     private static final String CREATE_POSITION_INDEX = "CREATE INDEX IF NOT EXISTS idx_tasks_position "
+            + "ON tasks(position)";
+
+    private static final String CREATE_UNIQUE_POSITION_INDEX = "CREATE UNIQUE INDEX IF NOT EXISTS uq_tasks_position "
             + "ON tasks(position)";
 
     private static final String CREATE_DEADLINE_INDEX = "CREATE INDEX IF NOT EXISTS idx_tasks_deadline "
@@ -47,7 +55,23 @@ public final class SqliteTaskRepository implements TaskRepository {
     private static final String COUNT_TASKS = "SELECT COUNT(*) FROM tasks";
 
     private static final String SELECT_TASKS = "SELECT task_type, is_done, description, deadline, "
-            + "event_from, event_to FROM tasks ORDER BY position";
+            + "event_from, event_to FROM tasks ORDER BY position, id";
+
+    private static final String VALIDATE_TASK_ATTRIBUTES_INSERT = "CREATE TRIGGER IF NOT EXISTS "
+            + "validate_task_attributes_insert BEFORE INSERT ON tasks "
+            + "WHEN NOT ((NEW.task_type = 'T' AND NEW.deadline IS NULL AND NEW.event_from IS NULL "
+            + "AND NEW.event_to IS NULL) OR (NEW.task_type = 'D' AND NEW.deadline IS NOT NULL "
+            + "AND NEW.event_from IS NULL AND NEW.event_to IS NULL) OR (NEW.task_type = 'E' "
+            + "AND NEW.deadline IS NULL AND NEW.event_from IS NOT NULL AND NEW.event_to IS NOT NULL)) "
+            + "BEGIN SELECT RAISE(ABORT, 'task attributes do not match task type'); END";
+
+    private static final String VALIDATE_TASK_ATTRIBUTES_UPDATE = "CREATE TRIGGER IF NOT EXISTS "
+            + "validate_task_attributes_update BEFORE UPDATE OF task_type, deadline, event_from, event_to ON tasks "
+            + "WHEN NOT ((NEW.task_type = 'T' AND NEW.deadline IS NULL AND NEW.event_from IS NULL "
+            + "AND NEW.event_to IS NULL) OR (NEW.task_type = 'D' AND NEW.deadline IS NOT NULL "
+            + "AND NEW.event_from IS NULL AND NEW.event_to IS NULL) OR (NEW.task_type = 'E' "
+            + "AND NEW.deadline IS NULL AND NEW.event_from IS NOT NULL AND NEW.event_to IS NOT NULL)) "
+            + "BEGIN SELECT RAISE(ABORT, 'task attributes do not match task type'); END";
 
     private static final String DELETE_TASKS = "DELETE FROM tasks";
 
@@ -241,7 +265,14 @@ public final class SqliteTaskRepository implements TaskRepository {
             if (parentDirectory != null) {
                 Files.createDirectories(parentDirectory);
             }
-            connection = DriverManager.getConnection("jdbc:sqlite:" + absolutePath);
+            SQLiteConfig configuration = new SQLiteConfig();
+            configuration.setBusyTimeout(BUSY_TIMEOUT_MILLISECONDS);
+            configuration.setJournalMode(SQLiteConfig.JournalMode.WAL);
+            configuration.setSynchronous(SQLiteConfig.SynchronousMode.NORMAL);
+            configuration.enforceForeignKeys(true);
+            configuration.setTransactionMode(SQLiteConfig.TransactionMode.IMMEDIATE);
+            connection = DriverManager.getConnection("jdbc:sqlite:" + absolutePath,
+                    configuration.toProperties());
             configureConnection(connection);
             return connection;
         } catch (IOException | SQLException exception) {
@@ -254,9 +285,6 @@ public final class SqliteTaskRepository implements TaskRepository {
     private void configureConnection(Connection connection) throws SQLException {
         try (Statement statement = connection.createStatement()) {
             statement.setQueryTimeout(QUERY_TIMEOUT_SECONDS);
-            statement.execute("PRAGMA busy_timeout = " + BUSY_TIMEOUT_MILLISECONDS);
-            statement.execute("PRAGMA journal_mode = WAL");
-            statement.execute("PRAGMA synchronous = NORMAL");
             statement.execute("PRAGMA foreign_keys = ON");
         }
     }
@@ -267,7 +295,10 @@ public final class SqliteTaskRepository implements TaskRepository {
             statement.setQueryTimeout(QUERY_TIMEOUT_SECONDS);
             statement.executeUpdate(CREATE_TASKS_TABLE);
             statement.executeUpdate(CREATE_POSITION_INDEX);
+            statement.executeUpdate(CREATE_UNIQUE_POSITION_INDEX);
             statement.executeUpdate(CREATE_DEADLINE_INDEX);
+            statement.executeUpdate(VALIDATE_TASK_ATTRIBUTES_INSERT);
+            statement.executeUpdate(VALIDATE_TASK_ATTRIBUTES_UPDATE);
         }
     }
 
@@ -338,12 +369,18 @@ public final class SqliteTaskRepository implements TaskRepository {
         Task task;
         switch (type) {
         case "T":
+            rejectUnexpectedValue(resultSet.getString("deadline"), "todo deadline");
+            rejectUnexpectedValue(resultSet.getString("event_from"), "todo event start");
+            rejectUnexpectedValue(resultSet.getString("event_to"), "todo event end");
             task = new Todo(description);
             break;
         case "D":
+            rejectUnexpectedValue(resultSet.getString("event_from"), "deadline event start");
+            rejectUnexpectedValue(resultSet.getString("event_to"), "deadline event end");
             task = new Deadline(description, parseDeadline(resultSet.getString("deadline")));
             break;
         case "E":
+            rejectUnexpectedValue(resultSet.getString("deadline"), "event deadline");
             task = new Event(description, requireValue(resultSet.getString("event_from"), "event start"),
                     requireValue(resultSet.getString("event_to"), "event end"));
             break;
@@ -375,6 +412,13 @@ public final class SqliteTaskRepository implements TaskRepository {
             throw invalidDatabaseRow(fieldName + " cannot be empty");
         }
         return value;
+    }
+
+    /** Rejects a task-specific value that belongs to a different task type. */
+    private void rejectUnexpectedValue(String value, String fieldName) throws StorageException {
+        if (value != null) {
+            throw invalidDatabaseRow(fieldName + " must be empty");
+        }
     }
 
     /** Inserts tasks in their current display order using a prepared batch. */
