@@ -1,6 +1,7 @@
 package duke.gui;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import duke.Parser;
@@ -60,6 +61,14 @@ public class Main extends Application {
 
     private TextField commandField;
 
+    private Label statusText;
+
+    private Label taskStats;
+
+    private final List<String> commandHistory = new ArrayList<>();
+
+    private int historyIndex;
+
     private TaskService taskService;
 
     /** Starts the JavaFX window and loads saved tasks. */
@@ -112,9 +121,13 @@ public class Main extends Application {
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         Circle statusDot = new Circle(4, Color.web("#8ee7bd"));
-        Label statusText = new Label("SYSTEM READY");
+        statusText = new Label("SYSTEM READY");
         statusText.getStyleClass().add("status-text");
-        HBox status = new HBox(7, statusDot, statusText);
+        taskStats = new Label("0 QUESTS  ·  0 DONE");
+        taskStats.getStyleClass().add("task-stats");
+        VBox statusCopy = new VBox(1, statusText, taskStats);
+        statusCopy.setAlignment(Pos.CENTER_RIGHT);
+        HBox status = new HBox(7, statusDot, statusCopy);
         status.setAlignment(Pos.CENTER);
 
         header.getChildren().addAll(pokeball, brand, levelBadge, spacer, status);
@@ -170,10 +183,14 @@ public class Main extends Application {
 
         commandField = new TextField();
         commandField.setPromptText("Type a command, then press Enter");
+        commandField.setAccessibleText("Wangsa command input");
         commandField.getStyleClass().add("command-field");
         commandField.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ENTER) {
                 handleCommand();
+                event.consume();
+            } else if (event.getCode() == KeyCode.UP || event.getCode() == KeyCode.DOWN) {
+                navigateHistory(event.getCode());
                 event.consume();
             }
         });
@@ -275,12 +292,13 @@ public class Main extends Application {
             taskService = new TaskService(createRepository(), parser);
             appendAssistant("Hey, trainer! I'm Wangsa, your Level-10 quest partner.\n"
                     + "Try `list`, `todo ...`, or `mark #` and I'll keep your day moving.");
-            appendAssistant(renderTasks(taskService.getTasks()));
+            appendAssistant(TaskFormatter.renderTasks(taskService.getTasks()));
         } catch (StorageException | WangsaException exception) {
             taskService = TaskService.empty(createRepository(), parser);
             appendAssistant("I couldn't load the saved quest log, so I opened a fresh one.\n"
                     + exception.getMessage());
         }
+        refreshHeader();
     }
 
     /** Creates the default repository shared by the JavaFX workflows. */
@@ -298,9 +316,11 @@ public class Main extends Application {
         appendUser(command);
         try {
             execute(command);
+            rememberCommand(command);
         } catch (WangsaException | StorageException exception) {
             appendAssistant(exception.getMessage());
         }
+        refreshHeader();
     }
 
     /** Places a command in the composer without executing it. */
@@ -308,6 +328,25 @@ public class Main extends Application {
         commandField.setText(command);
         commandField.positionCaret(command.length());
         commandField.requestFocus();
+    }
+
+    /** Stores a successful command once so history remains useful and compact. */
+    private void rememberCommand(String command) {
+        if (commandHistory.isEmpty() || !commandHistory.get(commandHistory.size() - 1).equals(command)) {
+            commandHistory.add(command);
+        }
+        historyIndex = commandHistory.size();
+    }
+
+    /** Navigates the command history without leaving the current conversation. */
+    private void navigateHistory(KeyCode direction) {
+        if (commandHistory.isEmpty()) {
+            return;
+        }
+        historyIndex += direction == KeyCode.UP ? -1 : 1;
+        historyIndex = Math.max(0, Math.min(historyIndex, commandHistory.size()));
+        commandField.setText(historyIndex == commandHistory.size() ? "" : commandHistory.get(historyIndex));
+        commandField.positionCaret(commandField.getText().length());
     }
 
     /** Executes a parsed command and persists mutations. */
@@ -319,15 +358,15 @@ public class Main extends Application {
             Platform.exit();
             break;
         case LIST:
-            appendAssistant(renderTasks(taskService.getTasks()));
+            appendAssistant(TaskFormatter.renderTasks(taskService.getTasks()));
             break;
         case FIND:
-            appendAssistant(renderTasks(taskService.find(command)));
+            appendAssistant(TaskFormatter.renderTasks(taskService.find(command)));
             break;
         case SORT:
             taskService.sortByDeadline();
             appendAssistant("Sorted by deadline; undated tasks are last.\n"
-                    + renderTasks(taskService.getTasks()));
+                    + TaskFormatter.renderTasks(taskService.getTasks()));
             break;
         case MARK:
         case UNMARK:
@@ -335,11 +374,13 @@ public class Main extends Application {
             break;
         case DELETE:
             Task removedTask = taskService.delete(command);
-            appendAssistant("Quest cleared from your log:\n" + removedTask + "\n\n" + progressSummary());
+            appendAssistant("Quest cleared from your log:\n" + removedTask + "\n\n"
+                    + TaskFormatter.progressSummary(taskService.getTasks()));
             break;
         case ADD_TASK:
             Task addedTask = taskService.add(command);
-            appendAssistant("New quest added to your log:\n" + addedTask + "\n\n" + progressSummary());
+            appendAssistant("New quest added to your log:\n" + addedTask + "\n\n"
+                    + TaskFormatter.progressSummary(taskService.getTasks()));
             break;
         default:
             throw new IllegalStateException("Unsupported command type: " + commandType);
@@ -356,44 +397,16 @@ public class Main extends Application {
             updatedTask = taskService.unmark(command);
         }
         appendAssistant((commandType == Parser.CommandType.MARK ? "Quest complete! " : "Quest reopened: ")
-                + updatedTask + "\n\n" + progressSummary());
+                + updatedTask + "\n\n" + TaskFormatter.progressSummary(taskService.getTasks()));
     }
 
-    /** Formats tasks for display in the conversation. */
-    private String renderTasks(List<Task> taskList) {
-        if (taskList.isEmpty()) {
-            return "Your quest log is clear.\nUse `todo DESCRIPTION` below to catch a new quest.";
+    /** Refreshes the live status copy after loading or mutating tasks. */
+    private void refreshHeader() {
+        if (statusText == null || taskStats == null || taskService == null) {
+            return;
         }
-        StringBuilder result = new StringBuilder("Here's your current quest log:\n");
-        for (int i = 0; i < taskList.size(); i++) {
-            result.append(i + 1).append(". ").append(taskList.get(i));
-            if (i < taskList.size() - 1) {
-                result.append(System.lineSeparator());
-            }
-        }
-        return result.toString();
-    }
-
-    /** Returns a short progress message for mutation confirmations. */
-    private String progressSummary() {
-        int total = taskService.getTasks().size();
-        int completed = countCompletedTasks();
-        if (total > 0 && completed == total) {
-            return "All " + total + " quests complete — " + completed + "/" + total
-                    + "! Great run, trainer.";
-        }
-        return completed + " of " + total + " quests complete. Keep the streak going!";
-    }
-
-    /** Counts completed tasks in the service's current snapshot. */
-    private int countCompletedTasks() {
-        int completed = 0;
-        for (Task task : taskService.getTasks()) {
-            if (task.isDone()) {
-                completed++;
-            }
-        }
-        return completed;
+        statusText.setText("SYSTEM READY");
+        taskStats.setText(TaskFormatter.headerStats(taskService.getTasks()));
     }
 
     /** Adds an assistant message to the chat and scrolls to the latest entry. */

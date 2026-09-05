@@ -2,9 +2,11 @@ package duke;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -64,5 +66,68 @@ class TaskServiceTest {
         TaskService reloaded = new TaskService(new SqliteTaskRepository(databasePath, null), new Parser());
         assertEquals(List.of("first"), reloaded.getTasks().stream().map(Task::getDescription).toList());
         assertTrue(reloaded.getTasks().get(0).isDone());
+    }
+
+    @Test
+    void statusChange_restoresInMemoryStateWhenPersistenceFails() throws Exception {
+        Task task = new Todo("recoverable");
+        FailingRepository repository = new FailingRepository(List.of(task));
+        TaskService service = new TaskService(repository, new Parser());
+
+        assertThrows(StorageException.class, () -> service.mark("mark 1"));
+        assertFalse(service.getTasks().get(0).isDone());
+
+        task.markAsDone();
+        assertThrows(StorageException.class, () -> service.unmark("unmark 1"));
+        assertTrue(service.getTasks().get(0).isDone());
+    }
+
+    @Test
+    void sort_restoresOriginalOrderWhenPersistenceFails() throws Exception {
+        List<Task> initialTasks = List.of(
+                new Deadline("later", java.time.LocalDate.of(2026, 10, 20)), new Todo("undated"));
+        TaskService service = new TaskService(new FailingRepository(initialTasks), new Parser());
+
+        assertThrows(StorageException.class, service::sortByDeadline);
+        assertEquals(List.of("later", "undated"), service.getTasks().stream()
+                .map(Task::getDescription).toList());
+    }
+
+    /** Repository test double that fails every write while retaining an initial snapshot. */
+    private static final class FailingRepository implements TaskRepository {
+        private final List<Task> initialTasks;
+
+        private FailingRepository(List<Task> initialTasks) {
+            this.initialTasks = new ArrayList<>(initialTasks);
+        }
+
+        @Override
+        public List<Task> loadTasks() {
+            return List.copyOf(initialTasks);
+        }
+
+        @Override
+        public void saveTasks(List<Task> tasks) throws StorageException {
+            throw failure();
+        }
+
+        @Override
+        public void insertTask(Task task, int position) throws StorageException {
+            throw failure();
+        }
+
+        @Override
+        public void updateTask(Task task, int position) throws StorageException {
+            throw failure();
+        }
+
+        @Override
+        public void deleteTask(int position) throws StorageException {
+            throw failure();
+        }
+
+        private StorageException failure() {
+            return new StorageException("simulated persistence failure");
+        }
     }
 }

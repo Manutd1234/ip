@@ -34,6 +34,7 @@
 
 .brand-subtitle,
 .status-text,
+.task-stats,
 .section-kicker,
 .try-label,
 .message-speaker,
@@ -46,6 +47,14 @@
 .brand-subtitle,
 .status-text {
     -fx-text-fill: #aeb6c8;
+}
+
+.task-stats {
+    -fx-text-fill: #e4b63d;
+    -fx-font-family: "Menlo", "Monaco", monospace;
+    -fx-font-size: 9px;
+    -fx-font-weight: bold;
+    -fx-letter-spacing: 0.7px;
 }
 
 .level-badge {
@@ -229,6 +238,10 @@
     -fx-effect: dropshadow(gaussian, rgba(212, 71, 63, 0.2), 8, 0, 0, 0);
 }
 
+.command-field:hover {
+    -fx-border-color: #a89982;
+}
+
 .send-button {
     -fx-padding: 13px 20px;
     -fx-background-color: linear-gradient(to bottom right, #e84c48, #c9363b);
@@ -244,6 +257,12 @@
 .send-button:hover {
     -fx-background-color: #bd3937;
     -fx-cursor: hand;
+}
+
+.send-button:focused,
+.suggestion-chip:focused {
+    -fx-border-color: #20263b;
+    -fx-effect: dropshadow(gaussian, rgba(32, 38, 59, 0.25), 7, 0, 0, 0);
 }
 
 .send-button:pressed {
@@ -271,6 +290,10 @@
     -fx-border-color: #d4473f;
     -fx-text-fill: #d4473f;
     -fx-cursor: hand;
+}
+
+.suggestion-chip:pressed {
+    -fx-translate-y: 1px;
 }
 
 .keyboard-hint {

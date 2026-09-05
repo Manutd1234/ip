@@ -115,17 +115,7 @@ public final class TaskService {
      * @throws StorageException if the updated list cannot be saved
      */
     public Task mark(String command) throws WangsaException, StorageException {
-        int taskNumber = parser.parseTaskNumber(command);
-        Task task = tasks.get(taskNumber);
-        boolean wasDone = task.isDone();
-        task.markAsDone();
-        try {
-            repository.updateTask(task, taskNumber - 1);
-        } catch (StorageException exception) {
-            restoreStatus(task, wasDone);
-            throw exception;
-        }
-        return task;
+        return updateStatus(command, true);
     }
 
     /**
@@ -137,10 +127,20 @@ public final class TaskService {
      * @throws StorageException if the updated list cannot be saved
      */
     public Task unmark(String command) throws WangsaException, StorageException {
+        return updateStatus(command, false);
+    }
+
+    /** Changes a task's completion state and restores it if persistence fails. */
+    private Task updateStatus(String command, boolean markAsDone)
+            throws WangsaException, StorageException {
         int taskNumber = parser.parseTaskNumber(command);
         Task task = tasks.get(taskNumber);
         boolean wasDone = task.isDone();
-        task.markAsNotDone();
+        if (markAsDone) {
+            task.markAsDone();
+        } else {
+            task.markAsNotDone();
+        }
         try {
             repository.updateTask(task, taskNumber - 1);
         } catch (StorageException exception) {
