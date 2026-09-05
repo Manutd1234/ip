@@ -12,6 +12,7 @@
 2. If `data/wangsa.txt` exists, start Wangsa once and confirm its tasks appear in the database-backed list.
 3. Delete all migrated tasks, restart Wangsa, and confirm the legacy file is not imported again.
 4. Stop or interrupt a write and confirm the database contains either the old snapshot or the complete new snapshot.
+5. Open an existing database and confirm task order remains stable and malformed task-specific fields are reported.
 
 ## C-Sort acceptance checks
 

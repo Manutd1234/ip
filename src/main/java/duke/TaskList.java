@@ -66,7 +66,7 @@ public class TaskList {
      * @throws WangsaException if the list is full
      */
     public Task add(Task task) throws WangsaException {
-        assert task != null : "task must not be null";
+        validateTask(task);
         if (tasks.size() >= MAX_TASKS) {
             throw new WangsaException("OOPS!!! Your task list is full (maximum 100 tasks).");
         }
@@ -82,7 +82,12 @@ public class TaskList {
      * @throws WangsaException if the combined list would exceed capacity
      */
     public void addAll(Task... newTasks) throws WangsaException {
-        assert newTasks != null : "newTasks must not be null";
+        if (newTasks == null) {
+            throw new WangsaException("OOPS!!! Tasks to add cannot be null.");
+        }
+        for (Task task : newTasks) {
+            validateTask(task);
+        }
         if (newTasks.length > MAX_TASKS - tasks.size()) {
             throw new WangsaException("OOPS!!! Your task list is full (maximum 100 tasks).");
         }
@@ -157,6 +162,13 @@ public class TaskList {
                     + tasks.size() + ".");
         }
         return tasks.get(taskNumber - 1);
+    }
+
+    /** Rejects null task values before they can enter the domain collection. */
+    private void validateTask(Task task) throws WangsaException {
+        if (task == null) {
+            throw new WangsaException("OOPS!!! A task cannot be null.");
+        }
     }
 
     /** Returns a task's deadline or a sentinel date that sorts undated tasks last. */

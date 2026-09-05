@@ -100,4 +100,13 @@ class TaskListTest {
         assertThrows(WangsaException.class, () -> tasks.addAll(new Todo("overflow"), new Todo("extra")));
         assertEquals(100, tasks.size());
     }
+
+    @Test
+    void addAndAddAll_rejectNullTasksWithoutChangingTheList() throws WangsaException {
+        TaskList tasks = new TaskList();
+
+        assertThrows(WangsaException.class, () -> tasks.add(null));
+        assertThrows(WangsaException.class, () -> tasks.addAll(new Todo("valid"), null));
+        assertTrue(tasks.getTasks().isEmpty());
+    }
 }
