@@ -54,6 +54,14 @@ tasks.named('run', JavaExec) {
     standardInput = System.in
 }
 
+tasks.register('runCli', JavaExec) {
+    group = 'application'
+    description = 'Runs Wangsa using the command-line interface.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'duke.Wangsa'
+    standardInput = System.in
+}
+
 tasks.withType(JavaExec).configureEach {
     jvmArgs '--enable-native-access=ALL-UNNAMED'
 }

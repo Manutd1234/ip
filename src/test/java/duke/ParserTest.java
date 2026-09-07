@@ -53,6 +53,22 @@ class ParserTest {
     }
 
     @Test
+    void parse_buildsTypedCommandsForInterfaceAdapters() throws WangsaException {
+        assertEquals(Parser.CommandType.LIST, parser.parse("list").type());
+        assertEquals(3, ((Command.TaskNumber) parser.parse("mark 3")).taskNumber());
+        assertEquals("book", ((Command.Search) parser.parse("find book")).keyword());
+        assertInstanceOf(Todo.class, ((Command.AddTask) parser.parse("todo read book")).task());
+    }
+
+    @Test
+    void commandShapes_rejectIncompatibleActions() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new Command.Simple(Parser.CommandType.MARK));
+        assertThrows(IllegalArgumentException.class,
+                () -> new Command.TaskNumber(Parser.CommandType.FIND, 1));
+    }
+
+    @Test
     void parseSearchKeyword_requiresAndReturnsKeyword() throws WangsaException {
         assertEquals("book", parser.parseSearchKeyword("find book"));
         assertThrows(WangsaException.class, () -> parser.parseSearchKeyword("find"));

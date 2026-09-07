@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import duke.Command;
 import duke.Parser;
 import duke.SqliteTaskRepository;
 import duke.StorageException;
@@ -70,6 +71,10 @@ public class Main extends Application {
     private int historyIndex;
 
     private TaskService taskService;
+
+    /** Creates the JavaFX application instance used by the launcher. */
+    public Main() {
+    }
 
     /** Starts the JavaFX window and loads saved tasks. */
     @Override
@@ -351,8 +356,8 @@ public class Main extends Application {
 
     /** Executes a parsed command and persists mutations. */
     private void execute(String command) throws WangsaException, StorageException {
-        Parser.CommandType commandType = parser.parseCommandType(command);
-        switch (commandType) {
+        Command parsedCommand = parser.parse(command);
+        switch (parsedCommand.type()) {
         case BYE:
             appendAssistant("Quest paused. See you next time, trainer!");
             Platform.exit();
@@ -361,7 +366,8 @@ public class Main extends Application {
             appendAssistant(TaskFormatter.renderTasks(taskService.getTasks()));
             break;
         case FIND:
-            appendAssistant(TaskFormatter.renderTasks(taskService.find(command)));
+            appendAssistant(TaskFormatter.renderTasks(
+                    taskService.findKeyword(((Command.Search) parsedCommand).keyword())));
             break;
         case SORT:
             taskService.sortByDeadline();
@@ -370,33 +376,33 @@ public class Main extends Application {
             break;
         case MARK:
         case UNMARK:
-            updateStatus(command, commandType);
+            updateStatus((Command.TaskNumber) parsedCommand);
             break;
         case DELETE:
-            Task removedTask = taskService.delete(command);
+            Task removedTask = taskService.delete(((Command.TaskNumber) parsedCommand).taskNumber());
             appendAssistant("Quest cleared from your log:\n" + removedTask + "\n\n"
                     + TaskFormatter.progressSummary(taskService.getTasks()));
             break;
         case ADD_TASK:
-            Task addedTask = taskService.add(command);
+            Task addedTask = taskService.add(((Command.AddTask) parsedCommand).task());
             appendAssistant("New quest added to your log:\n" + addedTask + "\n\n"
                     + TaskFormatter.progressSummary(taskService.getTasks()));
             break;
         default:
-            throw new IllegalStateException("Unsupported command type: " + commandType);
+            throw new IllegalStateException("Unsupported command type: " + parsedCommand.type());
         }
     }
 
     /** Updates a task's completion status and persists the change. */
-    private void updateStatus(String command, Parser.CommandType commandType)
+    private void updateStatus(Command.TaskNumber command)
             throws WangsaException, StorageException {
         Task updatedTask;
-        if (commandType == Parser.CommandType.MARK) {
-            updatedTask = taskService.mark(command);
+        if (command.type() == Parser.CommandType.MARK) {
+            updatedTask = taskService.mark(command.taskNumber());
         } else {
-            updatedTask = taskService.unmark(command);
+            updatedTask = taskService.unmark(command.taskNumber());
         }
-        appendAssistant((commandType == Parser.CommandType.MARK ? "Quest complete! " : "Quest reopened: ")
+        appendAssistant((command.type() == Parser.CommandType.MARK ? "Quest complete! " : "Quest reopened: ")
                 + updatedTask + "\n\n" + TaskFormatter.progressSummary(taskService.getTasks()));
     }
 

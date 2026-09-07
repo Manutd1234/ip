@@ -24,6 +24,23 @@ public class Parser {
     }
 
     /**
+     * Parses and validates a complete command into a typed command object.
+     *
+     * @param command complete command entered by the user
+     * @return validated command ready for the application service
+     * @throws WangsaException if the command or one of its arguments is invalid
+     */
+    public Command parse(String command) throws WangsaException {
+        CommandType commandType = parseCommandType(command);
+        return switch (commandType) {
+        case BYE, LIST, SORT -> new Command.Simple(commandType);
+        case MARK, UNMARK, DELETE -> new Command.TaskNumber(commandType, parseTaskNumber(command));
+        case FIND -> new Command.Search(parseSearchKeyword(command));
+        case ADD_TASK -> new Command.AddTask(parseTask(command));
+        };
+    }
+
+    /**
      * Identifies the action requested by a full command line.
      *
      * @param command full command entered by the user

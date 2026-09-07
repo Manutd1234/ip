@@ -43,6 +43,10 @@ Wangsa automatically saves task-list changes to the SQLite database at `data/wan
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the responsibilities of each layer and guidance for adding features.
 
+For end-user instructions, see the [Wangsa product overview](docs/index.md) and
+[complete user guide](docs/README.md), which cover the desktop interface, every
+command, validation rules, persistence, migration, and common errors.
+
 ## Building and running with Gradle
 
 Use the Gradle wrapper from the project root:
@@ -50,6 +54,7 @@ Use the Gradle wrapper from the project root:
 ```shell
 ./gradlew build
 ./gradlew run
+./gradlew runCli
 ./gradlew jar
 ```
 
@@ -58,7 +63,7 @@ The executable JAR is written to `build/libs/Wangsa.jar`; copy it to an empty
 folder and run it with `java --enable-native-access=ALL-UNNAMED -jar Wangsa.jar`.
 
 `./gradlew run` launches the JavaFX desktop interface. The original text
-interface remains available through `duke.Wangsa` for command-line use and
+interface remains available through `./gradlew runCli` for command-line use and
 automated tests.
 
 On the first run, Wangsa creates the `data` folder and SQLite database. Existing
