@@ -76,8 +76,8 @@ public class Wangsa {
      */
     private boolean executeCommand(String command, TaskService tasks)
             throws WangsaException, StorageException {
-        Parser.CommandType commandType = parser.parseCommandType(command);
-        switch (commandType) {
+        Command parsedCommand = parser.parse(command);
+        switch (parsedCommand.type()) {
         case BYE:
             ui.showGoodbye();
             return true;
@@ -85,44 +85,44 @@ public class Wangsa {
             ui.showTaskList(tasks.getTasks());
             break;
         case FIND:
-            ui.showMatchingTasks(tasks.find(command));
+            ui.showMatchingTasks(tasks.findKeyword(((Command.Search) parsedCommand).keyword()));
             break;
         case SORT:
             sortTasks(tasks);
             break;
         case MARK:
         case UNMARK:
-            updateTaskStatus(command, commandType, tasks);
+            updateTaskStatus((Command.TaskNumber) parsedCommand, tasks);
             break;
         case DELETE:
-            deleteTask(command, tasks);
+            deleteTask((Command.TaskNumber) parsedCommand, tasks);
             break;
         case ADD_TASK:
-            addTask(command, tasks);
+            addTask((Command.AddTask) parsedCommand, tasks);
             break;
         default:
-            throw new IllegalStateException("Unsupported command type: " + commandType);
+            throw new IllegalStateException("Unsupported command type: " + parsedCommand.type());
         }
         return false;
     }
 
     /** Saves and displays a task status change. */
-    private void updateTaskStatus(String command, Parser.CommandType commandType, TaskService tasks)
+    private void updateTaskStatus(Command.TaskNumber command, TaskService tasks)
             throws WangsaException, StorageException {
-        boolean isMarked = commandType == Parser.CommandType.MARK;
-        Task updatedTask = isMarked ? tasks.mark(command) : tasks.unmark(command);
+        boolean isMarked = command.type() == Parser.CommandType.MARK;
+        Task updatedTask = isMarked ? tasks.mark(command.taskNumber()) : tasks.unmark(command.taskNumber());
         ui.showTaskStatusUpdate(updatedTask, isMarked);
     }
 
     /** Deletes, saves, and displays a task removal. */
-    private void deleteTask(String command, TaskService tasks) throws WangsaException, StorageException {
-        Task removedTask = tasks.delete(command);
+    private void deleteTask(Command.TaskNumber command, TaskService tasks) throws WangsaException, StorageException {
+        Task removedTask = tasks.delete(command.taskNumber());
         ui.showTaskDeleted(removedTask, tasks.getTasks().size());
     }
 
     /** Adds, saves, and displays a new task. */
-    private void addTask(String command, TaskService tasks) throws WangsaException, StorageException {
-        Task task = tasks.add(command);
+    private void addTask(Command.AddTask command, TaskService tasks) throws WangsaException, StorageException {
+        Task task = tasks.add(command.task());
         ui.showTaskAdded(task, tasks.getTasks().size());
     }
 

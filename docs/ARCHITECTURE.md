@@ -15,6 +15,9 @@ User input
        duke.Parser        (command syntax and validation)
              |
              v
+       duke.Command      (typed command objects)
+             |
+             v
        duke.TaskService   (application workflows)
           |          |
           v          v
@@ -28,7 +31,9 @@ User input
 
 - `Task`, `Todo`, `Deadline`, `Event`, and `TaskType` model task data and display behavior.
 - `TaskList` owns ordering, capacity, search, and task mutations.
-- `Parser` translates command text into validated command types and task values.
+- `Parser` translates command text into validated `Command` objects, task values, and
+  backwards-compatible parsing helpers. Each command shape owns the arguments valid
+  for that action, so interfaces do not need to parse raw strings again.
 - `TaskService` coordinates a complete use case, such as adding a task and saving it.
 - `TaskRepository` defines persistence without committing the application to a storage format.
 - `SqliteTaskRepository` implements `TaskRepository` using indexed, transactional SQLite rows.
@@ -46,8 +51,8 @@ structure so both interfaces behave identically.
 ## Adding a feature
 
 1. Add or update the domain model in the task classes when the feature introduces new task data or behavior.
-2. Add command syntax and validation in `Parser`.
-3. Add the state-changing workflow in `TaskService`; save mutations through `TaskRepository`.
+2. Add command syntax and validation in `Parser`, then add a typed `Command` shape when the feature needs new arguments.
+3. Add the state-changing workflow in `TaskService`; keep its primary API typed and save mutations through `TaskRepository`.
 4. Add focused unit tests beside the affected class. Prefer testing `TaskService` and the domain classes instead of JavaFX controls.
 5. Add CLI output in `Ui` and JavaFX output in `duke.gui.Main` only after the shared workflow works.
 6. Update the user guide and this architecture guide when the public command set or a layer responsibility changes.
@@ -60,6 +65,8 @@ structure so both interfaces behave identically.
 - Schema initialization is idempotent: it adds missing indexes and validation triggers whenever an existing
   database is opened, while malformed legacy rows are reported instead of being silently changed.
 - A new interface can construct a `TaskService` and reuse the existing parser and workflows.
+- A new interface can parse once, switch on `Command.type()`, and pass typed values to
+  `TaskService`; it does not need to duplicate command-token parsing.
 - A new task type should extend `Task`, define its own details, and be handled by `Parser` and
   `SqliteTaskRepository` for creation and persistence.
 

@@ -72,6 +72,15 @@ public final class TaskService {
         return tasks.find(parser.parseSearchKeyword(command));
     }
 
+    /**
+     * Finds tasks by a validated keyword supplied by a parsed command.
+     * @param keyword search keyword
+     * @return matching tasks in their original order
+     */
+    public List<Task> findKeyword(String keyword) {
+        return tasks.find(keyword);
+    }
+
     /** Sorts tasks by deadline and saves the resulting order.
      * @throws StorageException if the updated order cannot be saved
      */
@@ -95,7 +104,17 @@ public final class TaskService {
      * @throws StorageException if the updated list cannot be saved
      */
     public Task add(String command) throws WangsaException, StorageException {
-        Task task = parser.parseTask(command);
+        return add(parser.parseTask(command));
+    }
+
+    /**
+     * Adds a validated task and persists it at the end of the current order.
+     * @param task task to add
+     * @return the added task
+     * @throws WangsaException if the list cannot accept the task
+     * @throws StorageException if the task cannot be persisted
+     */
+    public Task add(Task task) throws WangsaException, StorageException {
         tasks.add(task);
         try {
             repository.insertTask(task, tasks.size() - 1);
@@ -115,7 +134,18 @@ public final class TaskService {
      * @throws StorageException if the updated list cannot be saved
      */
     public Task mark(String command) throws WangsaException, StorageException {
-        return updateStatus(command, true);
+        return mark(parser.parseTaskNumber(command));
+    }
+
+    /**
+     * Marks the supplied one-based task number as done and persists the change.
+     * @param taskNumber one-based task number
+     * @return the updated task
+     * @throws WangsaException if the task number is invalid
+     * @throws StorageException if the update cannot be persisted
+     */
+    public Task mark(int taskNumber) throws WangsaException, StorageException {
+        return updateStatus(taskNumber, true);
     }
 
     /**
@@ -127,13 +157,23 @@ public final class TaskService {
      * @throws StorageException if the updated list cannot be saved
      */
     public Task unmark(String command) throws WangsaException, StorageException {
-        return updateStatus(command, false);
+        return unmark(parser.parseTaskNumber(command));
+    }
+
+    /**
+     * Marks the supplied one-based task number as not done and persists the change.
+     * @param taskNumber one-based task number
+     * @return the updated task
+     * @throws WangsaException if the task number is invalid
+     * @throws StorageException if the update cannot be persisted
+     */
+    public Task unmark(int taskNumber) throws WangsaException, StorageException {
+        return updateStatus(taskNumber, false);
     }
 
     /** Changes a task's completion state and restores it if persistence fails. */
-    private Task updateStatus(String command, boolean markAsDone)
+    private Task updateStatus(int taskNumber, boolean markAsDone)
             throws WangsaException, StorageException {
-        int taskNumber = parser.parseTaskNumber(command);
         Task task = tasks.get(taskNumber);
         boolean wasDone = task.isDone();
         if (markAsDone) {
@@ -160,6 +200,17 @@ public final class TaskService {
      */
     public Task delete(String command) throws WangsaException, StorageException {
         int taskNumber = parser.parseTaskNumber(command);
+        return delete(taskNumber);
+    }
+
+    /**
+     * Deletes the supplied one-based task number and persists the change.
+     * @param taskNumber one-based task number
+     * @return the removed task
+     * @throws WangsaException if the task number is invalid
+     * @throws StorageException if the deletion cannot be persisted
+     */
+    public Task delete(int taskNumber) throws WangsaException, StorageException {
         Task task = tasks.get(taskNumber);
         repository.deleteTask(taskNumber - 1);
         tasks.delete(taskNumber);

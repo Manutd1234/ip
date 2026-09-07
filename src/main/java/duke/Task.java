@@ -5,13 +5,13 @@ package duke;
  */
 public class Task {
     /** The text entered by the user for this task. */
-    protected String description;
+    private final String description;
 
     /** Whether the task has been marked as done. */
-    protected boolean isDone;
+    private boolean isDone;
 
     /** The kind of task, used to select its display marker. */
-    protected final TaskType type;
+    private final TaskType type;
 
     /**
      * Creates an unfinished task with the given description.

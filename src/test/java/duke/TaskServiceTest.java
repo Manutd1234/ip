@@ -37,6 +37,19 @@ class TaskServiceTest {
     }
 
     @Test
+    void typedOperations_keepCommandParsingOutOfTheApplicationService() throws Exception {
+        Storage storage = new Storage(temporaryDirectory.resolve("typed-tasks.txt"));
+        TaskService service = new TaskService(storage, new Parser());
+        Task task = new Deadline("submit report", java.time.LocalDate.of(2026, 9, 20));
+
+        service.add(task);
+        service.mark(1);
+
+        assertTrue(service.getTasks().get(0).isDone());
+        assertEquals("submit report", service.getTasks().get(0).getDescription());
+    }
+
+    @Test
     void sortByDeadline_ordersAndPersistsTaskOrder() throws Exception {
         Storage storage = new Storage(temporaryDirectory.resolve("tasks.txt"));
         TaskService service = new TaskService(storage, new Parser());
