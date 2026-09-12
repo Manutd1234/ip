@@ -1,227 +1,210 @@
 # Wangsa User Guide
 
-Wangsa is a Pokémon-inspired task manager for keeping track of your daily quests.
-Type short commands to add tasks, find work, and track what you have finished.
-Your tasks are saved automatically on this computer.
+Wangsa is a Pokémon-inspired task manager that turns your daily tasks into quests.
+Add things to do, track deadlines and events, and mark tasks as complete—all by
+typing short commands. Your tasks are saved automatically.
 
-![The Wangsa desktop window, with a quest list and command box](Ui.png)
+**Contents:** [Quick start](#quick-start) · [Features](#features) ·
+[Saving tasks](#saving-tasks) · [Troubleshooting](#troubleshooting) ·
+[Command summary](#command-summary)
 
 ## Quick start
 
-1. Install **Java 25**. Run `java -version` in a terminal to check your version.
-2. Download the JAR from the [Wangsa releases page](https://github.com/Manutd1234/ip/releases).
-   Use a build for your operating system and processor. The current build bundles
-   platform-specific JavaFX libraries; a JAR built on another platform may not open.
-3. Put `Wangsa.jar` in a folder where you can save files. Open a terminal in that
-   folder and run:
+1. Install **Java 25**. Check your version by running `java -version` in a terminal.
+2. Download the JAR from the [Wangsa releases page](https://github.com/Manutd1234/ip/releases)
+   and save it as `Wangsa.jar` in a folder you can write to.
+3. Open a terminal in that folder and run:
 
    ```shell
    java --enable-native-access=ALL-UNNAMED -jar Wangsa.jar
    ```
 
-4. Click the command box at the bottom of the window. Type a command and press
-   **Enter**, or click **SEND**.
+4. The Wangsa window opens. Type a command in the box at the bottom, then press
+   **Enter** or click **SEND**.
 
-If you have the source code, run `./gradlew run` from the project folder instead
-(`gradlew.bat run` on Windows). This builds with the JavaFX libraries for your
-computer. The terminal interface is available with `./gradlew runCli`.
+![Wangsa's full desktop window, showing the task list and command box](Ui.png)
 
-Try this sequence with an empty task list:
+Try these commands one at a time with an empty list:
 
 ```text
 todo read the project brief
 deadline submit report /by 2026-09-20
-event project meeting /from Monday 2pm /to Monday 4pm
 list
 mark 1
-find report
 ```
 
-The list now has three tasks. The first is complete, and `find report` shows task
-**2**, which you can complete with `mark 2`.
+You now have two tasks, with the first marked complete.
 
-## Reading and entering commands
+> **Using the source code?** Run `./gradlew run` from the project folder
+> (`gradlew.bat run` on Windows). Use `./gradlew runCli` for the terminal interface.
+> If the JAR will not open, see [Troubleshooting](#troubleshooting).
 
-- Commands and markers are **case-sensitive**: use `todo` and `/by`, not `TODO` or
-  `/BY`. Search text is case-insensitive.
-- Replace words such as `DESCRIPTION` and `NUMBER` with your own values. Do not
-  type the capitalized placeholders or angle brackets from the on-screen hints.
-- Leading and trailing spaces are ignored. Spaces or tabs can separate command
-  keywords, markers, and values. Spaces inside descriptions are kept.
-- `/by`, `/from`, and `/to` must be separate tokens, with whitespace before their
-  values. Use each required marker once, in the order shown below. These tokens
-  are reserved in deadline and event commands.
-- Task numbers start at **1**. `list` and `find` use the same task numbers. After
-  deleting or sorting, use the latest results because task numbers may change.
+## Features
 
-In a task such as `2.[D][X] submit report (by: Sep 20 2026)`, `2` is its task number,
-`D` means deadline, and `X` means complete. `T` means todo, `E` means event, and a
-blank status `[ ]` means incomplete. The GUI adds a space after the task number.
+### Before you start
 
-## Adding tasks
+- Replace uppercase placeholders with your own values: `todo DESCRIPTION`
+  becomes `todo read a book`. Do not type the placeholders or angle brackets.
+- Use lowercase commands and markers. Write `/by`, `/from`, and `/to` as separate
+  words, once each, in the order shown. These markers are reserved in deadline
+  and event commands.
+- Extra spaces around a command are ignored. Spaces or tabs can separate its
+  parts; spaces inside descriptions are kept. Required values cannot be empty.
+- `NUMBER` is a positive task number shown by `list` or `find`. Both commands
+  use the **same numbers**. Deleting or sorting can change them, so use the latest list.
+- You can keep **100 tasks**, including completed tasks. Duplicate tasks are allowed.
 
-### Todo: `todo DESCRIPTION`
+Task labels use `[T]` for todos, `[D]` for deadlines, and `[E]` for events.
+`[ ]` means incomplete; `[X]` means complete.
 
-A todo is a task without a date.
+### Adding a todo: `todo`
 
-```text
-todo read the project brief
-```
+Adds a task without a date.
 
-Wangsa adds `[T][ ] read the project brief` to the end of your list and confirms
-the addition. Descriptions cannot be empty. Duplicate tasks are allowed.
+**Format:** `todo DESCRIPTION`
 
-### Deadline: `deadline DESCRIPTION /by YYYY-MM-DD`
+**Example:** `todo read a book`
 
-Use a deadline for work due on a date.
+Adds `[T][ ] read a book` to the end of the list.
 
-```text
-deadline submit report /by 2026-09-20
-```
+### Adding a deadline: `deadline`
 
-Wangsa adds `[D][ ] submit report (by: Sep 20 2026)`. Use a real calendar date, with
-a four-digit year, two-digit month, and two-digit day; `2026-02-30` is rejected.
-Past deadlines are allowed. Deadlines contain a date, without a time of day.
+Adds a task due on a specific date.
 
-### Event: `event DESCRIPTION /from START /to END`
+**Format:** `deadline DESCRIPTION /by YYYY-MM-DD`
 
-Use an event for an activity with a start and end.
+**Example:** `deadline submit report /by 2026-09-20`
 
-```text
-event project meeting /from Monday 2pm /to Monday 4pm
-```
+Adds `[D][ ] submit report (by: Sep 20 2026)`.
+Use a real date with a four-digit year, two-digit month, and two-digit day.
+For example, `2026-02-30` is invalid. Past dates are allowed; times are not supported.
 
-Wangsa adds `[E][ ] project meeting (from: Monday 2pm to: Monday 4pm)`.
-The description, start, and end must all be non-empty. Start and end are **text**,
-so Wangsa accepts phrases such as `after lunch` and does not check whether the
-end comes after the start. Events do not trigger notifications or reminders.
+### Adding an event: `event`
 
-## Viewing and finding tasks
+Adds an activity with a start and end.
 
-### List: `list`
+**Format:** `event DESCRIPTION /from START /to END`
 
-Shows all tasks, including completed tasks, in their current order. An empty GUI
-list displays “Your quest log is clear.” Adding tasks appends them to this order.
+**Example:** `event project meeting /from Monday 2pm /to Monday 4pm`
 
-### Find: `find KEYWORD`
+Adds `[E][ ] project meeting (from: Monday 2pm to: Monday 4pm)`.
+Start and end are stored as text: Wangsa does not check their order or send reminders.
+Both values are required.
 
-```text
-find report
-```
+### Listing all tasks: `list`
 
-Finds descriptions containing the supplied text, ignoring case. `find BOOK`
-matches both `read book` and `return book`. Multiple words form one search phrase:
-`find project meeting` looks for that phrase, not either word separately.
-Dates and event start/end values are not searched.
+Shows every task, including completed tasks, with its current number.
 
-Results keep their numbers from the full list. For example, if a matching task
-is shown as `4`, use `mark 4` to complete it. Finding tasks does not reorder or
-remove anything. A search with no matches displays a no-match message.
+**Format:** `list`
 
-### Sort: `sort`
+### Finding tasks: `find`
 
-Puts deadlines first, from earliest to latest, followed by todos and events.
-Deadlines on the same date retain their relative order; todos and events also
-retain their relative order. Completed and incomplete tasks use the same rule.
-The new order is saved, and the response shows the new task numbers.
+Finds descriptions containing your search text, ignoring case.
 
-## Completing and removing tasks
+**Format:** `find KEYWORD`
 
-### Complete: `mark NUMBER`
+**Example:** `find book` matches `read book`, `BOOK flight`, and `booking tickets`.
 
-```text
-mark 2
-```
+Multiple words are treated as one phrase: `find read book` searches for that phrase.
+Dates and event times are not searched. If nothing matches, Wangsa says so.
 
-Marks task 2 as complete, changing `[ ]` to `[X]`. The task stays in your list.
-Marking an already completed task is allowed and keeps it complete.
+Results keep their full-list numbers. If a result is numbered **4**, use `mark 4`
+to complete it, even if it is the only result.
 
-### Reopen: `unmark NUMBER`
+### Sorting by deadline: `sort`
 
-```text
-unmark 2
-```
+**Format:** `sort`
 
-Changes task 2 back to incomplete. You can also unmark an incomplete task.
+Places deadlines first, from earliest to latest, followed by todos and events.
+Tasks with the same deadline keep their relative order, as do todos and events.
+The new order is saved and displayed. Completed tasks follow the same sorting rule.
 
-### Delete: `delete NUMBER`
+### Completing a task: `mark`
 
-```text
-delete 2
-```
+**Format:** `mark NUMBER`
 
-Permanently removes task 2 and saves the change immediately. There is no undo or
-confirmation prompt. Later tasks move up one number. Run `list` first if you are
-unsure which task a number refers to.
+**Example:** `mark 2` marks task 2 as complete: `[ ]` becomes `[X]`.
 
-### Exit: `bye`
+The task stays in your list. Marking it again leaves it complete.
 
-Closes Wangsa. Successful changes have already been saved; you do not need a
-separate save command. Closing the desktop window also retains saved tasks.
+### Reopening a task: `unmark`
 
-## Desktop shortcuts
+**Format:** `unmark NUMBER`
 
-The **TRY** buttons sit below the command box. **list** runs immediately; **new
-todo**, **find**, and **mark #** insert a prefix for you to finish. Press **Up** or
-**Down** in the command box to browse successful commands from this session.
-Consecutive identical commands appear only once in this history.
+**Example:** `unmark 2` marks task 2 as incomplete: `[X]` becomes `[ ]`.
 
-Your commands appear on the right and Wangsa's responses on the left. The header
-counts total and completed tasks. The window can be resized; scroll the
-conversation to see older replies. The transcript and command history are not
-saved between launches.
+Unmarking an incomplete task leaves it incomplete.
 
-## Saved tasks and recovery
+### Deleting a task: `delete`
 
-Wangsa creates `data/wangsa.db` inside the folder **from which you launch it**.
-Always launch from the same folder to use the same task list. The GUI and CLI
-share that list when launched from the same folder; use one instance at a time.
-Moving only the JAR does not move your existing tasks.
+**Format:** `delete NUMBER`
 
-Every successful add, mark, unmark, delete, and sort is saved automatically.
-If a save fails, the operation is not confirmed and the in-memory change is
-rolled back. The CLI exits after a storage error; the GUI displays the error.
+**Example:** `delete 2` removes task 2. Later tasks move up one number.
 
-To back up your tasks, close Wangsa and copy the entire `data` folder somewhere
-safe. To restore, close Wangsa and replace the `data` folder with your backup.
-Avoid editing the SQLite database by hand.
+> **Deletion is immediate and cannot be undone.** Run `list` first if you are
+> unsure which task to remove.
 
-If `data/wangsa.txt` from an older version exists before the first database is
-created, Wangsa imports it once. The text file remains as a backup; later changes
-use the database. An invalid legacy file reports a line number and can be
-corrected before retrying the import.
+### Exiting Wangsa: `bye`
 
-If saved tasks cannot be loaded, the GUI displays **STORAGE UNAVAILABLE** and
-blocks task commands to protect existing data. Fix the reported problem or
-restore a backup, then restart. `bye` still works. The CLI reports the problem
-and exits.
+**Format:** `bye`
+
+Closes Wangsa. Successful changes are already saved, including when you close
+using the window's close button.
+
+### Desktop shortcuts
+
+Click **list** below the command box to show your tasks immediately. **new todo**,
+**find**, and **mark #** fill in a command prefix for you to finish. Press **Up** or
+**Down** in the command box to reuse successful commands from this session.
+
+The header shows total and completed task counts. You can resize the window and
+scroll to read older messages. The conversation and command history reset when
+Wangsa closes.
+
+## Saving tasks
+
+Wangsa saves every successful change in `data/wangsa.db`, inside the folder
+**from which you launch the app**. Use the same folder each time and run one
+instance at a time. The GUI and CLI share these saved tasks.
+
+**To back up or move your tasks:** close Wangsa and copy the entire `data` folder.
+To restore a backup, close Wangsa and replace its `data` folder with your copy.
+Moving only the JAR does not move your tasks. Avoid editing the database by hand.
+
+An older `data/wangsa.txt` file is imported once, before the database is first
+created. The text file remains; future changes use the database.
+
+If saving fails, Wangsa reports an error and cancels the change. If saved data
+cannot be loaded, the GUI shows **STORAGE UNAVAILABLE** and blocks task commands;
+`bye` still works. Fix the reported problem or restore a backup, then restart.
+The CLI exits after a storage error.
 
 ## Troubleshooting
 
 | Problem | What to do |
 | --- | --- |
-| Unknown command | Use the exact lowercase command. `list`, `sort`, and `bye` take no extra arguments. |
-| Missing description or event value | Supply a description and every required marker/value. |
-| Invalid deadline date | Use a real date such as `2026-09-20`; include two digits for month and day. |
-| Duplicate or misplaced markers | Use `/by` once for a deadline, or `/from` then `/to` once each for an event. |
-| Invalid task number | Run `list`, then use one whole number from the displayed list. On an empty list, add a task first. |
-| Task list is full | The limit is **100 tasks**, including completed tasks. Delete one before adding another. |
-| Empty input | The GUI ignores blank submissions. The CLI asks you to enter a command. |
-| Tasks seem to have disappeared | Check the launch folder and its `data` folder; avoid creating another list in a different folder. |
-| Cannot read or save data | Close other Wangsa instances and check that the launch folder is writable. Back up existing data before recovery. |
-| JAR will not start | Check `java -version` reports Java 25. Use a build matching your OS and processor, or run from source as described above. |
+| Unknown command or missing value | Follow the format above. `list`, `sort`, and `bye` take no extra values. Use each required marker once, in order. |
+| Invalid date | Use a real date such as `2026-09-20`. |
+| Invalid task number | Run `list` and choose a displayed number. If the list is empty, add a task first. |
+| Task list is full | Delete a task before adding another. Completed tasks count towards the 100-task limit. |
+| Tasks seem to be missing | Check that you launched Wangsa from the folder containing your usual `data` folder. |
+| Cannot load or save tasks | Close other Wangsa instances and check folder access. Keep a backup before repairing data. A malformed legacy text file reports the line to correct. |
+| JAR will not open | Check that you use Java 25. The current JAR must match your operating system and processor; running from source selects the libraries for your computer. |
 
 ## Command summary
 
-| Action | Format |
-| --- | --- |
-| Add todo | `todo DESCRIPTION` |
-| Add deadline | `deadline DESCRIPTION /by YYYY-MM-DD` |
-| Add event | `event DESCRIPTION /from START /to END` |
-| List all tasks | `list` |
-| Find descriptions | `find KEYWORD` |
-| Sort by deadline | `sort` |
-| Complete a task | `mark NUMBER` |
-| Reopen a task | `unmark NUMBER` |
-| Delete a task | `delete NUMBER` |
-| Exit | `bye` |
+| Action | Format | Example |
+| --- | --- | --- |
+| Add todo | `todo DESCRIPTION` | `todo read a book` |
+| Add deadline | `deadline DESCRIPTION /by YYYY-MM-DD` | `deadline return book /by 2026-09-20` |
+| Add event | `event DESCRIPTION /from START /to END` | `event lunch /from 12pm /to 1pm` |
+| List tasks | `list` | `list` |
+| Find tasks | `find KEYWORD` | `find book` |
+| Sort deadlines | `sort` | `sort` |
+| Complete task | `mark NUMBER` | `mark 2` |
+| Reopen task | `unmark NUMBER` | `unmark 2` |
+| Delete task | `delete NUMBER` | `delete 2` |
+| Exit | `bye` | `bye` |
+
+Guide structure inspired by the
+[SE-EDU AddressBook Level 3 User Guide](https://se-education.org/addressbook-level3/UserGuide.html).

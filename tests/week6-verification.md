@@ -40,8 +40,17 @@ A temporary JavaFX harness loaded the packaged app in isolated folders under
 
 ## Documentation checks and remaining release work
 
-- The guide renders locally with 20 headings and two tables; the screenshot
-  exists, and the Pages index includes the guide from its single source.
+- The refined guide renders locally with 18 headings and two tables. Its contents
+  links resolve, all ten commands have explicit formats, the screenshot exists,
+  and the Pages index includes the guide from its single source.
+- The guide follows the quick-start, feature-format/example, and command-summary
+  structure of the [AB3 user guide](https://se-education.org/addressbook-level3/UserGuide.html),
+  with credit included. Search, task numbers, dates, and saving rules were checked
+  against Wangsa's implementation rather than copied from AB3.
+- The [Week 6 guide criteria](https://nus-cs2103-ay2627-s1.github.io/website/schedule/week6/project.html)
+  are covered by the Wangsa title, full-window screenshot, Markdown guide in
+  `docs/README.md`, and instructions for every important feature. Verification
+  of the updated public Pages output still depends on merging and pushing.
 - GitHub Pages already uses `master` and `/docs`.
 - Browser policy blocked opening the local HTML preview. The published Jekyll
   output has not been visually verified for this branch.
