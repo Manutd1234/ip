@@ -2,11 +2,17 @@ package duke;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Interprets user commands and converts their arguments into domain values.
  */
 public class Parser {
+    private static final Pattern DETAIL_MARKER = Pattern.compile("(?<!\\S)/(by|from|to)(?=\\s|$)");
+
     /** Creates a parser for Wangsa command lines. */
     public Parser() {
     }
@@ -157,13 +163,10 @@ public class Parser {
     /** Creates a deadline with a validated ISO date. */
     private Task parseDeadline(String command) throws WangsaException {
         String content = textAfterKeyword(command, "deadline");
-        int byMarker = content.indexOf(" /by");
-        if (byMarker < 0) {
-            throw new WangsaException("OOPS!!! A deadline must include a description and a /by date.");
-        }
-
-        String description = content.substring(0, byMarker).trim();
-        String by = content.substring(byMarker + " /by".length()).trim();
+        List<String> fields = splitDetails(content,
+                "A deadline must include a description and a /by date.", "by");
+        String description = fields.get(0);
+        String by = fields.get(1);
         if (description.isEmpty()) {
             throw new WangsaException("OOPS!!! The description of a deadline cannot be empty.");
         }
@@ -182,15 +185,11 @@ public class Parser {
     /** Creates an event or reports its missing description, start, or end. */
     private Task parseEvent(String command) throws WangsaException {
         String content = textAfterKeyword(command, "event");
-        int fromMarker = content.indexOf(" /from");
-        int toMarker = fromMarker < 0 ? -1 : content.indexOf(" /to", fromMarker + " /from".length());
-        if (fromMarker < 0 || toMarker < 0) {
-            throw new WangsaException("OOPS!!! An event must include a description, /from start, and /to end.");
-        }
-
-        String description = content.substring(0, fromMarker).trim();
-        String from = content.substring(fromMarker + " /from".length(), toMarker).trim();
-        String to = content.substring(toMarker + " /to".length()).trim();
+        List<String> fields = splitDetails(content,
+                "An event must include a description, /from start, and /to end.", "from", "to");
+        String description = fields.get(0);
+        String from = fields.get(1);
+        String to = fields.get(2);
         if (description.isEmpty()) {
             throw new WangsaException("OOPS!!! The description of an event cannot be empty.");
         }
@@ -198,6 +197,28 @@ public class Parser {
             throw new WangsaException("OOPS!!! An event needs values after /from and /to.");
         }
         return new Event(description, from, to);
+    }
+
+    /** Splits standalone detail markers, requiring each marker once in the expected order. */
+    private List<String> splitDetails(String content, String formatHint, String... expectedMarkers)
+            throws WangsaException {
+        Matcher matcher = DETAIL_MARKER.matcher(content);
+        List<String> fields = new ArrayList<>();
+        int fieldStart = 0;
+        while (matcher.find()) {
+            int markerIndex = fields.size();
+            if (markerIndex >= expectedMarkers.length
+                    || !matcher.group(1).equals(expectedMarkers[markerIndex])) {
+                throw new WangsaException("OOPS!!! Use each detail marker once and in order. " + formatHint);
+            }
+            fields.add(content.substring(fieldStart, matcher.start()).trim());
+            fieldStart = matcher.end();
+        }
+        if (fields.size() != expectedMarkers.length) {
+            throw new WangsaException("OOPS!!! " + formatHint);
+        }
+        fields.add(content.substring(fieldStart).trim());
+        return fields;
     }
 
     /** Returns the trimmed text after a command keyword. */

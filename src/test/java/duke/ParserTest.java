@@ -15,6 +15,31 @@ class ParserTest {
     private final Parser parser = new Parser();
 
     @ParameterizedTest
+    @ValueSource(strings = {
+        "deadline task /by 2026-09-20 /by 2026-09-21",
+        "deadline task /by2026-09-20",
+        "event meeting /fromage 2pm /to 4pm",
+        "event meeting /from 2pm /to 4pm /to 5pm",
+        "event meeting /from 2pm /from 3pm /to 4pm",
+        "event meeting /to 4pm /from 2pm",
+        "event meeting /from 2pm /to 4pm /by 2026-09-20",
+        "event /from 2pm /to 4pm",
+        "event meeting /from /to 4pm"
+    })
+    void parseTask_invalidDetailMarkers_rejectsAmbiguousInput(String command) {
+        assertThrows(WangsaException.class, () -> parser.parseTask(command));
+    }
+
+    @Test
+    void parseTask_spacedDetailMarkers_preservesFreeFormValues() throws WangsaException {
+        Event event = (Event) parser.parseTask("event\tmeeting\t/from\tMonday  2pm\t/to\tMonday 4pm");
+        assertEquals("Monday  2pm", event.getFrom());
+        assertEquals("Monday 4pm", event.getTo());
+        Deadline deadline = (Deadline) parser.parseTask("deadline task\t/by\t2026-09-20");
+        assertEquals(LocalDate.of(2026, 9, 20), deadline.getBy());
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {" todo read  book ", "todo\tread  book", "\t todo   read  book\t"})
     void parse_surroundingWhitespace_preservesDescriptionSpacing(String input) throws WangsaException {
         Task task = ((Command.AddTask) parser.parse(input)).task();
