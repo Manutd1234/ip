@@ -1,7 +1,7 @@
 # Week 6 quality and user guide verification
 
 Verified on 12 September 2026 with Java 25.0.4 on macOS ARM64, starting from
-`master` at `468668c`. Changes are on `codex/week6-quality-user-guide`.
+`master` at `468668c`. Changes are on `week6-quality-user-guide`.
 
 ## Generated feedback
 
@@ -54,8 +54,9 @@ A temporary JavaFX harness loaded the packaged app in isolated folders under
 - GitHub Pages already uses `master` and `/docs`.
 - Browser policy blocked opening the local HTML preview. The published Jekyll
   output has not been visually verified for this branch.
-- Commits and the lightweight `A-UserGuide` tag are local. Merge and push them
-  before expecting the public website or course dashboard to change.
+- These checks were completed before publication. The branch and lightweight
+  `A-UserGuide` tag must reach GitHub, with the changes on `master`, for the
+  public website and course dashboard to update.
 - This build includes JavaFX libraries for macOS ARM64. Windows, Linux, and Intel
   macOS execution were not tested; a cross-platform release remains separate work.
 - JavaFX 17 emitted module/Unsafe deprecation warnings on Java 25, while both
