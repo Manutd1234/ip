@@ -1,6 +1,7 @@
 package duke;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -21,6 +22,20 @@ import org.junit.jupiter.api.io.TempDir;
 class SqliteTaskRepositoryTest {
     @TempDir
     Path temporaryDirectory;
+
+    @Test
+    void loadTasks_invalidLegacyFile_canRetryAfterCorrection() throws Exception {
+        Path databasePath = temporaryDirectory.resolve("retry.db");
+        Path legacyPath = temporaryDirectory.resolve("wangsa.txt");
+        Files.writeString(legacyPath, "T | 2 | recoverable task\n");
+
+        assertThrows(StorageException.class, () -> new SqliteTaskRepository(databasePath, legacyPath).loadTasks());
+        assertFalse(Files.exists(databasePath));
+
+        Files.writeString(legacyPath, "T | 0 | recoverable task\n");
+        assertEquals(List.of("recoverable task"),
+                descriptions(new SqliteTaskRepository(databasePath, legacyPath).loadTasks()));
+    }
 
     @Test
     void insertAndDelete_multipleShiftedRows_preservesUniquePositions() throws Exception {

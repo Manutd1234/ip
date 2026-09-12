@@ -129,9 +129,11 @@ public final class SqliteTaskRepository implements TaskRepository {
      */
     @Override
     public List<Task> loadTasks() throws StorageException {
+        // A malformed legacy file must not create an empty database that skips migration on restart.
+        List<Task> legacyTasks = isLegacyMigrationPending ? new Storage(legacyFilePath).loadTasks() : List.of();
         try (Connection connection = openConnection()) {
             initializeSchema(connection);
-            migrateLegacyTasksIfNeeded(connection);
+            migrateLegacyTasksIfNeeded(connection, legacyTasks);
             return readTasks(connection);
         } catch (SQLException exception) {
             throw databaseException("read", exception);
@@ -336,12 +338,11 @@ public final class SqliteTaskRepository implements TaskRepository {
     }
 
     /** Imports legacy text data only when this repository created a new database. */
-    private void migrateLegacyTasksIfNeeded(Connection connection) throws SQLException, StorageException {
+    private void migrateLegacyTasksIfNeeded(Connection connection, List<Task> legacyTasks) throws SQLException {
         if (!isLegacyMigrationPending || !isDatabaseEmpty(connection)) {
             return;
         }
 
-        List<Task> legacyTasks = new Storage(legacyFilePath).loadTasks();
         connection.setAutoCommit(false);
         try {
             insertTasks(connection, legacyTasks);
