@@ -31,6 +31,7 @@ public class Parser {
      * @throws WangsaException if the command or one of its arguments is invalid
      */
     public Command parse(String command) throws WangsaException {
+        command = command.trim();
         CommandType commandType = parseCommandType(command);
         return switch (commandType) {
         case BYE, LIST, SORT -> new Command.Simple(commandType);
@@ -48,6 +49,7 @@ public class Parser {
      * @throws WangsaException if the command is empty or unknown
      */
     public CommandType parseCommandType(String command) throws WangsaException {
+        command = command.trim();
         if (command.isEmpty()) {
             throw new WangsaException("OOPS!!! Please enter a command.");
         }
@@ -74,14 +76,13 @@ public class Parser {
      * @throws WangsaException if required task details are missing or invalid
      */
     public Task parseTask(String command) throws WangsaException {
-        if (command.equals("todo") || command.startsWith("todo ")) {
-            return parseTodo(command);
-        } else if (command.equals("deadline") || command.startsWith("deadline ")) {
-            return parseDeadline(command);
-        } else if (command.equals("event") || command.startsWith("event ")) {
-            return parseEvent(command);
-        }
-        throw new WangsaException("OOPS!!! I'm sorry, but I don't know what that means :-(");
+        command = command.trim();
+        return switch (firstWord(command)) {
+        case "todo" -> parseTodo(command);
+        case "deadline" -> parseDeadline(command);
+        case "event" -> parseEvent(command);
+        default -> throw unknownCommand();
+        };
     }
 
     /**
@@ -92,6 +93,7 @@ public class Parser {
      * @throws WangsaException if the argument count or number is invalid
      */
     public int parseTaskNumber(String command) throws WangsaException {
+        command = command.trim();
         String[] parts = command.split("\\s+");
         if (parts.length != 2) {
             throw new WangsaException("OOPS!!! " + parts[0] + " expects one task number.");
@@ -112,6 +114,7 @@ public class Parser {
      * @throws WangsaException if the keyword is missing
      */
     public String parseSearchKeyword(String command) throws WangsaException {
+        command = command.trim();
         String keyword = textAfterKeyword(command, "find");
         if (keyword.isEmpty()) {
             throw new WangsaException("OOPS!!! Find needs a keyword to search for.");

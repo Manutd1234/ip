@@ -7,10 +7,32 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.time.LocalDate;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /** Tests command classification, task construction, and argument validation. */
 class ParserTest {
     private final Parser parser = new Parser();
+
+    @ParameterizedTest
+    @ValueSource(strings = {" todo read  book ", "todo\tread  book", "\t todo   read  book\t"})
+    void parse_surroundingWhitespace_preservesDescriptionSpacing(String input) throws WangsaException {
+        Task task = ((Command.AddTask) parser.parse(input)).task();
+
+        assertEquals("read  book", task.getDescription());
+        assertEquals("read  book", parser.parseTask(input).getDescription());
+    }
+
+    @Test
+    void parse_spacedCommands_acceptsWhitespaceInBothInterfaces() throws WangsaException {
+        assertEquals(Parser.CommandType.LIST, parser.parse("  list\t").type());
+        assertEquals(Parser.CommandType.SORT, parser.parseCommandType("\tsort "));
+        assertEquals(2, parser.parseTaskNumber("  mark\t2 "));
+        assertEquals("read  book", parser.parseSearchKeyword(" find  read  book "));
+        assertThrows(WangsaException.class, () -> parser.parse("\t  "));
+        assertThrows(WangsaException.class, () -> parser.parse("list extra"));
+        assertThrows(WangsaException.class, () -> parser.parse("TODO task"));
+    }
 
     @Test
     void parseCommandType_recognizesSupportedCommands() throws WangsaException {
