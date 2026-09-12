@@ -94,7 +94,7 @@ public final class SqliteTaskRepository implements TaskRepository {
 
     private final Path legacyFilePath;
 
-    private boolean legacyMigrationPending;
+    private boolean isLegacyMigrationPending;
 
     /**
      * Creates a repository backed by the supplied database path.
@@ -117,7 +117,7 @@ public final class SqliteTaskRepository implements TaskRepository {
     public SqliteTaskRepository(Path databasePath, Path legacyFilePath) {
         this.databasePath = databasePath;
         this.legacyFilePath = legacyFilePath;
-        this.legacyMigrationPending = legacyFilePath != null
+        this.isLegacyMigrationPending = legacyFilePath != null
                 && Files.notExists(databasePath)
                 && Files.exists(legacyFilePath);
     }
@@ -156,7 +156,7 @@ public final class SqliteTaskRepository implements TaskRepository {
                 }
                 insertTasks(connection, tasks);
                 connection.commit();
-                legacyMigrationPending = false;
+                isLegacyMigrationPending = false;
             } catch (SQLException exception) {
                 rollback(connection, exception);
                 throw exception;
@@ -188,7 +188,7 @@ public final class SqliteTaskRepository implements TaskRepository {
                     insert.executeUpdate();
                 }
                 connection.commit();
-                legacyMigrationPending = false;
+                isLegacyMigrationPending = false;
             } catch (SQLException exception) {
                 rollback(connection, exception);
                 throw exception;
@@ -216,7 +216,7 @@ public final class SqliteTaskRepository implements TaskRepository {
                     throw invalidPosition(position);
                 }
                 connection.commit();
-                legacyMigrationPending = false;
+                isLegacyMigrationPending = false;
             } catch (SQLException | StorageException exception) {
                 rollback(connection, exception);
                 throw exception;
@@ -246,7 +246,7 @@ public final class SqliteTaskRepository implements TaskRepository {
                 shift.setInt(1, position);
                 shift.executeUpdate();
                 connection.commit();
-                legacyMigrationPending = false;
+                isLegacyMigrationPending = false;
             } catch (SQLException | StorageException exception) {
                 rollback(connection, exception);
                 throw exception;
@@ -321,7 +321,7 @@ public final class SqliteTaskRepository implements TaskRepository {
 
     /** Imports legacy text data only when this repository created a new database. */
     private void migrateLegacyTasksIfNeeded(Connection connection) throws SQLException, StorageException {
-        if (!legacyMigrationPending || !isDatabaseEmpty(connection)) {
+        if (!isLegacyMigrationPending || !isDatabaseEmpty(connection)) {
             return;
         }
 
@@ -330,7 +330,7 @@ public final class SqliteTaskRepository implements TaskRepository {
         try {
             insertTasks(connection, legacyTasks);
             connection.commit();
-            legacyMigrationPending = false;
+            isLegacyMigrationPending = false;
         } catch (SQLException exception) {
             rollback(connection, exception);
             throw exception;

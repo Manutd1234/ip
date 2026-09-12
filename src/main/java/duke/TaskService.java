@@ -96,7 +96,7 @@ public final class TaskService {
     }
 
     /**
-     * Parses, adds, and saves a task.
+     * Adds a task described by the command and saves it.
      *
      * @param command complete task-creation command
      * @return the added task
@@ -172,11 +172,11 @@ public final class TaskService {
     }
 
     /** Changes a task's completion state and restores it if persistence fails. */
-    private Task updateStatus(int taskNumber, boolean markAsDone)
+    private Task updateStatus(int taskNumber, boolean shouldMarkAsDone)
             throws WangsaException, StorageException {
         Task task = tasks.get(taskNumber);
         boolean wasDone = task.isDone();
-        if (markAsDone) {
+        if (shouldMarkAsDone) {
             task.markAsDone();
         } else {
             task.markAsNotDone();
