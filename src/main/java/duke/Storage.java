@@ -98,48 +98,51 @@ public class Storage implements TaskRepository {
             throw invalidLine(lineNumber, "not enough fields");
         }
 
-        boolean isDone;
-        if (fields.get(1).equals("1")) {
-            isDone = true;
-        } else if (fields.get(1).equals("0")) {
-            isDone = false;
-        } else {
-            throw invalidLine(lineNumber, "status must be 0 or 1");
-        }
-
+        boolean isDone = parseStatus(fields.get(1), lineNumber);
         String description = fields.get(2);
         if (description.isEmpty()) {
             throw invalidLine(lineNumber, "task description cannot be empty");
         }
 
-        Task task;
-        switch (fields.get(0)) {
-        case "T":
-            requireFieldCount(fields, 3, lineNumber);
-            task = new Todo(description);
-            break;
-        case "D":
-            requireFieldCount(fields, 4, lineNumber);
-            if (fields.get(3).isEmpty()) {
-                throw invalidLine(lineNumber, "deadline value cannot be empty");
-            }
-            task = new Deadline(description, parseDeadlineDate(fields.get(3), lineNumber));
-            break;
-        case "E":
-            requireFieldCount(fields, 5, lineNumber);
-            if (fields.get(3).isEmpty() || fields.get(4).isEmpty()) {
-                throw invalidLine(lineNumber, "event start and end values cannot be empty");
-            }
-            task = new Event(description, fields.get(3), fields.get(4));
-            break;
-        default:
-            throw invalidLine(lineNumber, "unknown task type");
-        }
-
+        Task task = createTask(fields, description, lineNumber);
         if (isDone) {
             task.markAsDone();
         }
         return task;
+    }
+
+    /** Reads the saved completion flag without accepting other numeric values. */
+    private boolean parseStatus(String value, int lineNumber) throws StorageException {
+        return switch (value) {
+        case "1" -> true;
+        case "0" -> false;
+        default -> throw invalidLine(lineNumber, "status must be 0 or 1");
+        };
+    }
+
+    /** Validates type-specific fields before constructing a legacy task. */
+    private Task createTask(List<String> fields, String description, int lineNumber) throws StorageException {
+        return switch (fields.get(0)) {
+        case "T" -> {
+            requireFieldCount(fields, 3, lineNumber);
+            yield new Todo(description);
+        }
+        case "D" -> {
+            requireFieldCount(fields, 4, lineNumber);
+            if (fields.get(3).isEmpty()) {
+                throw invalidLine(lineNumber, "deadline value cannot be empty");
+            }
+            yield new Deadline(description, parseDeadlineDate(fields.get(3), lineNumber));
+        }
+        case "E" -> {
+            requireFieldCount(fields, 5, lineNumber);
+            if (fields.get(3).isEmpty() || fields.get(4).isEmpty()) {
+                throw invalidLine(lineNumber, "event start and end values cannot be empty");
+            }
+            yield new Event(description, fields.get(3), fields.get(4));
+        }
+        default -> throw invalidLine(lineNumber, "unknown task type");
+        };
     }
 
     /** Parses a stored ISO deadline date while retaining line-specific diagnostics. */

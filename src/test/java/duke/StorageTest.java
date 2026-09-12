@@ -12,11 +12,32 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 /** Tests durable task round-trips, first-run behavior, and corrupted data handling. */
 class StorageTest {
     @TempDir
     Path temporaryDirectory;
+
+    @ParameterizedTest
+    @CsvSource(delimiter = ';', value = {
+        "T | 0;not enough fields",
+        "T | 2 | task;status must be 0 or 1",
+        "T | 0 | ;task description cannot be empty",
+        "T | 0 | task | extra;unexpected number of fields",
+        "D | 0 | task | ;deadline value cannot be empty",
+        "E | 0 | task | start | ;event start and end values cannot be empty",
+        "X | 0 | task;unknown task type"
+    })
+    void loadTasks_invalidFields_reportsReasonAndLine(String line, String reason) throws Exception {
+        Path file = temporaryDirectory.resolve("invalid.txt");
+        Files.writeString(file, "T | 0 | valid\n" + line + "\n");
+
+        StorageException exception = assertThrows(StorageException.class, new Storage(file)::loadTasks);
+
+        assertTrue(exception.getMessage().contains("line 2: " + reason));
+    }
 
     @Test
     void saveAndLoadTasks_roundTripsTypesStatusesAndEscapedText() throws Exception {
