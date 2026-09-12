@@ -79,16 +79,15 @@ public final class SqliteTaskRepository implements TaskRepository {
             + "(task_type, is_done, description, deadline, event_from, event_to, position) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-    private static final String SHIFT_POSITIONS_UP = "UPDATE tasks SET position = position + 1 "
-            + "WHERE position >= ?";
+    private static final String SELECT_SHIFT_POSITIONS = "SELECT position FROM tasks "
+            + "WHERE position >= ? ORDER BY position ";
+
+    private static final String UPDATE_POSITION = "UPDATE tasks SET position = ? WHERE position = ?";
 
     private static final String UPDATE_TASK = "UPDATE tasks SET task_type = ?, is_done = ?, description = ?, "
             + "deadline = ?, event_from = ?, event_to = ? WHERE position = ?";
 
     private static final String DELETE_TASK_AT_POSITION = "DELETE FROM tasks WHERE position = ?";
-
-    private static final String SHIFT_POSITIONS_DOWN = "UPDATE tasks SET position = position - 1 "
-            + "WHERE position > ?";
 
     private final Path databasePath;
 
@@ -177,19 +176,17 @@ public final class SqliteTaskRepository implements TaskRepository {
     public void insertTask(Task task, int position) throws StorageException {
         try (Connection connection = openConnection()) {
             initializeSchema(connection);
-            ensureInsertPosition(connection, position);
             connection.setAutoCommit(false);
             try {
-                try (PreparedStatement shift = connection.prepareStatement(SHIFT_POSITIONS_UP);
-                        PreparedStatement insert = connection.prepareStatement(INSERT_TASK)) {
-                    shift.setInt(1, position);
-                    shift.executeUpdate();
+                ensureInsertPosition(connection, position);
+                shiftPositions(connection, position, 1);
+                try (PreparedStatement insert = connection.prepareStatement(INSERT_TASK)) {
                     bindTask(insert, task, position);
                     insert.executeUpdate();
                 }
                 connection.commit();
                 isLegacyMigrationPending = false;
-            } catch (SQLException exception) {
+            } catch (SQLException | StorageException exception) {
                 rollback(connection, exception);
                 throw exception;
             }
@@ -237,14 +234,12 @@ public final class SqliteTaskRepository implements TaskRepository {
         try (Connection connection = openConnection()) {
             initializeSchema(connection);
             connection.setAutoCommit(false);
-            try (PreparedStatement delete = connection.prepareStatement(DELETE_TASK_AT_POSITION);
-                    PreparedStatement shift = connection.prepareStatement(SHIFT_POSITIONS_DOWN)) {
+            try (PreparedStatement delete = connection.prepareStatement(DELETE_TASK_AT_POSITION)) {
                 delete.setInt(1, position);
                 if (delete.executeUpdate() != 1) {
                     throw invalidPosition(position);
                 }
-                shift.setInt(1, position);
-                shift.executeUpdate();
+                shiftPositions(connection, position + 1, -1);
                 connection.commit();
                 isLegacyMigrationPending = false;
             } catch (SQLException | StorageException exception) {
@@ -253,6 +248,27 @@ public final class SqliteTaskRepository implements TaskRepository {
             }
         } catch (SQLException exception) {
             throw databaseException("delete", exception);
+        }
+    }
+
+    /** Shifts rows toward the free position so the unique index remains valid at every update. */
+    private void shiftPositions(Connection connection, int firstPosition, int offset) throws SQLException {
+        String direction = offset > 0 ? "DESC" : "ASC";
+        List<Integer> positions = new ArrayList<>();
+        try (PreparedStatement select = connection.prepareStatement(SELECT_SHIFT_POSITIONS + direction)) {
+            select.setInt(1, firstPosition);
+            try (ResultSet resultSet = select.executeQuery()) {
+                while (resultSet.next()) {
+                    positions.add(resultSet.getInt(1));
+                }
+            }
+        }
+        try (PreparedStatement update = connection.prepareStatement(UPDATE_POSITION)) {
+            for (int position : positions) {
+                update.setInt(1, position + offset);
+                update.setInt(2, position);
+                update.executeUpdate();
+            }
         }
     }
 

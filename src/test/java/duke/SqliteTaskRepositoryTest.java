@@ -23,6 +23,23 @@ class SqliteTaskRepositoryTest {
     Path temporaryDirectory;
 
     @Test
+    void insertAndDelete_multipleShiftedRows_preservesUniquePositions() throws Exception {
+        SqliteTaskRepository repository = new SqliteTaskRepository(temporaryDirectory.resolve("ordered.db"), null);
+        repository.saveTasks(List.of(new Todo("first"), new Todo("second"), new Todo("third")));
+
+        repository.insertTask(new Todo("new first"), 0);
+        repository.insertTask(new Todo("middle"), 2);
+        assertEquals(List.of("new first", "first", "middle", "second", "third"),
+                descriptions(repository.loadTasks()));
+
+        repository.deleteTask(0);
+        repository.deleteTask(1);
+        assertEquals(List.of("first", "second", "third"), descriptions(repository.loadTasks()));
+        assertThrows(StorageException.class, () -> repository.insertTask(new Todo("invalid"), 5));
+        assertEquals(List.of("first", "second", "third"), descriptions(repository.loadTasks()));
+    }
+
+    @Test
     void saveAndLoadTasks_roundTripsAllTaskTypesAndOrder() throws Exception {
         Path databasePath = temporaryDirectory.resolve("wangsa.db");
         SqliteTaskRepository repository = new SqliteTaskRepository(databasePath, null);
