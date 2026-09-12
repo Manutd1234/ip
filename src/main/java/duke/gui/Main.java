@@ -178,19 +178,30 @@ public class Main extends Application {
     private Node createComposer() {
         VBox composer = new VBox(9);
         composer.getStyleClass().add("composer");
+        composer.getChildren().addAll(createCheatsheet(), createComposerRow(), createSuggestions());
+        return composer;
+    }
 
-        Node cheatsheet = createCheatsheet();
-
+    /** Creates the input field and send action on a shared row. */
+    private Node createComposerRow() {
         HBox composerRow = new HBox(10);
         composerRow.setAlignment(Pos.CENTER_LEFT);
         Label prompt = new Label(">_");
         prompt.getStyleClass().add("prompt-symbol");
 
-        commandField = new TextField();
-        commandField.setPromptText("Type a command, then press Enter");
-        commandField.setAccessibleText("Wangsa command input");
-        commandField.getStyleClass().add("command-field");
-        commandField.setOnKeyPressed(event -> {
+        commandField = createCommandField();
+        HBox.setHgrow(commandField, Priority.ALWAYS);
+        composerRow.getChildren().addAll(prompt, commandField, createSendButton());
+        return composerRow;
+    }
+
+    /** Creates the command field with submission and history keyboard actions. */
+    private TextField createCommandField() {
+        TextField field = new TextField();
+        field.setPromptText("Type a command, then press Enter");
+        field.setAccessibleText("Wangsa command input");
+        field.getStyleClass().add("command-field");
+        field.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ENTER) {
                 handleCommand();
                 event.consume();
@@ -199,14 +210,20 @@ public class Main extends Application {
                 event.consume();
             }
         });
+        return field;
+    }
 
+    /** Creates the default action for submitting a command. */
+    private Button createSendButton() {
         Button sendButton = new Button("SEND  ↗");
         sendButton.getStyleClass().add("send-button");
         sendButton.setDefaultButton(true);
         sendButton.setOnAction(event -> handleCommand());
-        HBox.setHgrow(commandField, Priority.ALWAYS);
-        composerRow.getChildren().addAll(prompt, commandField, sendButton);
+        return sendButton;
+    }
 
+    /** Creates command shortcuts and the keyboard reminder. */
+    private Node createSuggestions() {
         HBox suggestions = new HBox(7);
         suggestions.setAlignment(Pos.CENTER_LEFT);
         Label suggestionLabel = new Label("TRY");
@@ -223,8 +240,7 @@ public class Main extends Application {
         keyboardHint.getStyleClass().add("keyboard-hint");
         suggestions.getChildren().addAll(suggestionSpacer, keyboardHint);
 
-        composer.getChildren().addAll(cheatsheet, composerRow, suggestions);
-        return composer;
+        return suggestions;
     }
 
     /** Creates the compact command reference above the composer. */
