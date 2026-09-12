@@ -31,6 +31,8 @@ User input
 
 - `Task`, `Todo`, `Deadline`, `Event`, and `TaskType` model task data and display behavior.
 - `TaskList` owns ordering, capacity, search, and task mutations.
+- `TaskMatch` pairs a search result with its full-list number, keeping displayed
+  search numbers consistent with mark, unmark, and delete commands.
 - `Parser` translates command text into validated `Command` objects, task values, and
   backwards-compatible parsing helpers. Each command shape owns the arguments valid
   for that action, so interfaces do not need to parse raw strings again.
@@ -42,6 +44,9 @@ User input
   task-specific fields at the database boundary, including for databases created by earlier versions.
 - `Storage` remains the legacy text-file reader used for one-time migration from `data/wangsa.txt`.
 - `Ui` and `duke.gui.Main` format output for their respective interfaces.
+  The GUI builds its composer from small control builders and keeps task commands
+  blocked after a failed load; it never replaces unreadable saved data with a
+  writable empty service. The CLI exits on a failed load.
 
 The `C-Sort` extension follows the same flow as other commands: `Parser` recognizes
 `sort`, `TaskService` persists the reordered snapshot, and each interface renders
@@ -64,6 +69,12 @@ structure so both interfaces behave identically.
   remote database can replace it without leaking JDBC details into the domain or interfaces.
 - Schema initialization is idempotent: it adds missing indexes and validation triggers whenever an existing
   database is opened, while malformed legacy rows are reported instead of being silently changed.
+- Position shifts update rows toward a free slot, from the end for insertion and
+  from the beginning for deletion. This preserves the unique position index even
+  when insertion order differs from display order. Insert validation takes place
+  inside the same write transaction as the shift and insertion.
+- Legacy text is validated before opening a new database, so a malformed file
+  does not create an empty database that prevents retrying the import.
 - A new interface can construct a `TaskService` and reuse the existing parser and workflows.
 - A new interface can parse once, switch on `Command.type()`, and pass typed values to
   `TaskService`; it does not need to duplicate command-token parsing.

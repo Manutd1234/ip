@@ -14,6 +14,10 @@
 3. Delete all migrated tasks, restart Wangsa, and confirm the legacy file is not imported again.
 4. Stop or interrupt a write and confirm the database contains either the old snapshot or the complete new snapshot.
 5. Open an existing database and confirm task order remains stable and malformed task-specific fields are reported.
+6. Try migrating a malformed legacy file; confirm no database is created. Correct
+   the reported line, restart, and confirm the legacy tasks are imported.
+7. Insert at the front and middle of a saved list through the repository, then
+   delete earlier positions. Confirm ordering survives without unique-index errors.
 
 ## GUI acceptance checks
 
@@ -27,6 +31,18 @@
    are inserted or executed as described in the user guide.
 5. Enter invalid commands and confirm an explanatory message appears without
    changing the task count.
+6. Find a task that is not first in the full list. Confirm its displayed number
+   marks that same task, and a search with no matches says so explicitly.
+7. Start with malformed saved data. Confirm the header says STORAGE UNAVAILABLE,
+   task commands are rejected, the original data remains intact, and `bye` exits.
+
+## User guide acceptance checks
+
+1. Follow the quick-start example in `docs/README.md` using an empty launch folder.
+2. Confirm the full-window `docs/Ui.png` exists and both Markdown tables render.
+3. Check that the Pages index includes the guide from `README.md` without copying it.
+4. After merging and pushing, open the public Pages site and verify the guide,
+   screenshot, links, and tables there. Local rendering does not replace this check.
 
 ## C-Sort acceptance checks
 
