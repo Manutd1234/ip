@@ -15,6 +15,28 @@ class ParserTest {
     private final Parser parser = new Parser();
 
     @ParameterizedTest
+    @ValueSource(strings = {"@ai How do I add a deadline?", "  @ai\tHow do I add a deadline?  "})
+    void parse_aiQuestion_preservesQuestionAndRecognizesCommand(String input) throws WangsaException {
+        Command.AiQuestion command = assertInstanceOf(Command.AiQuestion.class, parser.parse(input));
+
+        assertEquals(Parser.CommandType.AI, command.type());
+        assertEquals("How do I add a deadline?", command.question());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"@ai", " @ai\t ", "@aihelp", "@AI question", "help extra"})
+    void parse_invalidHelpCommand_rejectsInput(String input) {
+        assertThrows(WangsaException.class, () -> parser.parse(input));
+    }
+
+    @Test
+    void parse_helpAndQuestionLimit_acceptsOnlySupportedSyntax() throws WangsaException {
+        assertEquals(Parser.CommandType.HELP, parser.parse(" help ").type());
+        assertInstanceOf(Command.AiQuestion.class, parser.parse("@ai " + "a".repeat(1000)));
+        assertThrows(WangsaException.class, () -> parser.parse("@ai " + "a".repeat(1001)));
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {
         "deadline task /by 2026-09-20 /by 2026-09-21",
         "deadline task /by2026-09-20",

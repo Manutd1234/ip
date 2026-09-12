@@ -3,11 +3,10 @@ package duke;
 import java.nio.file.Path;
 
 /**
- * Runs Wangsa's command-line adapter.
+ * Runs Wangsa's command loop in the terminal.
  *
- * <p>This class is intentionally responsible for input/output flow only. Command parsing,
- * task mutations, and persistence are delegated to {@link Parser} and {@link TaskService},
- * which keeps new interfaces from needing to duplicate business logic.</p>
+ * <p>{@link Parser} reads commands and {@link TaskService} saves task changes.
+ * This class connects those operations to the console and handles errors.</p>
  */
 public class Wangsa {
     private static final Path DATABASE_PATH = Path.of("data", "wangsa.db");
@@ -18,23 +17,38 @@ public class Wangsa {
 
     private final Ui ui;
 
+    private final AiHelper aiHelper;
+
     /**
      * Creates Wangsa with console interaction and a SQLite database at the supplied path.
-     * @param databasePath database location
+     *
+     * @param databasePath Database location.
      */
     public Wangsa(Path databasePath) {
         this(new SqliteTaskRepository(databasePath, databasePath.resolveSibling("wangsa.txt")),
                 new Parser(), new Ui());
     }
 
-    /** Creates Wangsa with supplied collaborators, allowing isolated testing. */
+    /**
+     * Creates Wangsa with supplied collaborators, allowing isolated testing.
+     */
     Wangsa(TaskRepository repository, Parser parser, Ui ui) {
+        this(repository, parser, ui, new AiHelper());
+    }
+
+    /**
+     * Supplies an optional AI helper for deterministic console tests.
+     */
+    Wangsa(TaskRepository repository, Parser parser, Ui ui, AiHelper aiHelper) {
         this.repository = repository;
         this.parser = parser;
         this.ui = ui;
+        this.aiHelper = aiHelper;
     }
 
-    /** Runs the command loop until the user exits, input ends, or storage fails. */
+    /**
+     * Runs the command loop until the user exits, input ends, or storage fails.
+     */
     public void run() {
         try (ui) {
             ui.showWelcome();
@@ -78,35 +92,26 @@ public class Wangsa {
             throws WangsaException, StorageException {
         Command parsedCommand = parser.parse(command);
         switch (parsedCommand.type()) {
-        case BYE:
-            ui.showGoodbye();
-            return true;
-        case LIST:
-            ui.showTaskList(tasks.getTasks());
-            break;
-        case FIND:
-            ui.showMatchingTasks(tasks.findMatches(((Command.Search) parsedCommand).keyword()));
-            break;
-        case SORT:
-            sortTasks(tasks);
-            break;
-        case MARK:
-        case UNMARK:
-            updateTaskStatus((Command.TaskNumber) parsedCommand, tasks);
-            break;
-        case DELETE:
-            deleteTask((Command.TaskNumber) parsedCommand, tasks);
-            break;
-        case ADD_TASK:
-            addTask((Command.AddTask) parsedCommand, tasks);
-            break;
-        default:
-            throw new IllegalStateException("Unsupported command type: " + parsedCommand.type());
+            case BYE -> {
+                ui.showGoodbye();
+                return true;
+            }
+            case LIST -> ui.showTaskList(tasks.getTasks());
+            case HELP -> ui.showMessage(CommandHelp.getText());
+            case AI -> ui.showMessage(aiHelper.ask(((Command.AiQuestion) parsedCommand).question()));
+            case FIND -> ui.showMatchingTasks(tasks.findMatches(((Command.Search) parsedCommand).keyword()));
+            case SORT -> sortTasks(tasks);
+            case MARK, UNMARK -> updateTaskStatus((Command.TaskNumber) parsedCommand, tasks);
+            case DELETE -> deleteTask((Command.TaskNumber) parsedCommand, tasks);
+            case ADD_TASK -> addTask((Command.AddTask) parsedCommand, tasks);
+            default -> throw new IllegalStateException("Unsupported command type: " + parsedCommand.type());
         }
         return false;
     }
 
-    /** Saves and displays a task status change. */
+    /**
+     * Saves and displays a task status change.
+     */
     private void updateTaskStatus(Command.TaskNumber command, TaskService tasks)
             throws WangsaException, StorageException {
         boolean isMarked = command.type() == Parser.CommandType.MARK;
@@ -114,19 +119,25 @@ public class Wangsa {
         ui.showTaskStatusUpdate(updatedTask, isMarked);
     }
 
-    /** Deletes, saves, and displays a task removal. */
+    /**
+     * Deletes, saves, and displays a task removal.
+     */
     private void deleteTask(Command.TaskNumber command, TaskService tasks) throws WangsaException, StorageException {
         Task removedTask = tasks.delete(command.taskNumber());
         ui.showTaskDeleted(removedTask, tasks.getTasks().size());
     }
 
-    /** Adds, saves, and displays a new task. */
+    /**
+     * Adds, saves, and displays a new task.
+     */
     private void addTask(Command.AddTask command, TaskService tasks) throws WangsaException, StorageException {
         Task task = tasks.add(command.task());
         ui.showTaskAdded(task, tasks.getTasks().size());
     }
 
-    /** Sorts, saves, and displays tasks by deadline. */
+    /**
+     * Sorts, saves, and displays tasks by deadline.
+     */
     private void sortTasks(TaskService tasks) throws StorageException {
         tasks.sortByDeadline();
         ui.showSortedTaskList(tasks.getTasks());
@@ -134,7 +145,8 @@ public class Wangsa {
 
     /**
      * Starts Wangsa using its default relative database path.
-     * @param args command-line arguments (unused)
+     *
+     * @param args Command-line arguments (unused).
      */
     public static void main(String[] args) {
         new Wangsa(DATABASE_PATH).run();

@@ -151,10 +151,74 @@ Unmarking an incomplete task leaves it incomplete.
 Closes Wangsa. Successful changes are already saved, including when you close
 using the window's close button.
 
+### Built-in command help: `help`
+
+**Format:** `help`
+
+Shows the command reference immediately. It works without an API key or internet
+connection in both the desktop and terminal interfaces.
+
+### Optional AI command help: `@ai`
+
+**Format:** `@ai QUESTION`
+
+Ask a short question about Wangsa's features, for example:
+
+```text
+@ai How do I add a deadline for submitting my report?
+@ai Is there a command to add priorities to tasks?
+@ai How do I reopen a completed task?
+```
+
+The AI explains commands and may suggest an example for you to type. It never
+executes commands or changes tasks. Answers can be inaccurate; check suggestions
+against `help`. Questions must contain 1–1000 characters.
+
+**To enable AI help:**
+
+1. Create a Groq API key in the [Groq console](https://console.groq.com/keys).
+2. Set `LLM_API_KEY` in the environment used to launch Wangsa. For a temporary
+   macOS/Linux terminal session:
+
+   ```shell
+   export LLM_API_KEY='your-groq-api-key'
+   java --enable-native-access=ALL-UNNAMED -jar Wangsa.jar
+   ```
+
+   In Windows PowerShell:
+
+   ```powershell
+   $env:LLM_API_KEY='your-groq-api-key'
+   java --enable-native-access=ALL-UNNAMED -jar Wangsa.jar
+   ```
+
+   When running from source, use `./gradlew run` or `./gradlew runCli` in that same
+   terminal. In IntelliJ, add `LLM_API_KEY` under your run configuration's
+   **Environment variables**. Keep your real key out of source code, shared run
+   configurations, and Git.
+3. Restart Wangsa after changing configuration, then enter an `@ai` question.
+
+The default model is `openai/gpt-oss-20b`, hosted by **Groq**. This requires a Groq
+key. Optionally set `LLM_MODEL` to another text chat model available to your Groq
+account; consult the [Groq model list](https://console.groq.com/docs/models).
+Provider access, usage limits, and charges depend on your account.
+
+Only your question and Wangsa's built-in command reference are sent to Groq.
+Saved tasks and previous conversation messages are not sent. Each question is
+independent, so include all the context it needs and avoid sensitive information.
+
+Without a key, `@ai` shows setup instructions and clearly labelled **Offline help**.
+If the service fails, the same built-in reference remains available. Normal task
+commands continue working. Requests use a 20-second timeout and no automatic
+retries. In the desktop interface, you can keep using normal commands while one
+AI question is pending; wait for its answer before asking another. The terminal
+waits for the answer before processing the next command. Closing the desktop
+cancels an outstanding request.
+
 ### Desktop shortcuts
 
 Click **list** below the command box to show your tasks immediately. **new todo**,
-**find**, and **mark #** fill in a command prefix for you to finish. Press **Up** or
+**find**, **mark #**, and **ask AI** fill in a command prefix for you to finish. Press **Up** or
 **Down** in the command box to reuse successful commands from this session.
 
 The header shows total and completed task counts. You can resize the window and
@@ -183,13 +247,14 @@ The CLI exits after a storage error.
 
 | Problem | What to do |
 | --- | --- |
-| Unknown command or missing value | Follow the format above. `list`, `sort`, and `bye` take no extra values. Use each required marker once, in order. |
+| Unknown command or missing value | Follow the format above. `list`, `sort`, `help`, and `bye` take no extra values. Use each required marker once, in order. |
 | Invalid date | Use a real date such as `2026-09-20`. |
 | Invalid task number | Run `list` and choose a displayed number. If the list is empty, add a task first. |
 | Task list is full | Delete a task before adding another. Completed tasks count towards the 100-task limit. |
 | Tasks seem to be missing | Check that you launched Wangsa from the folder containing your usual `data` folder. |
 | Cannot load or save tasks | Close other Wangsa instances and check folder access. Keep a backup before repairing data. A malformed legacy text file reports the line to correct. |
 | JAR will not open | Check that you use Java 25. The current JAR must match your operating system and processor; running from source selects the libraries for your computer. |
+| AI shows offline help | Set `LLM_API_KEY` to a Groq key in the launch environment, then restart. If already configured, check connectivity, model access, and account usage limits. `help` and normal commands remain available. |
 
 ## Command summary
 
@@ -204,6 +269,8 @@ The CLI exits after a storage error.
 | Complete task | `mark NUMBER` | `mark 2` |
 | Reopen task | `unmark NUMBER` | `unmark 2` |
 | Delete task | `delete NUMBER` | `delete 2` |
+| Built-in help | `help` | `help` |
+| AI command help (optional) | `@ai QUESTION` | `@ai How do I add a deadline?` |
 | Exit | `bye` | `bye` |
 
 Guide structure inspired by the

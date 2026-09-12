@@ -5,7 +5,9 @@ import java.util.List;
 import duke.Task;
 import duke.TaskMatch;
 
-/** Formats task snapshots and progress summaries for the desktop conversation. */
+/**
+ * Formats task snapshots and progress summaries for the desktop conversation.
+ */
 public final class TaskFormatter {
     private TaskFormatter() {
     }
@@ -13,8 +15,8 @@ public final class TaskFormatter {
     /**
      * Formats search results with actionable task numbers from the full list.
      *
-     * @param matches search results in full-list order
-     * @return matching tasks or an explicit no-match message
+     * @param matches Search results in full-list order.
+     * @return Matching tasks or an explicit no-match message.
      */
     public static String renderMatches(List<TaskMatch> matches) {
         if (matches.isEmpty()) {
@@ -30,12 +32,12 @@ public final class TaskFormatter {
     /**
      * Formats tasks with the one-based numbering used by the command interface.
      *
-     * @param tasks tasks to display
-     * @return a conversation-ready task list
+     * @param tasks Tasks to display.
+     * @return A conversation-ready task list.
      */
     public static String renderTasks(List<Task> tasks) {
         if (tasks.isEmpty()) {
-            return "Your quest log is clear.\nUse `todo DESCRIPTION` below to catch a new quest.";
+            return "Your quest log is empty.\nTry `todo read a book` to add your first task.";
         }
 
         StringBuilder result = new StringBuilder("Here's your current quest log:\n");
@@ -51,25 +53,30 @@ public final class TaskFormatter {
     /**
      * Summarizes completed and total tasks for confirmations.
      *
-     * @param tasks tasks whose progress should be summarized
-     * @return a concise progress summary
+     * @param tasks Tasks whose progress should be summarized.
+     * @return A concise progress summary.
      */
-    public static String progressSummary(List<Task> tasks) {
+    public static String formatProgressSummary(List<Task> tasks) {
         int completed = (int) tasks.stream().filter(Task::isDone).count();
         int total = tasks.size();
-        if (total > 0 && completed == total) {
-            return "All " + total + " quests complete — " + completed + "/" + total + "! Great run, trainer.";
+        if (total == 0) {
+            return "No quests in your log. Add one whenever you're ready.";
         }
-        return completed + " of " + total + " quests complete. Keep the streak going!";
+        String questLabel = total == 1 ? "quest" : "quests";
+        if (completed == total) {
+            return "You've finished " + (total == 1 ? "your quest" : "all " + total + " quests")
+                    + ". Nice work, trainer!";
+        }
+        return completed + " of " + total + " " + questLabel + " complete. One step at a time.";
     }
 
     /**
      * Returns the compact task count shown in the application header.
      *
-     * @param tasks tasks whose count should be displayed
-     * @return a compact count of total and completed tasks
+     * @param tasks Tasks whose count should be displayed.
+     * @return A compact count of total and completed tasks.
      */
-    public static String headerStats(List<Task> tasks) {
+    public static String formatHeaderStats(List<Task> tasks) {
         long completed = tasks.stream().filter(Task::isDone).count();
         return tasks.size() + " QUEST" + (tasks.size() == 1 ? "" : "S") + "  ·  " + completed + " DONE";
     }

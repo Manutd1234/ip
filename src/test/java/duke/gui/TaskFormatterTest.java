@@ -5,12 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.time.LocalDate;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
 import duke.Deadline;
 import duke.Task;
 import duke.TaskMatch;
 import duke.Todo;
+import org.junit.jupiter.api.Test;
 
 /** Tests the pure text formatting used by the JavaFX conversation. */
 class TaskFormatterTest {
@@ -23,7 +22,7 @@ class TaskFormatterTest {
 
     @Test
     void renderTasks_formatsEmptyAndNumberedLists() {
-        assertEquals("Your quest log is clear.\nUse `todo DESCRIPTION` below to catch a new quest.",
+        assertEquals("Your quest log is empty.\nTry `todo read a book` to add your first task.",
                 TaskFormatter.renderTasks(List.of()));
 
         List<Task> tasks = List.of(new Todo("read book"), new Deadline("submit report", LocalDate.of(2026, 9, 20)));
@@ -33,15 +32,19 @@ class TaskFormatterTest {
     }
 
     @Test
-    void progressSummary_andHeaderStats_reportCompletion() {
+    void formatProgressSummary_andHeaderStats_reportCompletion() {
         Task completed = new Todo("done");
         completed.markAsDone();
         Task pending = new Todo("next");
         List<Task> tasks = List.of(completed, pending);
 
-        assertEquals("1 of 2 quests complete. Keep the streak going!", TaskFormatter.progressSummary(tasks));
-        assertEquals("2 QUESTS  ·  1 DONE", TaskFormatter.headerStats(tasks));
-        assertEquals("All 1 quests complete — 1/1! Great run, trainer.",
-                TaskFormatter.progressSummary(List.of(completed)));
+        assertEquals("1 of 2 quests complete. One step at a time.", TaskFormatter.formatProgressSummary(tasks));
+        assertEquals("2 QUESTS  ·  1 DONE", TaskFormatter.formatHeaderStats(tasks));
+        assertEquals("You've finished your quest. Nice work, trainer!",
+                TaskFormatter.formatProgressSummary(List.of(completed)));
+        assertEquals("0 of 1 quest complete. One step at a time.",
+                TaskFormatter.formatProgressSummary(List.of(pending)));
+        assertEquals("No quests in your log. Add one whenever you're ready.",
+                TaskFormatter.formatProgressSummary(List.of()));
     }
 }

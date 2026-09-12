@@ -26,7 +26,7 @@ Prerequisites: JDK 25, update Intellij to the most recent version.
    ____________________________________________________________
    Got it. I've added this task:
      [T][ ] read book
-   Now you have 1 tasks in the list.
+   You now have 1 task in your list.
    ____________________________________________________________
    list
    ____________________________________________________________
@@ -67,6 +67,24 @@ folder and run it with `java --enable-native-access=ALL-UNNAMED -jar Wangsa.jar`
 `./gradlew run` launches the JavaFX desktop interface. The original text
 interface remains available through `./gradlew runCli` for command-line use and
 automated tests.
+
+## Optional AI command help
+
+Use `help` for the built-in command reference, or `@ai How do I add a deadline?`
+for an AI explanation. AI answers are read-only: suggested commands are never
+executed automatically. The app works without AI configuration and falls back to
+offline help if the service is unavailable.
+
+To enable AI, set `LLM_API_KEY` to a Groq API key in your launch environment and
+restart Wangsa. `LLM_MODEL` optionally overrides the default Groq-hosted
+`openai/gpt-oss-20b` model. See the [AI setup instructions](docs/README.md#optional-ai-command-help-ai)
+for terminal and IntelliJ setup, usage, and data sent to the provider.
+
+This feature follows the read-only help approach in the
+[SE-EDU AI integration tutorial](https://se-education.org/guides/tutorials/addingAiToJavaApp.html),
+using LangChain4j's model adapter without agents, tools, or conversation memory.
+
+## Persistence details
 
 On the first run, Wangsa creates the `data` folder and SQLite database. Existing
 `data/wangsa.txt` files are migrated once, then the database becomes the source of

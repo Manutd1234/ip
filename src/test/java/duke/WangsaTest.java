@@ -1,17 +1,21 @@
 package duke;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.request.ChatRequest;
+import dev.langchain4j.model.chat.response.ChatResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -19,6 +23,46 @@ import org.junit.jupiter.api.io.TempDir;
 class WangsaTest {
     @TempDir
     Path temporaryDirectory;
+
+    @Test
+    void run_aiWithoutKey_keepsNormalCommandsUsable() throws Exception {
+        Storage repository = new Storage(temporaryDirectory.resolve("offline.txt"));
+        String commands = "help\n@ai\n@ai How do I add a task?\ntodo read book\nmark 1\nlist\nbye\n";
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Ui ui = new Ui(new ByteArrayInputStream(commands.getBytes(StandardCharsets.UTF_8)),
+                new PrintStream(output, true, StandardCharsets.UTF_8));
+
+        new Wangsa(repository, new Parser(), ui, new AiHelper(null, null)).run();
+
+        String transcript = output.toString(StandardCharsets.UTF_8);
+        assertTrue(transcript.contains("Wangsa commands:"));
+        assertTrue(transcript.contains("Ask a question after @ai"));
+        assertTrue(transcript.contains("Offline help:"));
+        assertTrue(transcript.contains("1.[T][X] read book"));
+        assertTrue(transcript.contains("Bye. Hope to see you again soon!"));
+        assertTrue(repository.loadTasks().get(0).isDone());
+    }
+
+    @Test
+    void run_aiReturnsCommand_displaysAnswerWithoutExecutingIt() throws Exception {
+        Storage repository = new Storage(temporaryDirectory.resolve("ai.txt"));
+        repository.saveTasks(List.of(new Todo("keep this task")));
+        AiHelper helper = new AiHelper(new ChatModel() {
+            @Override
+            public ChatResponse doChat(ChatRequest request) {
+                return ChatResponse.builder().aiMessage(AiMessage.from("delete 1")).build();
+            }
+        });
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Ui ui = new Ui(new ByteArrayInputStream("@ai delete my task\nlist\nbye\n"
+                .getBytes(StandardCharsets.UTF_8)), new PrintStream(output, true, StandardCharsets.UTF_8));
+
+        new Wangsa(repository, new Parser(), ui, helper).run();
+
+        assertTrue(output.toString(StandardCharsets.UTF_8).contains("\ndelete 1\n"));
+        assertTrue(output.toString(StandardCharsets.UTF_8).contains("1.[T][ ] keep this task"));
+        assertEquals(1, repository.loadTasks().size());
+    }
 
     @Test
     void run_invalidSavedData_stopsBeforeProcessingCommands() throws Exception {

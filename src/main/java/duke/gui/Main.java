@@ -4,7 +4,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import duke.AiHelper;
 import duke.Command;
+import duke.CommandHelp;
 import duke.Parser;
 import duke.SqliteTaskRepository;
 import duke.StorageException;
@@ -37,11 +39,10 @@ import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 
 /**
- * Provides a polished JavaFX interface for Wangsa's task-management commands.
+ * Displays Wangsa's task conversation in a JavaFX window.
  *
- * <p>The interface combines JavaFX controls, CSS, and bundled character art. This keeps
- * the starter project easy to run while giving the chat a Pokédex-inspired visual
- * language and a clear command conversation.</p>
+ * <p>Task commands use the same parser and service as the terminal interface.
+ * AI requests run in the background so the window stays responsive.</p>
  */
 public class Main extends Application {
     private static final Path DATABASE_PATH = Path.of("data", "wangsa.db");
@@ -55,6 +56,13 @@ public class Main extends Application {
     private static final String ASH_IMAGE_PATH = "/duke/gui/assets/ash.jpeg";
 
     private final Parser parser = new Parser();
+
+    private final AiHelper aiHelper = new AiHelper();
+
+    /**
+     * At most one AI request runs at a time; normal task commands remain available.
+     */
+    private javafx.concurrent.Task<String> aiRequest;
 
     private VBox messageList;
 
@@ -72,11 +80,15 @@ public class Main extends Application {
 
     private TaskService taskService;
 
-    /** Creates the JavaFX application instance used by the launcher. */
+    /**
+     * Creates the JavaFX application instance used by the launcher.
+     */
     public Main() {
     }
 
-    /** Starts the JavaFX window and loads saved tasks. */
+    /**
+     * Starts the JavaFX window and loads saved tasks.
+     */
     @Override
     public void start(Stage stage) {
         BorderPane root = createRoot();
@@ -94,7 +106,19 @@ public class Main extends Application {
         commandField.requestFocus();
     }
 
-    /** Builds the application shell and its three primary areas. */
+    /**
+     * Cancels an outstanding AI request when the window closes.
+     */
+    @Override
+    public void stop() {
+        if (aiRequest != null) {
+            aiRequest.cancel();
+        }
+    }
+
+    /**
+     * Builds the application shell and its three primary areas.
+     */
     private BorderPane createRoot() {
         BorderPane root = new BorderPane();
         root.getStyleClass().add("app-shell");
@@ -104,7 +128,9 @@ public class Main extends Application {
         return root;
     }
 
-    /** Creates the compact application header. */
+    /**
+     * Creates the compact application header.
+     */
     private Node createHeader() {
         HBox header = new HBox(12);
         header.setAlignment(Pos.CENTER_LEFT);
@@ -115,7 +141,7 @@ public class Main extends Application {
 
         Label appName = new Label("WANGSA");
         appName.getStyleClass().add("brand-name");
-        Label appSubtitle = new Label("AI QUEST ASSISTANT");
+        Label appSubtitle = new Label("YOUR QUEST PARTNER");
         appSubtitle.getStyleClass().add("brand-subtitle");
         VBox brand = new VBox(1, appName, appSubtitle);
 
@@ -139,7 +165,9 @@ public class Main extends Application {
         return header;
     }
 
-    /** Creates the central conversation panel. */
+    /**
+     * Creates the central conversation panel.
+     */
     private Node createChatPanel() {
         VBox chatPanel = new VBox(12);
         chatPanel.getStyleClass().add("chat-panel");
@@ -174,7 +202,9 @@ public class Main extends Application {
         return chatPanel;
     }
 
-    /** Creates the command composer at the bottom of the window. */
+    /**
+     * Creates the command composer at the bottom of the window.
+     */
     private Node createComposer() {
         VBox composer = new VBox(9);
         composer.getStyleClass().add("composer");
@@ -182,7 +212,9 @@ public class Main extends Application {
         return composer;
     }
 
-    /** Creates the input field and send action on a shared row. */
+    /**
+     * Creates the input field and send action on a shared row.
+     */
     private Node createComposerRow() {
         HBox composerRow = new HBox(10);
         composerRow.setAlignment(Pos.CENTER_LEFT);
@@ -195,7 +227,9 @@ public class Main extends Application {
         return composerRow;
     }
 
-    /** Creates the command field with submission and history keyboard actions. */
+    /**
+     * Creates the command field with submission and history keyboard actions.
+     */
     private TextField createCommandField() {
         TextField field = new TextField();
         field.setPromptText("Type a command, then press Enter");
@@ -213,7 +247,9 @@ public class Main extends Application {
         return field;
     }
 
-    /** Creates the default action for submitting a command. */
+    /**
+     * Creates the default action for submitting a command.
+     */
     private Button createSendButton() {
         Button sendButton = new Button("SEND  ↗");
         sendButton.getStyleClass().add("send-button");
@@ -222,7 +258,9 @@ public class Main extends Application {
         return sendButton;
     }
 
-    /** Creates command shortcuts and the keyboard reminder. */
+    /**
+     * Creates command shortcuts and the keyboard reminder.
+     */
     private Node createSuggestions() {
         HBox suggestions = new HBox(7);
         suggestions.setAlignment(Pos.CENTER_LEFT);
@@ -233,7 +271,8 @@ public class Main extends Application {
                 createSuggestion("list", "list"),
                 createSuggestion("new todo", "todo "),
                 createSuggestion("find", "find "),
-                createSuggestion("mark #", "mark "));
+                createSuggestion("mark #", "mark "),
+                createSuggestion("ask AI", "@ai "));
         Region suggestionSpacer = new Region();
         HBox.setHgrow(suggestionSpacer, Priority.ALWAYS);
         Label keyboardHint = new Label("ENTER TO SEND");
@@ -243,7 +282,9 @@ public class Main extends Application {
         return suggestions;
     }
 
-    /** Creates the compact command reference above the composer. */
+    /**
+     * Creates the compact command reference above the composer.
+     */
     private Node createCheatsheet() {
         VBox cheatsheet = new VBox(3);
         cheatsheet.getStyleClass().add("cheatsheet");
@@ -253,14 +294,17 @@ public class Main extends Application {
         Label commands = new Label("ADD  todo <description>  ·  deadline <description> /by <yyyy-MM-dd>  ·  "
                 + "event <description> /from <start> /to <end>\n"
                 + "VIEW  list  ·  find <keyword>  ·  sort    STATUS  mark <#>  ·  unmark <#>    "
-                + "REMOVE  delete <#>    EXIT  bye");
+                + "REMOVE  delete <#>    EXIT  bye\n"
+                + "HELP  help  ·  @ai <question>");
         commands.setWrapText(true);
         commands.getStyleClass().add("cheatsheet-text");
         cheatsheet.getChildren().addAll(title, commands);
         return cheatsheet;
     }
 
-    /** Creates a small command suggestion button. */
+    /**
+     * Creates a small command suggestion button.
+     */
     private Button createSuggestion(String label, String command) {
         Button button = new Button(label);
         button.getStyleClass().add("suggestion-chip");
@@ -273,7 +317,9 @@ public class Main extends Application {
         return button;
     }
 
-    /** Creates a simple Pokéball-inspired icon without requiring an image asset. */
+    /**
+     * Creates a simple Pokéball-inspired icon without requiring an image asset.
+     */
     private StackPane createPokeball(double radius) {
         StackPane icon = new StackPane();
         Circle ball = new Circle(radius, Color.web("#d4473f"));
@@ -288,7 +334,9 @@ public class Main extends Application {
         return icon;
     }
 
-    /** Creates a fixed-size character frame backed by an image resource. */
+    /**
+     * Creates a fixed-size character frame backed by an image resource.
+     */
     private StackPane createCharacterAvatar(String resourcePath, double width, double height, String styleClass) {
         StackPane frame = new StackPane();
         frame.setMinSize(width, height);
@@ -307,12 +355,15 @@ public class Main extends Application {
         return frame;
     }
 
-    /** Loads persisted tasks and renders the initial conversation. */
+    /**
+     * Loads persisted tasks and renders the initial conversation.
+     */
     private void loadTasks() {
         try {
             taskService = new TaskService(createRepository(), parser);
-            appendAssistant("Hey, trainer! I'm Wangsa, your Level-10 quest partner.\n"
-                    + "Try `list`, `todo ...`, or `mark #` and I'll keep your day moving.");
+            appendAssistant("Hi, trainer! I'm Wangsa. What would you like to work on today?\n"
+                    + "Try `todo read a book` to add a task, or `help` to see the commands.\n"
+                    + "You can also ask about commands with `@ai How do I add a deadline?`.");
             appendAssistant(TaskFormatter.renderTasks(taskService.getTasks()));
         } catch (StorageException | WangsaException exception) {
             appendAssistant("I couldn't load the saved quest log. Commands are blocked to protect your saved tasks.\n"
@@ -322,12 +373,16 @@ public class Main extends Application {
         refreshHeader();
     }
 
-    /** Creates the default repository shared by the JavaFX workflows. */
+    /**
+     * Creates the default repository shared by the JavaFX workflows.
+     */
     private TaskRepository createRepository() {
         return new SqliteTaskRepository(DATABASE_PATH, LEGACY_DATA_FILE_PATH);
     }
 
-    /** Parses and executes the command currently entered in the command field. */
+    /**
+     * Parses and executes the command currently entered in the command field.
+     */
     private void handleCommand() {
         String command = commandField.getText().trim();
         if (command.isEmpty()) {
@@ -344,14 +399,18 @@ public class Main extends Application {
         refreshHeader();
     }
 
-    /** Places a command in the composer without executing it. */
+    /**
+     * Places a command in the composer without executing it.
+     */
     private void prepareCommand(String command) {
         commandField.setText(command);
         commandField.positionCaret(command.length());
         commandField.requestFocus();
     }
 
-    /** Stores a successful command once so history remains useful and compact. */
+    /**
+     * Stores a successful command once so history remains useful and compact.
+     */
     private void rememberCommand(String command) {
         if (commandHistory.isEmpty() || !commandHistory.get(commandHistory.size() - 1).equals(command)) {
             commandHistory.add(command);
@@ -359,7 +418,9 @@ public class Main extends Application {
         historyIndex = commandHistory.size();
     }
 
-    /** Navigates the command history without leaving the current conversation. */
+    /**
+     * Navigates the command history without leaving the current conversation.
+     */
     private void navigateHistory(KeyCode direction) {
         if (commandHistory.isEmpty()) {
             return;
@@ -370,7 +431,9 @@ public class Main extends Application {
         commandField.positionCaret(commandField.getText().length());
     }
 
-    /** Executes a parsed command and persists mutations. */
+    /**
+     * Executes a parsed command and persists mutations.
+     */
     private void execute(String command) throws WangsaException, StorageException {
         Command parsedCommand = parser.parse(command);
         if (taskService == null && parsedCommand.type() != Parser.CommandType.BYE) {
@@ -378,55 +441,100 @@ public class Main extends Application {
                     + "Wangsa before using task commands.");
         }
         switch (parsedCommand.type()) {
-        case BYE:
-            appendAssistant("Quest paused. See you next time, trainer!");
-            Platform.exit();
-            break;
-        case LIST:
-            appendAssistant(TaskFormatter.renderTasks(taskService.getTasks()));
-            break;
-        case FIND:
-            appendAssistant(TaskFormatter.renderMatches(
+            case BYE -> {
+                appendAssistant("See you next time, trainer.");
+                Platform.exit();
+            }
+            case LIST -> appendAssistant(TaskFormatter.renderTasks(taskService.getTasks()));
+            case HELP -> appendAssistant(CommandHelp.getText());
+            case AI -> askAi(((Command.AiQuestion) parsedCommand).question());
+            case FIND -> appendAssistant(TaskFormatter.renderMatches(
                     taskService.findMatches(((Command.Search) parsedCommand).keyword())));
-            break;
-        case SORT:
-            taskService.sortByDeadline();
-            appendAssistant("Sorted by deadline; undated tasks are last.\n"
-                    + TaskFormatter.renderTasks(taskService.getTasks()));
-            break;
-        case MARK:
-        case UNMARK:
-            updateStatus((Command.TaskNumber) parsedCommand);
-            break;
-        case DELETE:
-            Task removedTask = taskService.delete(((Command.TaskNumber) parsedCommand).taskNumber());
-            appendAssistant("Quest cleared from your log:\n" + removedTask + "\n\n"
-                    + TaskFormatter.progressSummary(taskService.getTasks()));
-            break;
-        case ADD_TASK:
-            Task addedTask = taskService.add(((Command.AddTask) parsedCommand).task());
-            appendAssistant("New quest added to your log:\n" + addedTask + "\n\n"
-                    + TaskFormatter.progressSummary(taskService.getTasks()));
-            break;
-        default:
-            throw new IllegalStateException("Unsupported command type: " + parsedCommand.type());
+            case SORT -> sortTasks();
+            case MARK, UNMARK -> updateStatus((Command.TaskNumber) parsedCommand);
+            case DELETE -> deleteTask((Command.TaskNumber) parsedCommand);
+            case ADD_TASK -> addTask((Command.AddTask) parsedCommand);
+            default -> throw new IllegalStateException("Unsupported command type: " + parsedCommand.type());
         }
     }
 
-    /** Updates a task's completion status and persists the change. */
+    /**
+     * Saves the new order before showing the user any changed task numbers.
+     */
+    private void sortTasks() throws StorageException {
+        taskService.sortByDeadline();
+        appendAssistant("I've put the earliest deadlines first, followed by tasks without dates.\n"
+                + TaskFormatter.renderTasks(taskService.getTasks()));
+    }
+
+    /**
+     * Removes a task and shows the remaining progress after the save succeeds.
+     */
+    private void deleteTask(Command.TaskNumber command) throws WangsaException, StorageException {
+        Task removedTask = taskService.delete(command.taskNumber());
+        appendAssistant("I've removed this quest:\n" + removedTask + "\n\n"
+                + TaskFormatter.formatProgressSummary(taskService.getTasks()));
+    }
+
+    /**
+     * Adds a task and confirms it only after the service saves it.
+     */
+    private void addTask(Command.AddTask command) throws WangsaException, StorageException {
+        Task addedTask = taskService.add(command.task());
+        appendAssistant("Added to your quest log:\n" + addedTask + "\n\n"
+                + TaskFormatter.formatProgressSummary(taskService.getTasks()));
+    }
+
+    /**
+     * Starts one background request while allowing the user to keep managing tasks.
+     */
+    private void askAi(String question) throws WangsaException {
+        if (aiRequest != null) {
+            throw new WangsaException("I'm still checking your last question. You can keep using task commands.");
+        }
+        Node pendingMessage = createMessage("Let me check that for you...", false);
+        messageList.getChildren().add(pendingMessage);
+        scrollToLatestMessage();
+
+        javafx.concurrent.Task<String> request = new javafx.concurrent.Task<>() {
+            @Override
+            protected String call() {
+                return aiHelper.ask(question);
+            }
+        };
+        request.setOnSucceeded(event -> finishAiRequest(pendingMessage, request.getValue()));
+        request.setOnFailed(event -> finishAiRequest(pendingMessage,
+                "I couldn't get an AI answer just now. Type `help` for the command guide."));
+        aiRequest = request;
+        Thread worker = new Thread(request, "wangsa-ai-help");
+        worker.setDaemon(true); // A slow network request must not keep the app open after the window closes.
+        worker.start();
+    }
+
+    /**
+     * Replaces the loading bubble on the JavaFX thread, keeping the answer beside its question.
+     */
+    private void finishAiRequest(Node pendingMessage, String answer) {
+        int messageIndex = messageList.getChildren().indexOf(pendingMessage);
+        messageList.getChildren().set(messageIndex, createMessage(answer, false));
+        aiRequest = null;
+        scrollToLatestMessage();
+    }
+
+    /**
+     * Updates a task's completion status and persists the change.
+     */
     private void updateStatus(Command.TaskNumber command)
             throws WangsaException, StorageException {
-        Task updatedTask;
-        if (command.type() == Parser.CommandType.MARK) {
-            updatedTask = taskService.mark(command.taskNumber());
-        } else {
-            updatedTask = taskService.unmark(command.taskNumber());
-        }
-        appendAssistant((command.type() == Parser.CommandType.MARK ? "Quest complete! " : "Quest reopened: ")
-                + updatedTask + "\n\n" + TaskFormatter.progressSummary(taskService.getTasks()));
+        boolean isMarked = command.type() == Parser.CommandType.MARK;
+        Task updatedTask = isMarked ? taskService.mark(command.taskNumber()) : taskService.unmark(command.taskNumber());
+        appendAssistant((isMarked ? "Nice work! You've completed:\n" : "I've reopened this quest for you:\n")
+                + updatedTask + "\n\n" + TaskFormatter.formatProgressSummary(taskService.getTasks()));
     }
 
-    /** Refreshes the live status copy after loading or mutating tasks. */
+    /**
+     * Refreshes the live status copy after loading or mutating tasks.
+     */
     private void refreshHeader() {
         if (statusText == null || taskStats == null) {
             return;
@@ -437,22 +545,28 @@ public class Main extends Application {
             return;
         }
         statusText.setText("SYSTEM READY");
-        taskStats.setText(TaskFormatter.headerStats(taskService.getTasks()));
+        taskStats.setText(TaskFormatter.formatHeaderStats(taskService.getTasks()));
     }
 
-    /** Adds an assistant message to the chat and scrolls to the latest entry. */
+    /**
+     * Adds an assistant message to the chat and scrolls to the latest entry.
+     */
     private void appendAssistant(String message) {
         messageList.getChildren().add(createMessage(message, false));
         scrollToLatestMessage();
     }
 
-    /** Adds a user message to the chat and scrolls to the latest entry. */
+    /**
+     * Adds a user message to the chat and scrolls to the latest entry.
+     */
     private void appendUser(String message) {
         messageList.getChildren().add(createMessage(message, true));
         scrollToLatestMessage();
     }
 
-    /** Creates a left-aligned assistant or right-aligned user message bubble. */
+    /**
+     * Creates a left-aligned assistant or right-aligned user message bubble.
+     */
     private Node createMessage(String message, boolean isUser) {
         HBox row = new HBox(10);
         row.setAlignment(isUser ? Pos.TOP_RIGHT : Pos.TOP_LEFT);
@@ -463,7 +577,7 @@ public class Main extends Application {
         bubble.setMaxWidth(720);
         bubble.getStyleClass().add(isUser ? "user-bubble" : "assistant-bubble");
 
-        Label speaker = new Label(isUser ? "TRAINER" : "CHARIZARD  //  AI QUEST ASSISTANT");
+        Label speaker = new Label(isUser ? "TRAINER" : "WANGSA  //  YOUR QUEST PARTNER");
         speaker.getStyleClass().add("message-speaker");
         Label body = new Label(message);
         body.setWrapText(true);
@@ -484,7 +598,9 @@ public class Main extends Application {
         return row;
     }
 
-    /** Scrolls the transcript after JavaFX has laid out the newly added message. */
+    /**
+     * Scrolls the transcript after JavaFX has laid out the newly added message.
+     */
     private void scrollToLatestMessage() {
         Platform.runLater(() -> chatScrollPane.setVvalue(1.0));
     }
