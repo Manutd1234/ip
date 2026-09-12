@@ -8,7 +8,8 @@ public class WangsaException extends Exception {
 
     /**
      * Creates an input error with the supplied user-facing message.
-     * @param message user-facing explanation
+     *
+     * @param message User-facing explanation.
      */
     public WangsaException(String message) {
         super(message);

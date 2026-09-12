@@ -15,16 +15,19 @@ public class Deadline extends Task {
 
     /**
      * Creates a deadline with its description and completion date.
-     * @param description task text
-     * @param by completion date
+     *
+     * @param description Task text.
+     * @param by Completion date.
      */
     public Deadline(String description, LocalDate by) {
         super(description, TaskType.DEADLINE);
         this.by = by;
     }
 
-    /** Returns the date by which this task should be completed.
-     * @return the completion date
+    /**
+     * Returns the date by which this task should be completed.
+     *
+     * @return The completion date.
      */
     public LocalDate getBy() {
         return by;

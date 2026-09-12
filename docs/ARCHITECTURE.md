@@ -47,6 +47,32 @@ User input
   The GUI builds its composer from small control builders and keeps task commands
   blocked after a failed load; it never replaces unreadable saved data with a
   writable empty service. The CLI exits on a failed load.
+- `CommandHelp` keeps the command reference in one place for built-in help, AI
+  prompts, and offline responses. It has no AI or network dependencies.
+- `AiHelper` answers optional `@ai` questions through LangChain4j's Groq-compatible
+  chat adapter. Client setup, response formatting, and offline help each have a
+  small helper method. It has no access to the repository or task service, so
+  model output cannot change tasks.
+
+## Optional AI help
+
+`Parser` produces a `Command.AiQuestion` with a non-empty question of at most 1000
+characters. Both interfaces pass the question to `AiHelper.ask`. The helper lazily
+creates its model from `LLM_API_KEY` and optional `LLM_MODEL`; no key is required
+at startup. Each request contains only a system message with the command reference
+and the current user question. There is no conversation memory, tool execution,
+or access to the saved task list.
+
+The JavaFX adapter runs the blocking call in a daemon thread using a JavaFX `Task`,
+allows normal commands while waiting, and replaces the corresponding loading
+bubble on the application thread. Only one AI request is allowed at a time, and
+closing the application cancels it. The CLI processes questions synchronously.
+The model uses a 20-second timeout, no retries, and a bounded response token budget.
+Missing configuration, empty responses, and provider failures return labelled
+offline help. Raw provider errors are never shown because they may contain request data.
+
+AI tests inject a `ChatModel` so automated checks never need credentials or call
+an external provider. Keep the built-in reference up to date when adding commands.
 
 The `C-Sort` extension follows the same flow as other commands: `Parser` recognizes
 `sort`, `TaskService` persists the reordered snapshot, and each interface renders

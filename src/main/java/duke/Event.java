@@ -10,9 +10,10 @@ public class Event extends Task {
 
     /**
      * Creates an event with its description, start text, and end text.
-     * @param description task text
-     * @param from event start
-     * @param to event end
+     *
+     * @param description Task text.
+     * @param from Event start.
+     * @param to Event end.
      */
     public Event(String description, String from, String to) {
         super(description, TaskType.EVENT);
@@ -20,15 +21,19 @@ public class Event extends Task {
         this.to = to;
     }
 
-    /** Returns the event's start date or time.
-     * @return the start value
+    /**
+     * Returns the event's start date or time.
+     *
+     * @return The start value.
      */
     public String getFrom() {
         return from;
     }
 
-    /** Returns the event's end date or time.
-     * @return the end value
+    /**
+     * Returns the event's end date or time.
+     *
+     * @return The end value.
      */
     public String getTo() {
         return to;

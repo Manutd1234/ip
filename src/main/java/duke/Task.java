@@ -4,19 +4,25 @@ package duke;
  * A task entered into the Wangsa task list.
  */
 public class Task {
-    /** The text entered by the user for this task. */
+    /**
+     * The text entered by the user for this task.
+     */
     private final String description;
 
-    /** Whether the task has been marked as done. */
+    /**
+     * Whether the task has been marked as done.
+     */
     private boolean isDone;
 
-    /** The kind of task, used to select its display marker. */
+    /**
+     * The kind of task, used to select its display marker.
+     */
     private final TaskType type;
 
     /**
      * Creates an unfinished task with the given description.
      *
-     * @param description the task text
+     * @param description The task text.
      */
     public Task(String description) {
         this(description, TaskType.TODO);
@@ -24,8 +30,9 @@ public class Task {
 
     /**
      * Creates an unfinished task of the supplied type.
-     * @param description task text
-     * @param type task category
+     *
+     * @param description Task text.
+     * @param type Task category.
      */
     protected Task(String description, TaskType type) {
         this.description = description;
@@ -33,32 +40,42 @@ public class Task {
         this.type = type;
     }
 
-    /** Marks this task as done. */
+    /**
+     * Marks this task as done.
+     */
     public void markAsDone() {
         isDone = true;
     }
 
-    /** Marks this task as not done. */
+    /**
+     * Marks this task as not done.
+     */
     public void markAsNotDone() {
         isDone = false;
     }
 
-    /** Returns the task text entered by the user.
-     * @return the task text entered by the user
+    /**
+     * Returns the task text entered by the user.
+     *
+     * @return The task text entered by the user.
      */
     public String getDescription() {
         return description;
     }
 
-    /** Returns whether this task has been completed.
-     * @return whether this task has been completed
+    /**
+     * Returns whether this task has been completed.
+     *
+     * @return Whether this task has been completed.
      */
     public boolean isDone() {
         return isDone;
     }
 
-    /** Returns the kind of this task.
-     * @return the kind of this task
+    /**
+     * Returns the kind of this task.
+     *
+     * @return The kind of this task.
      */
     public TaskType getType() {
         return type;
@@ -67,7 +84,7 @@ public class Task {
     /**
      * Returns the one-character status marker used in task output.
      *
-     * @return {@code X} for a completed task, otherwise a blank space
+     * @return {@code X} for a completed task, otherwise a blank space.
      */
     public String getStatusIcon() {
         return isDone ? "X" : " ";
@@ -76,7 +93,7 @@ public class Task {
     /**
      * Returns the one-letter type marker used by specialized task classes.
      *
-     * @return the task type's display marker
+     * @return The task type's display marker.
      */
     public String getTypeIcon() {
         return type.getIcon();
@@ -85,7 +102,7 @@ public class Task {
     /**
      * Returns task-specific details appended to the description.
      *
-     * @return an empty string for a task without extra details
+     * @return An empty string for a task without extra details.
      */
     protected String getDetails() {
         return "";
@@ -94,7 +111,7 @@ public class Task {
     /**
      * Returns the task in the format shown to the user.
      *
-     * @return the status marker and task description
+     * @return The status marker and task description.
      */
     @Override
     public String toString() {

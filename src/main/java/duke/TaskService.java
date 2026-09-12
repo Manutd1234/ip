@@ -5,8 +5,8 @@ import java.util.List;
 /**
  * Coordinates task operations that are shared by Wangsa's user interfaces.
  *
- * <p>The service keeps parsing, task-list mutation, and persistence together so that
- * the command-line and JavaFX interfaces do not need to duplicate application logic.</p>
+ * <p>Changes are saved before an interface reports success. If a save fails, the
+ * service restores the task state so the screen and saved data stay in sync.</p>
  */
 public final class TaskService {
     private final Parser parser;
@@ -18,33 +18,21 @@ public final class TaskService {
     /**
      * Creates a service and loads its task list from storage.
      *
-     * @param repository source and destination for saved tasks
-     * @param parser parser for Wangsa commands
-     * @throws StorageException if saved tasks cannot be loaded
-     * @throws WangsaException if the saved task list is invalid
+     * @param repository Source and destination for saved tasks.
+     * @param parser Parser for Wangsa commands.
+     * @throws StorageException If saved tasks cannot be loaded.
+     * @throws WangsaException If the saved task list is invalid.
      */
     public TaskService(TaskRepository repository, Parser parser) throws StorageException, WangsaException {
-        this(repository, parser, new TaskList(repository.loadTasks()));
+        this.parser = parser;
+        this.repository = repository;
+        this.tasks = new TaskList(repository.loadTasks());
     }
 
     /**
-     * Creates a service around an already prepared task list.
+     * Returns the current task order, using the same task objects as the service.
      *
-     * <p>This constructor is used by the empty-service fallback so the UI can remain
-     * usable even when an existing save file cannot be loaded.</p>
-     *
-     * @param repository destination for future saves
-     * @param parser parser for future commands
-     * @param tasks task list managed by this service
-     */
-    private TaskService(TaskRepository repository, Parser parser, TaskList tasks) {
-        this.parser = parser;
-        this.repository = repository;
-        this.tasks = tasks;
-    }
-
-    /** Returns a snapshot of all tasks in their current order.
-     * @return all current tasks
+     * @return An unmodifiable copy of the task order.
      */
     public List<Task> getTasks() {
         return tasks.getTasks();
@@ -53,9 +41,9 @@ public final class TaskService {
     /**
      * Finds tasks matching the keyword in a complete {@code find} command.
      *
-     * @param command complete find command
-     * @return matching tasks in their original order
-     * @throws WangsaException if the search keyword is missing
+     * @param command Complete find command.
+     * @return Matching tasks in their original order.
+     * @throws WangsaException If the search keyword is missing.
      */
     public List<Task> find(String command) throws WangsaException {
         return tasks.find(parser.parseSearchKeyword(command));
@@ -63,8 +51,9 @@ public final class TaskService {
 
     /**
      * Finds tasks by a validated keyword supplied by a parsed command.
-     * @param keyword search keyword
-     * @return matching tasks in their original order
+     *
+     * @param keyword Search keyword.
+     * @return Matching tasks in their original order.
      */
     public List<Task> findKeyword(String keyword) {
         return tasks.find(keyword);
@@ -73,15 +62,17 @@ public final class TaskService {
     /**
      * Finds tasks with the same task numbers used by status and delete commands.
      *
-     * @param keyword validated search keyword
-     * @return matching tasks with full-list positions
+     * @param keyword Validated search keyword.
+     * @return Matching tasks with full-list positions.
      */
     public List<TaskMatch> findMatches(String keyword) {
         return tasks.findMatches(keyword);
     }
 
-    /** Sorts tasks by deadline and saves the resulting order.
-     * @throws StorageException if the updated order cannot be saved
+    /**
+     * Sorts tasks by deadline and saves the resulting order.
+     *
+     * @throws StorageException If the updated order cannot be saved.
      */
     public void sortByDeadline() throws StorageException {
         List<Task> previousOrder = tasks.getTasks();
@@ -97,10 +88,10 @@ public final class TaskService {
     /**
      * Adds a task described by the command and saves it.
      *
-     * @param command complete task-creation command
-     * @return the added task
-     * @throws WangsaException if the command or task is invalid
-     * @throws StorageException if the updated list cannot be saved
+     * @param command Complete task-creation command.
+     * @return The added task.
+     * @throws WangsaException If the command or task is invalid.
+     * @throws StorageException If the updated list cannot be saved.
      */
     public Task add(String command) throws WangsaException, StorageException {
         return add(parser.parseTask(command));
@@ -108,10 +99,11 @@ public final class TaskService {
 
     /**
      * Adds a validated task and persists it at the end of the current order.
-     * @param task task to add
-     * @return the added task
-     * @throws WangsaException if the list cannot accept the task
-     * @throws StorageException if the task cannot be persisted
+     *
+     * @param task Task to add.
+     * @return The added task.
+     * @throws WangsaException If the list cannot accept the task.
+     * @throws StorageException If the task cannot be persisted.
      */
     public Task add(Task task) throws WangsaException, StorageException {
         tasks.add(task);
@@ -127,10 +119,10 @@ public final class TaskService {
     /**
      * Marks the task identified by a complete {@code mark} command as done and saves it.
      *
-     * @param command complete mark command
-     * @return the updated task
-     * @throws WangsaException if the task number is invalid
-     * @throws StorageException if the updated list cannot be saved
+     * @param command Complete mark command.
+     * @return The updated task.
+     * @throws WangsaException If the task number is invalid.
+     * @throws StorageException If the updated list cannot be saved.
      */
     public Task mark(String command) throws WangsaException, StorageException {
         return mark(parser.parseTaskNumber(command));
@@ -138,10 +130,11 @@ public final class TaskService {
 
     /**
      * Marks the supplied one-based task number as done and persists the change.
-     * @param taskNumber one-based task number
-     * @return the updated task
-     * @throws WangsaException if the task number is invalid
-     * @throws StorageException if the update cannot be persisted
+     *
+     * @param taskNumber One-based task number.
+     * @return The updated task.
+     * @throws WangsaException If the task number is invalid.
+     * @throws StorageException If the update cannot be persisted.
      */
     public Task mark(int taskNumber) throws WangsaException, StorageException {
         return updateStatus(taskNumber, true);
@@ -150,10 +143,10 @@ public final class TaskService {
     /**
      * Marks the task identified by a complete {@code unmark} command as not done and saves it.
      *
-     * @param command complete unmark command
-     * @return the updated task
-     * @throws WangsaException if the task number is invalid
-     * @throws StorageException if the updated list cannot be saved
+     * @param command Complete unmark command.
+     * @return The updated task.
+     * @throws WangsaException If the task number is invalid.
+     * @throws StorageException If the updated list cannot be saved.
      */
     public Task unmark(String command) throws WangsaException, StorageException {
         return unmark(parser.parseTaskNumber(command));
@@ -161,16 +154,19 @@ public final class TaskService {
 
     /**
      * Marks the supplied one-based task number as not done and persists the change.
-     * @param taskNumber one-based task number
-     * @return the updated task
-     * @throws WangsaException if the task number is invalid
-     * @throws StorageException if the update cannot be persisted
+     *
+     * @param taskNumber One-based task number.
+     * @return The updated task.
+     * @throws WangsaException If the task number is invalid.
+     * @throws StorageException If the update cannot be persisted.
      */
     public Task unmark(int taskNumber) throws WangsaException, StorageException {
         return updateStatus(taskNumber, false);
     }
 
-    /** Changes a task's completion state and restores it if persistence fails. */
+    /**
+     * Changes a task's completion state and restores it if persistence fails.
+     */
     private Task updateStatus(int taskNumber, boolean shouldMarkAsDone)
             throws WangsaException, StorageException {
         Task task = tasks.get(taskNumber);
@@ -192,10 +188,10 @@ public final class TaskService {
     /**
      * Deletes the task identified by a complete {@code delete} command and saves the result.
      *
-     * @param command complete delete command
-     * @return the removed task
-     * @throws WangsaException if the task number is invalid
-     * @throws StorageException if the updated list cannot be saved
+     * @param command Complete delete command.
+     * @return The removed task.
+     * @throws WangsaException If the task number is invalid.
+     * @throws StorageException If the updated list cannot be saved.
      */
     public Task delete(String command) throws WangsaException, StorageException {
         int taskNumber = parser.parseTaskNumber(command);
@@ -204,10 +200,11 @@ public final class TaskService {
 
     /**
      * Deletes the supplied one-based task number and persists the change.
-     * @param taskNumber one-based task number
-     * @return the removed task
-     * @throws WangsaException if the task number is invalid
-     * @throws StorageException if the deletion cannot be persisted
+     *
+     * @param taskNumber One-based task number.
+     * @return The removed task.
+     * @throws WangsaException If the task number is invalid.
+     * @throws StorageException If the deletion cannot be persisted.
      */
     public Task delete(int taskNumber) throws WangsaException, StorageException {
         Task task = tasks.get(taskNumber);
@@ -216,7 +213,9 @@ public final class TaskService {
         return task;
     }
 
-    /** Removes an in-memory task after a failed persistence insert. */
+    /**
+     * Removes an in-memory task after a failed persistence insert.
+     */
     private void rollbackAddedTask(StorageException exception) {
         try {
             tasks.delete(tasks.size());
@@ -225,7 +224,9 @@ public final class TaskService {
         }
     }
 
-    /** Restores an in-memory status after a failed persistence update. */
+    /**
+     * Restores an in-memory status after a failed persistence update.
+     */
     private void restoreStatus(Task task, boolean wasDone) {
         if (wasDone) {
             task.markAsDone();

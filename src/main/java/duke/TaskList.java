@@ -16,7 +16,9 @@ public class TaskList {
 
     private final List<Task> tasks;
 
-    /** Creates an empty task list. */
+    /**
+     * Creates an empty task list.
+     */
     public TaskList() {
         this.tasks = new ArrayList<>();
         assertInvariant();
@@ -25,36 +27,44 @@ public class TaskList {
     /**
      * Creates a task list containing the supplied saved tasks.
      *
-     * @param savedTasks tasks loaded from storage
-     * @throws WangsaException if the saved list exceeds Wangsa's capacity
+     * @param savedTasks Tasks loaded from storage.
+     * @throws WangsaException If the saved list exceeds Wangsa's capacity.
      */
     public TaskList(List<Task> savedTasks) throws WangsaException {
         if (savedTasks.size() > MAX_TASKS) {
-            throw new WangsaException("OOPS!!! The saved task list contains more than "
+            throw new WangsaException("The saved task list contains more than "
                     + MAX_TASKS + " tasks.");
         }
         this.tasks = new ArrayList<>(savedTasks);
         assertInvariant();
     }
 
-    /** Returns the number of tasks currently stored.
-     * @return the task count
+    /**
+     * Returns the number of tasks currently stored.
+     *
+     * @return The task count.
      */
     public int size() {
         return tasks.size();
     }
 
-    /** Returns an unmodifiable snapshot of tasks in their current order.
-     * @return an immutable task snapshot
+    /**
+     * Returns a copy of the current task order that callers cannot add to or reorder.
+     *
+     * <p>The task objects are shared with this list, so later status changes remain visible.</p>
+     *
+     * @return An unmodifiable list containing the current task objects.
      */
     public List<Task> getTasks() {
         return List.copyOf(tasks);
     }
 
-    /** Returns the task at a one-based display position.
-     * @param taskNumber one-based task number
-     * @return the task at the requested position
-     * @throws WangsaException if the number is invalid
+    /**
+     * Returns the task at a one-based display position.
+     *
+     * @param taskNumber One-based task number.
+     * @return The task at the requested position.
+     * @throws WangsaException If the number is invalid.
      */
     public Task get(int taskNumber) throws WangsaException {
         return getTask(taskNumber);
@@ -62,14 +72,15 @@ public class TaskList {
 
     /**
      * Adds and returns a task, provided the list still has capacity.
-     * @param task task to add
-     * @return the added task
-     * @throws WangsaException if the list is full
+     *
+     * @param task Task to add.
+     * @return The added task.
+     * @throws WangsaException If the list is full.
      */
     public Task add(Task task) throws WangsaException {
         validateTask(task);
         if (tasks.size() >= MAX_TASKS) {
-            throw new WangsaException("OOPS!!! Your task list is full (maximum 100 tasks).");
+            throw new WangsaException("Your task list is full (maximum 100 tasks).");
         }
         tasks.add(task);
         assertInvariant();
@@ -79,18 +90,18 @@ public class TaskList {
     /**
      * Adds several tasks as one capacity-checked operation.
      *
-     * @param newTasks tasks to add
-     * @throws WangsaException if the combined list would exceed capacity
+     * @param newTasks Tasks to add.
+     * @throws WangsaException If the combined list would exceed capacity.
      */
     public void addAll(Task... newTasks) throws WangsaException {
         if (newTasks == null) {
-            throw new WangsaException("OOPS!!! Tasks to add cannot be null.");
+            throw new WangsaException("Tasks to add cannot be null.");
         }
         for (Task task : newTasks) {
             validateTask(task);
         }
         if (newTasks.length > MAX_TASKS - tasks.size()) {
-            throw new WangsaException("OOPS!!! Your task list is full (maximum 100 tasks).");
+            throw new WangsaException("Your task list is full (maximum 100 tasks).");
         }
         tasks.addAll(Arrays.asList(newTasks));
         assertInvariant();
@@ -98,9 +109,10 @@ public class TaskList {
 
     /**
      * Marks and returns the numbered task as done.
-     * @param taskNumber one-based task number
-     * @return the updated task
-     * @throws WangsaException if the number is invalid
+     *
+     * @param taskNumber One-based task number.
+     * @return The updated task.
+     * @throws WangsaException If the number is invalid.
      */
     public Task mark(int taskNumber) throws WangsaException {
         Task task = getTask(taskNumber);
@@ -110,9 +122,10 @@ public class TaskList {
 
     /**
      * Marks and returns the numbered task as not done.
-     * @param taskNumber one-based task number
-     * @return the updated task
-     * @throws WangsaException if the number is invalid
+     *
+     * @param taskNumber One-based task number.
+     * @return The updated task.
+     * @throws WangsaException If the number is invalid.
      */
     public Task unmark(int taskNumber) throws WangsaException {
         Task task = getTask(taskNumber);
@@ -122,9 +135,10 @@ public class TaskList {
 
     /**
      * Deletes and returns the numbered task.
-     * @param taskNumber one-based task number
-     * @return the removed task
-     * @throws WangsaException if the number is invalid
+     *
+     * @param taskNumber One-based task number.
+     * @return The removed task.
+     * @throws WangsaException If the number is invalid.
      */
     public Task delete(int taskNumber) throws WangsaException {
         getTask(taskNumber);
@@ -134,8 +148,8 @@ public class TaskList {
     /**
      * Finds tasks whose descriptions contain the keyword, ignoring case.
      *
-     * @param keyword text to search for.
-     * @return matching tasks in their original order.
+     * @param keyword Text to search for.
+     * @return Matching tasks in their original order.
      */
     public List<Task> find(String keyword) {
         return findMatches(keyword).stream().map(TaskMatch::task).toList();
@@ -144,8 +158,8 @@ public class TaskList {
     /**
      * Finds matching descriptions while preserving full-list task numbers.
      *
-     * @param keyword text to search for, ignoring case
-     * @return matching tasks with their current one-based positions
+     * @param keyword Text to search for, ignoring case.
+     * @return Matching tasks with their current one-based positions.
      */
     public List<TaskMatch> findMatches(String keyword) {
         String normalizedKeyword = keyword.toLowerCase(Locale.ROOT);
@@ -155,40 +169,55 @@ public class TaskList {
                 .toList();
     }
 
-    /** Sorts deadlines chronologically and keeps tasks without deadlines after them. */
+    /**
+     * Sorts deadlines chronologically and keeps tasks without deadlines after them.
+     */
     public void sortByDeadline() {
         tasks.sort(Comparator.comparing(this::getSortDate));
     }
 
-    /** Restores a previously saved task order after a failed persistence operation. */
+    /**
+     * Restores a previously saved task order after a failed persistence operation.
+     */
     void restoreOrder(List<Task> previousOrder) {
         tasks.clear();
         tasks.addAll(previousOrder);
         assertInvariant();
     }
 
-    /** Resolves a one-based task number or reports that it is outside the list. */
+    /**
+     * Resolves a one-based task number or reports that it is outside the list.
+     */
     private Task getTask(int taskNumber) throws WangsaException {
+        if (tasks.isEmpty()) {
+            throw new WangsaException("Your list is empty. Add a task before choosing a task number.");
+        }
         if (taskNumber < 1 || taskNumber > tasks.size()) {
-            throw new WangsaException("OOPS!!! Task number must be between 1 and "
-                    + tasks.size() + ".");
+            throw new WangsaException("Choose a task number between 1 and "
+                    + tasks.size() + ". Type `list` to check your tasks.");
         }
         return tasks.get(taskNumber - 1);
     }
 
-    /** Rejects null task values before they can enter the domain collection. */
+    /**
+     * Rejects null task values before they can enter the domain collection.
+     */
     private void validateTask(Task task) throws WangsaException {
         if (task == null) {
-            throw new WangsaException("OOPS!!! A task cannot be null.");
+            throw new WangsaException("A task cannot be null.");
         }
     }
 
-    /** Returns a task's deadline or a sentinel date that sorts undated tasks last. */
+    /**
+     * Returns a task's deadline or a sentinel date that sorts undated tasks last.
+     */
     private LocalDate getSortDate(Task task) {
         return task instanceof Deadline deadline ? deadline.getBy() : LocalDate.MAX;
     }
 
-    /** Checks invariants that should hold for every task-list state. */
+    /**
+     * Checks invariants that should hold for every task-list state.
+     */
     private void assertInvariant() {
         assert tasks.size() <= MAX_TASKS : "task list cannot exceed its capacity";
     }

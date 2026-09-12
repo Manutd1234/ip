@@ -101,7 +101,7 @@ public final class SqliteTaskRepository implements TaskRepository {
      * <p>If the database is created beside a legacy {@code wangsa.txt} file, that file
      * is imported the first time the repository loads tasks.</p>
      *
-     * @param databasePath SQLite database location
+     * @param databasePath SQLite database location.
      */
     public SqliteTaskRepository(Path databasePath) {
         this(databasePath, databasePath.resolveSibling("wangsa.txt"));
@@ -110,8 +110,8 @@ public final class SqliteTaskRepository implements TaskRepository {
     /**
      * Creates a repository with an explicit legacy-file migration source.
      *
-     * @param databasePath SQLite database location
-     * @param legacyFilePath optional legacy text-file location
+     * @param databasePath SQLite database location.
+     * @param legacyFilePath Optional legacy text-file location.
      */
     public SqliteTaskRepository(Path databasePath, Path legacyFilePath) {
         this.databasePath = databasePath;
@@ -124,8 +124,8 @@ public final class SqliteTaskRepository implements TaskRepository {
     /**
      * Loads tasks in their saved order.
      *
-     * @return saved tasks in their current order
-     * @throws StorageException if the database cannot be opened or contains invalid data
+     * @return Saved tasks in their current order.
+     * @throws StorageException If the database cannot be opened or contains invalid data.
      */
     @Override
     public List<Task> loadTasks() throws StorageException {
@@ -136,15 +136,15 @@ public final class SqliteTaskRepository implements TaskRepository {
             migrateLegacyTasksIfNeeded(connection, legacyTasks);
             return readTasks(connection);
         } catch (SQLException exception) {
-            throw databaseException("read", exception);
+            throw createDatabaseException("read", exception);
         }
     }
 
     /**
      * Replaces the saved task snapshot in one transaction.
      *
-     * @param tasks tasks to persist in display order
-     * @throws StorageException if the database cannot be updated
+     * @param tasks Tasks to persist in display order.
+     * @throws StorageException If the database cannot be updated.
      */
     @Override
     public void saveTasks(List<Task> tasks) throws StorageException {
@@ -163,16 +163,16 @@ public final class SqliteTaskRepository implements TaskRepository {
                 throw exception;
             }
         } catch (SQLException exception) {
-            throw databaseException("save", exception);
+            throw createDatabaseException("save", exception);
         }
     }
 
     /**
      * Inserts one task without rewriting existing rows.
      *
-     * @param task task to insert
-     * @param position zero-based display position
-     * @throws StorageException if the position or database update is invalid
+     * @param task Task to insert.
+     * @param position Zero-based display position.
+     * @throws StorageException If the position or database update is invalid.
      */
     @Override
     public void insertTask(Task task, int position) throws StorageException {
@@ -193,16 +193,16 @@ public final class SqliteTaskRepository implements TaskRepository {
                 throw exception;
             }
         } catch (SQLException exception) {
-            throw databaseException("insert", exception);
+            throw createDatabaseException("insert", exception);
         }
     }
 
     /**
      * Updates one task without rewriting unrelated rows.
      *
-     * @param task replacement task data
-     * @param position zero-based display position
-     * @throws StorageException if the position or database update is invalid
+     * @param task Replacement task data.
+     * @param position Zero-based display position.
+     * @throws StorageException If the position or database update is invalid.
      */
     @Override
     public void updateTask(Task task, int position) throws StorageException {
@@ -212,7 +212,7 @@ public final class SqliteTaskRepository implements TaskRepository {
             try (PreparedStatement statement = connection.prepareStatement(UPDATE_TASK)) {
                 bindTask(statement, task, position);
                 if (statement.executeUpdate() != 1) {
-                    throw invalidPosition(position);
+                    throw createInvalidPositionException(position);
                 }
                 connection.commit();
                 isLegacyMigrationPending = false;
@@ -221,15 +221,15 @@ public final class SqliteTaskRepository implements TaskRepository {
                 throw exception;
             }
         } catch (SQLException exception) {
-            throw databaseException("update", exception);
+            throw createDatabaseException("update", exception);
         }
     }
 
     /**
      * Deletes one task and closes the resulting position gap in one transaction.
      *
-     * @param position zero-based display position
-     * @throws StorageException if the position or database update is invalid
+     * @param position Zero-based display position.
+     * @throws StorageException If the position or database update is invalid.
      */
     @Override
     public void deleteTask(int position) throws StorageException {
@@ -239,7 +239,7 @@ public final class SqliteTaskRepository implements TaskRepository {
             try (PreparedStatement delete = connection.prepareStatement(DELETE_TASK_AT_POSITION)) {
                 delete.setInt(1, position);
                 if (delete.executeUpdate() != 1) {
-                    throw invalidPosition(position);
+                    throw createInvalidPositionException(position);
                 }
                 shiftPositions(connection, position + 1, -1);
                 connection.commit();
@@ -249,11 +249,13 @@ public final class SqliteTaskRepository implements TaskRepository {
                 throw exception;
             }
         } catch (SQLException exception) {
-            throw databaseException("delete", exception);
+            throw createDatabaseException("delete", exception);
         }
     }
 
-    /** Shifts rows toward the free position so the unique index remains valid at every update. */
+    /**
+     * Shifts rows toward the free position so the unique index remains valid at every update.
+     */
     private void shiftPositions(Connection connection, int firstPosition, int offset) throws SQLException {
         String direction = offset > 0 ? "DESC" : "ASC";
         List<Integer> positions = new ArrayList<>();
@@ -274,7 +276,9 @@ public final class SqliteTaskRepository implements TaskRepository {
         }
     }
 
-    /** Opens a configured SQLite connection and creates its parent directory if needed. */
+    /**
+     * Opens a configured SQLite connection and creates its parent directory if needed.
+     */
     private Connection openConnection() throws StorageException {
         Connection connection = null;
         try {
@@ -295,11 +299,13 @@ public final class SqliteTaskRepository implements TaskRepository {
             return connection;
         } catch (IOException | SQLException exception) {
             closeAfterFailedOpen(connection, exception);
-            throw databaseException("open", exception);
+            throw createDatabaseException("open", exception);
         }
     }
 
-    /** Configures SQLite for concurrent readers and short-lived writer contention. */
+    /**
+     * Configures SQLite for concurrent readers and short-lived writer contention.
+     */
     private void configureConnection(Connection connection) throws SQLException {
         try (Statement statement = connection.createStatement()) {
             statement.setQueryTimeout(QUERY_TIMEOUT_SECONDS);
@@ -307,7 +313,9 @@ public final class SqliteTaskRepository implements TaskRepository {
         }
     }
 
-    /** Creates the current schema and indexes when the database is first opened. */
+    /**
+     * Creates the current schema and indexes when the database is first opened.
+     */
     private void initializeSchema(Connection connection) throws SQLException {
         try (Statement statement = connection.createStatement()) {
             statement.setQueryTimeout(QUERY_TIMEOUT_SECONDS);
@@ -320,24 +328,30 @@ public final class SqliteTaskRepository implements TaskRepository {
         }
     }
 
-    /** Ensures that an insert position is within the current task range. */
+    /**
+     * Ensures that an insert position is within the current task range.
+     */
     private void ensureInsertPosition(Connection connection, int position)
             throws SQLException, StorageException {
         try (Statement statement = connection.createStatement();
                 ResultSet resultSet = statement.executeQuery(COUNT_TASKS)) {
             long taskCount = resultSet.next() ? resultSet.getLong(1) : 0;
             if (position < 0 || position > taskCount) {
-                throw invalidPosition(position);
+                throw createInvalidPositionException(position);
             }
         }
     }
 
-    /** Creates a consistent error for an invalid zero-based task position. */
-    private StorageException invalidPosition(int position) {
-        return new StorageException("OOPS!!! Database task position " + position + " does not exist.");
+    /**
+     * Creates a consistent error for an invalid zero-based task position.
+     */
+    private StorageException createInvalidPositionException(int position) {
+        return new StorageException("Database task position " + position + " does not exist.");
     }
 
-    /** Imports legacy text data only when this repository created a new database. */
+    /**
+     * Imports legacy text data only when this repository created a new database.
+     */
     private void migrateLegacyTasksIfNeeded(Connection connection, List<Task> legacyTasks) throws SQLException {
         if (!isLegacyMigrationPending || !isDatabaseEmpty(connection)) {
             return;
@@ -354,7 +368,9 @@ public final class SqliteTaskRepository implements TaskRepository {
         }
     }
 
-    /** Returns whether the database currently contains no task rows. */
+    /**
+     * Returns whether the database currently contains no task rows.
+     */
     private boolean isDatabaseEmpty(Connection connection) throws SQLException {
         try (Statement statement = connection.createStatement();
                 ResultSet resultSet = statement.executeQuery(COUNT_TASKS)) {
@@ -362,7 +378,9 @@ public final class SqliteTaskRepository implements TaskRepository {
         }
     }
 
-    /** Reads and validates all rows in display order. */
+    /**
+     * Reads and validates all rows in display order.
+     */
     private List<Task> readTasks(Connection connection) throws SQLException, StorageException {
         List<Task> tasks = new ArrayList<>();
         try (PreparedStatement statement = connection.prepareStatement(SELECT_TASKS);
@@ -374,35 +392,37 @@ public final class SqliteTaskRepository implements TaskRepository {
         return tasks;
     }
 
-    /** Converts one database row back into its domain task. */
+    /**
+     * Converts one database row back into its domain task.
+     */
     private Task readTask(ResultSet resultSet) throws SQLException, StorageException {
         String type = resultSet.getString("task_type");
         String description = resultSet.getString("description");
         int status = resultSet.getInt("is_done");
         if (description == null || description.isEmpty() || (status != 0 && status != 1)) {
-            throw invalidDatabaseRow("description cannot be empty and status must be 0 or 1");
+            throw createInvalidRowException("description cannot be empty and status must be 0 or 1");
         }
 
         Task task;
         switch (type) {
-        case "T":
-            rejectUnexpectedValue(resultSet.getString("deadline"), "todo deadline");
-            rejectUnexpectedValue(resultSet.getString("event_from"), "todo event start");
-            rejectUnexpectedValue(resultSet.getString("event_to"), "todo event end");
-            task = new Todo(description);
-            break;
-        case "D":
-            rejectUnexpectedValue(resultSet.getString("event_from"), "deadline event start");
-            rejectUnexpectedValue(resultSet.getString("event_to"), "deadline event end");
-            task = new Deadline(description, parseDeadline(resultSet.getString("deadline")));
-            break;
-        case "E":
-            rejectUnexpectedValue(resultSet.getString("deadline"), "event deadline");
-            task = new Event(description, requireValue(resultSet.getString("event_from"), "event start"),
-                    requireValue(resultSet.getString("event_to"), "event end"));
-            break;
-        default:
-            throw invalidDatabaseRow("unknown task type");
+            case "T":
+                rejectUnexpectedValue(resultSet.getString("deadline"), "todo deadline");
+                rejectUnexpectedValue(resultSet.getString("event_from"), "todo event start");
+                rejectUnexpectedValue(resultSet.getString("event_to"), "todo event end");
+                task = new Todo(description);
+                break;
+            case "D":
+                rejectUnexpectedValue(resultSet.getString("event_from"), "deadline event start");
+                rejectUnexpectedValue(resultSet.getString("event_to"), "deadline event end");
+                task = new Deadline(description, parseDeadline(resultSet.getString("deadline")));
+                break;
+            case "E":
+                rejectUnexpectedValue(resultSet.getString("deadline"), "event deadline");
+                task = new Event(description, requireValue(resultSet.getString("event_from"), "event start"),
+                        requireValue(resultSet.getString("event_to"), "event end"));
+                break;
+            default:
+                throw createInvalidRowException("unknown task type");
         }
 
         if (status == 1) {
@@ -411,34 +431,42 @@ public final class SqliteTaskRepository implements TaskRepository {
         return task;
     }
 
-    /** Parses the ISO date stored for a deadline. */
+    /**
+     * Parses the ISO date stored for a deadline.
+     */
     private LocalDate parseDeadline(String value) throws StorageException {
         if (value == null || value.isEmpty()) {
-            throw invalidDatabaseRow("deadline value cannot be empty");
+            throw createInvalidRowException("deadline value cannot be empty");
         }
         try {
             return LocalDate.parse(value);
         } catch (DateTimeParseException exception) {
-            throw new StorageException("OOPS!!! Database deadline must use yyyy-MM-dd format.", exception);
+            throw new StorageException("Database deadline must use yyyy-MM-dd format.", exception);
         }
     }
 
-    /** Returns a required database text value or reports invalid data. */
+    /**
+     * Returns a required database text value or reports invalid data.
+     */
     private String requireValue(String value, String fieldName) throws StorageException {
         if (value == null || value.isEmpty()) {
-            throw invalidDatabaseRow(fieldName + " cannot be empty");
+            throw createInvalidRowException(fieldName + " cannot be empty");
         }
         return value;
     }
 
-    /** Rejects a task-specific value that belongs to a different task type. */
+    /**
+     * Rejects a task-specific value that belongs to a different task type.
+     */
     private void rejectUnexpectedValue(String value, String fieldName) throws StorageException {
         if (value != null) {
-            throw invalidDatabaseRow(fieldName + " must be empty");
+            throw createInvalidRowException(fieldName + " must be empty");
         }
     }
 
-    /** Inserts tasks in their current display order using a prepared batch. */
+    /**
+     * Inserts tasks in their current display order using a prepared batch.
+     */
     private void insertTasks(Connection connection, List<Task> tasks) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(INSERT_TASK)) {
             for (int position = 0; position < tasks.size(); position++) {
@@ -449,7 +477,9 @@ public final class SqliteTaskRepository implements TaskRepository {
         }
     }
 
-    /** Binds one domain task to the normalized task-row columns. */
+    /**
+     * Binds one domain task to the normalized task-row columns.
+     */
     private void bindTask(PreparedStatement statement, Task task, int position) throws SQLException {
         statement.setString(1, task.getTypeIcon());
         statement.setInt(2, task.isDone() ? 1 : 0);
@@ -466,7 +496,9 @@ public final class SqliteTaskRepository implements TaskRepository {
         statement.setInt(7, position);
     }
 
-    /** Rolls back a failed transaction while retaining the original exception. */
+    /**
+     * Rolls back a failed transaction while retaining the original exception.
+     */
     private void rollback(Connection connection, Exception exception) {
         try {
             connection.rollback();
@@ -475,7 +507,9 @@ public final class SqliteTaskRepository implements TaskRepository {
         }
     }
 
-    /** Closes a connection when configuration fails during opening. */
+    /**
+     * Closes a connection when configuration fails during opening.
+     */
     private void closeAfterFailedOpen(Connection connection, Exception exception) {
         if (connection == null) {
             return;
@@ -487,14 +521,18 @@ public final class SqliteTaskRepository implements TaskRepository {
         }
     }
 
-    /** Creates a consistent user-facing database error. */
-    private StorageException databaseException(String operation, Exception exception) {
-        return new StorageException("OOPS!!! I couldn't " + operation + " Wangsa's SQLite database at "
+    /**
+     * Creates a consistent user-facing database error.
+     */
+    private StorageException createDatabaseException(String operation, Exception exception) {
+        return new StorageException("I couldn't " + operation + " Wangsa's SQLite database at "
                 + databasePath + ".", exception);
     }
 
-    /** Creates a consistent invalid-row error. */
-    private StorageException invalidDatabaseRow(String reason) {
-        return new StorageException("OOPS!!! Database task data is invalid: " + reason + ".");
+    /**
+     * Creates a consistent invalid-row error.
+     */
+    private StorageException createInvalidRowException(String reason) {
+        return new StorageException("Database task data is invalid: " + reason + ".");
     }
 }

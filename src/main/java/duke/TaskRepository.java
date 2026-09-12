@@ -14,16 +14,16 @@ public interface TaskRepository {
     /**
      * Loads tasks from the repository.
      *
-     * @return saved tasks in their original order
-     * @throws StorageException if the repository cannot provide valid task data
+     * @return Saved tasks in their original order.
+     * @throws StorageException If the repository cannot provide valid task data.
      */
     List<Task> loadTasks() throws StorageException;
 
     /**
      * Saves the supplied tasks to the repository.
      *
-     * @param tasks tasks to persist
-     * @throws StorageException if the repository cannot save the tasks
+     * @param tasks Tasks to persist.
+     * @throws StorageException If the repository cannot save the tasks.
      */
     void saveTasks(List<Task> tasks) throws StorageException;
 
@@ -34,9 +34,9 @@ public interface TaskRepository {
      * only support complete snapshots. Database repositories can override this method
      * to perform a focused insert.</p>
      *
-     * @param task task to insert
-     * @param position zero-based display position
-     * @throws StorageException if the task cannot be inserted
+     * @param task Task to insert.
+     * @param position Zero-based display position.
+     * @throws StorageException If the task cannot be inserted.
      */
     default void insertTask(Task task, int position) throws StorageException {
         List<Task> tasks = new ArrayList<>(loadTasks());
@@ -52,9 +52,9 @@ public interface TaskRepository {
      * only support complete snapshots. Database repositories can override this method
      * to perform a focused update.</p>
      *
-     * @param task replacement task data
-     * @param position zero-based display position
-     * @throws StorageException if the task cannot be updated
+     * @param task Replacement task data.
+     * @param position Zero-based display position.
+     * @throws StorageException If the task cannot be updated.
      */
     default void updateTask(Task task, int position) throws StorageException {
         List<Task> tasks = new ArrayList<>(loadTasks());
@@ -70,8 +70,8 @@ public interface TaskRepository {
      * only support complete snapshots. Database repositories can override this method
      * to perform a focused delete.</p>
      *
-     * @param position zero-based display position
-     * @throws StorageException if the task cannot be deleted
+     * @param position Zero-based display position.
+     * @throws StorageException If the task cannot be deleted.
      */
     default void deleteTask(int position) throws StorageException {
         List<Task> tasks = new ArrayList<>(loadTasks());
@@ -80,17 +80,21 @@ public interface TaskRepository {
         saveTasks(tasks);
     }
 
-    /** Validates a position at which a new task may be inserted. */
+    /**
+     * Validates a position at which a new task may be inserted.
+     */
     private static void validateInsertPosition(int position, int taskCount) throws StorageException {
         if (position < 0 || position > taskCount) {
-            throw new StorageException("OOPS!!! Database insert position is outside the task list.");
+            throw new StorageException("Database insert position is outside the task list.");
         }
     }
 
-    /** Validates a position occupied by an existing task. */
+    /**
+     * Validates a position occupied by an existing task.
+     */
     private static void validateExistingPosition(int position, int taskCount) throws StorageException {
         if (position < 0 || position >= taskCount) {
-            throw new StorageException("OOPS!!! Database task position is outside the task list.");
+            throw new StorageException("Database task position is outside the task list.");
         }
     }
 }

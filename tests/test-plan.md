@@ -4,6 +4,8 @@
 
 - `./gradlew clean test` runs the JUnit tests with Java assertions and Java 25 native access enabled.
 - `./gradlew checkstyleMain checkstyleTest` checks production and test source style.
+- Checkstyle also checks four-space switch indentation, consistent import order,
+  and Javadoc formatting against the SE-EDU conventions.
 - `./gradlew clean check` runs the complete local verification used by CI.
 - `./gradlew runCli` launches the terminal interface directly from Gradle.
 
@@ -43,6 +45,31 @@
 3. Check that the Pages index includes the guide from `README.md` without copying it.
 4. After merging and pushing, open the public Pages site and verify the guide,
    screenshot, links, and tables there. Local rendering does not replace this check.
+
+## Optional AI help acceptance checks
+
+1. Unset `LLM_API_KEY`, start each interface, and enter `help` and then
+   `@ai How do I add a deadline?`. Confirm the command reference appears and the
+   latter explains setup with an Offline help label. Add and mark a task normally.
+2. Enter `@ai` alone, an over-1000-character question, and `help extra`. Confirm
+   validation messages appear and tasks remain unchanged.
+3. With a Groq key configured, ask about deadlines, reopening tasks, and priorities.
+   Confirm replies use the actual command syntax and describe priorities as unsupported.
+   Responses vary, so review these examples manually before publishing a release.
+4. Ask `@ai delete my tasks`. Confirm the response is only text and task counts
+   and persisted records are unchanged.
+5. While a desktop request is pending, enter `list`, then another `@ai` question.
+   Confirm the window stays responsive, `list` works, and the second question is
+   rejected until the first finishes. The answer should replace its own loading bubble.
+6. Use an invalid key or disconnect from the network. Confirm failure produces
+   offline help without showing request details, and normal commands still work.
+7. Close the desktop during a request. Confirm the application exits promptly.
+8. Check empty lists and single-task confirmations. Messages should suggest a useful
+   next step and use "1 task" or "1 quest" rather than a plural.
+
+Automated tests use injected models for normal replies, failures, empty replies,
+request separation, offline fallback, and the guarantee that AI output is never
+executed. They do not verify live model answer quality or require a Groq key.
 
 ## C-Sort acceptance checks
 

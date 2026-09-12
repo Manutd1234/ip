@@ -14,8 +14,10 @@ public enum TaskType {
         this.icon = icon;
     }
 
-    /** Returns the one-letter marker used when displaying this task type.
-     * @return the display marker
+    /**
+     * Returns the one-letter marker used when displaying this task type.
+     *
+     * @return The display marker.
      */
     public String getIcon() {
         return icon;

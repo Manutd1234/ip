@@ -15,6 +15,18 @@
         <module name="NeedBraces"/>
         <module name="WhitespaceAround"/>
         <module name="EmptyLineSeparator"/>
+        <module name="Indentation">
+            <property name="basicOffset" value="4"/>
+            <property name="caseIndent" value="4"/>
+            <property name="lineWrappingIndentation" value="8"/>
+        </module>
+        <module name="CustomImportOrder">
+            <property name="customImportOrderRules" value="STATIC###STANDARD_JAVA_PACKAGE###THIRD_PARTY_PACKAGE"/>
+            <property name="standardPackageRegExp" value="^(java|javax)\."/>
+            <property name="sortImportsInGroupAlphabetically" value="true"/>
+            <property name="separateLineBetweenGroups" value="true"/>
+        </module>
+        <module name="JavadocStyle"/>
         <module name="JavadocType"/>
         <module name="JavadocMethod">
             <property name="accessModifiers" value="public"/>

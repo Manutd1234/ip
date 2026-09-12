@@ -22,7 +22,8 @@ public class Storage implements TaskRepository {
 
     /**
      * Creates storage that reads from and writes to the supplied path.
-     * @param filePath save-file location
+     *
+     * @param filePath Save-file location.
      */
     public Storage(Path filePath) {
         this.filePath = filePath;
@@ -31,9 +32,10 @@ public class Storage implements TaskRepository {
     /**
      * Loads and returns the tasks stored in the data file.
      *
-     * @return the saved tasks in their original order
-     * @throws StorageException if the file cannot be read or contains invalid data
+     * @return The saved tasks in their original order.
+     * @throws StorageException If the file cannot be read or contains invalid data.
      */
+    @Override
     public List<Task> loadTasks() throws StorageException {
         if (Files.notExists(filePath)) {
             return new ArrayList<>();
@@ -47,16 +49,17 @@ public class Storage implements TaskRepository {
             }
             return loadedTasks;
         } catch (IOException exception) {
-            throw new StorageException("OOPS!!! I couldn't read saved tasks from " + filePath + ".", exception);
+            throw new StorageException("I couldn't read saved tasks from " + filePath + ".", exception);
         }
     }
 
     /**
      * Writes the supplied tasks to disk.
      *
-     * @param tasks tasks to save
-     * @throws StorageException if the data folder or file cannot be written
+     * @param tasks Tasks to save.
+     * @throws StorageException If the data folder or file cannot be written.
      */
+    @Override
     public void saveTasks(List<Task> tasks) throws StorageException {
         List<String> lines = new ArrayList<>();
         for (Task task : tasks) {
@@ -70,11 +73,13 @@ public class Storage implements TaskRepository {
             }
             Files.write(filePath, lines, StandardCharsets.UTF_8);
         } catch (IOException exception) {
-            throw new StorageException("OOPS!!! I couldn't save tasks to " + filePath + ".", exception);
+            throw new StorageException("I couldn't save tasks to " + filePath + ".", exception);
         }
     }
 
-    /** Converts one task to a line in Wangsa's save-file format. */
+    /**
+     * Converts one task to a line in Wangsa's save-file format.
+     */
     private String formatTask(Task task) {
         List<String> fields = new ArrayList<>();
         fields.add(task.getTypeIcon());
@@ -91,17 +96,19 @@ public class Storage implements TaskRepository {
         return String.join(FIELD_SEPARATOR, fields);
     }
 
-    /** Recreates one task from a line in Wangsa's save-file format. */
+    /**
+     * Recreates one task from a line in Wangsa's save-file format.
+     */
     private Task parseTask(String line, int lineNumber) throws StorageException {
         List<String> fields = splitFields(line, lineNumber);
         if (fields.size() < 3) {
-            throw invalidLine(lineNumber, "not enough fields");
+            throw createInvalidLineException(lineNumber, "not enough fields");
         }
 
         boolean isDone = parseStatus(fields.get(1), lineNumber);
         String description = fields.get(2);
         if (description.isEmpty()) {
-            throw invalidLine(lineNumber, "task description cannot be empty");
+            throw createInvalidLineException(lineNumber, "task description cannot be empty");
         }
 
         Task task = createTask(fields, description, lineNumber);
@@ -111,63 +118,75 @@ public class Storage implements TaskRepository {
         return task;
     }
 
-    /** Reads the saved completion flag without accepting other numeric values. */
+    /**
+     * Reads the saved completion flag without accepting other numeric values.
+     */
     private boolean parseStatus(String value, int lineNumber) throws StorageException {
         return switch (value) {
-        case "1" -> true;
-        case "0" -> false;
-        default -> throw invalidLine(lineNumber, "status must be 0 or 1");
+            case "1" -> true;
+            case "0" -> false;
+            default -> throw createInvalidLineException(lineNumber, "status must be 0 or 1");
         };
     }
 
-    /** Validates type-specific fields before constructing a legacy task. */
+    /**
+     * Validates type-specific fields before constructing a legacy task.
+     */
     private Task createTask(List<String> fields, String description, int lineNumber) throws StorageException {
         return switch (fields.get(0)) {
-        case "T" -> {
-            requireFieldCount(fields, 3, lineNumber);
-            yield new Todo(description);
-        }
-        case "D" -> {
-            requireFieldCount(fields, 4, lineNumber);
-            if (fields.get(3).isEmpty()) {
-                throw invalidLine(lineNumber, "deadline value cannot be empty");
+            case "T" -> {
+                requireFieldCount(fields, 3, lineNumber);
+                yield new Todo(description);
             }
-            yield new Deadline(description, parseDeadlineDate(fields.get(3), lineNumber));
-        }
-        case "E" -> {
-            requireFieldCount(fields, 5, lineNumber);
-            if (fields.get(3).isEmpty() || fields.get(4).isEmpty()) {
-                throw invalidLine(lineNumber, "event start and end values cannot be empty");
+            case "D" -> {
+                requireFieldCount(fields, 4, lineNumber);
+                if (fields.get(3).isEmpty()) {
+                    throw createInvalidLineException(lineNumber, "deadline value cannot be empty");
+                }
+                yield new Deadline(description, parseDeadlineDate(fields.get(3), lineNumber));
             }
-            yield new Event(description, fields.get(3), fields.get(4));
-        }
-        default -> throw invalidLine(lineNumber, "unknown task type");
+            case "E" -> {
+                requireFieldCount(fields, 5, lineNumber);
+                if (fields.get(3).isEmpty() || fields.get(4).isEmpty()) {
+                    throw createInvalidLineException(lineNumber, "event start and end values cannot be empty");
+                }
+                yield new Event(description, fields.get(3), fields.get(4));
+            }
+            default -> throw createInvalidLineException(lineNumber, "unknown task type");
         };
     }
 
-    /** Parses a stored ISO deadline date while retaining line-specific diagnostics. */
+    /**
+     * Parses a stored ISO deadline date while retaining line-specific diagnostics.
+     */
     private LocalDate parseDeadlineDate(String value, int lineNumber) throws StorageException {
         try {
             return LocalDate.parse(value);
         } catch (DateTimeParseException exception) {
-            throw invalidLine(lineNumber, "deadline date must be valid and use yyyy-MM-dd format");
+            throw createInvalidLineException(lineNumber, "deadline date must be valid and use yyyy-MM-dd format");
         }
     }
 
-    /** Ensures that a saved task has exactly the fields expected for its type. */
+    /**
+     * Ensures that a saved task has exactly the fields expected for its type.
+     */
     private void requireFieldCount(List<String> fields, int expectedCount, int lineNumber)
             throws StorageException {
         if (fields.size() != expectedCount) {
-            throw invalidLine(lineNumber, "unexpected number of fields");
+            throw createInvalidLineException(lineNumber, "unexpected number of fields");
         }
     }
 
-    /** Escapes separator and escape characters that occur in user-entered text. */
+    /**
+     * Escapes separator and escape characters that occur in user-entered text.
+     */
     private String escapeField(String field) {
         return field.replace("\\", "\\\\").replace("|", "\\|");
     }
 
-    /** Splits a saved line while preserving escaped separators in user-entered text. */
+    /**
+     * Splits a saved line while preserving escaped separators in user-entered text.
+     */
     private List<String> splitFields(String line, int lineNumber) throws StorageException {
         List<String> fields = new ArrayList<>();
         StringBuilder currentField = new StringBuilder();
@@ -177,7 +196,7 @@ public class Storage implements TaskRepository {
             char character = line.charAt(i);
             if (isEscaped) {
                 if (character != '\\' && character != '|') {
-                    throw invalidLine(lineNumber, "invalid escape sequence");
+                    throw createInvalidLineException(lineNumber, "invalid escape sequence");
                 }
                 currentField.append(character);
                 isEscaped = false;
@@ -192,15 +211,17 @@ public class Storage implements TaskRepository {
         }
 
         if (isEscaped) {
-            throw invalidLine(lineNumber, "unfinished escape sequence");
+            throw createInvalidLineException(lineNumber, "unfinished escape sequence");
         }
         fields.add(currentField.toString().trim());
         return fields;
     }
 
-    /** Builds a consistent error for a malformed save-file line. */
-    private StorageException invalidLine(int lineNumber, String reason) {
-        return new StorageException("OOPS!!! Saved task data is invalid at line "
+    /**
+     * Builds a consistent error for a malformed save-file line.
+     */
+    private StorageException createInvalidLineException(int lineNumber, String reason) {
+        return new StorageException("Saved task data is invalid at line "
                 + lineNumber + ": " + reason + ".");
     }
 }
