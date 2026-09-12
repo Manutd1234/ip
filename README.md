@@ -1,6 +1,8 @@
-# Wangsa project template
+# Wangsa
 
-This is a project template for a greenfield Java project. The chatbot is named _Wangsa_. Given below are instructions on how to use it.
+Wangsa is a Pokémon-inspired task manager with desktop and terminal interfaces.
+Read the [User Guide](docs/README.md) for setup, commands, and recovery.
+The sections below describe development setup.
 
 ## Setting up in Intellij
 
@@ -43,9 +45,9 @@ Wangsa automatically saves task-list changes to the SQLite database at `data/wan
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the responsibilities of each layer and guidance for adding features.
 
-For end-user instructions, see the [Wangsa product overview](docs/index.md) and
-[complete user guide](docs/README.md), which cover the desktop interface, every
-command, validation rules, persistence, migration, and common errors.
+The [product website](https://manutd1234.github.io/ip/) renders the user guide
+from `docs/README.md`. GitHub Pages publishes the `master` branch and `/docs`
+folder, so branch changes appear there after merging and pushing.
 
 ## Building and running with Gradle
 
