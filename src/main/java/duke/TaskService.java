@@ -28,17 +28,6 @@ public final class TaskService {
     }
 
     /**
-     * Creates an empty service for use when previously saved data cannot be loaded.
-     *
-     * @param repository destination for future saves
-     * @param parser parser for future commands
-     * @return an empty task service
-     */
-    public static TaskService empty(TaskRepository repository, Parser parser) {
-        return new TaskService(repository, parser, new TaskList());
-    }
-
-    /**
      * Creates a service around an already prepared task list.
      *
      * <p>This constructor is used by the empty-service fallback so the UI can remain

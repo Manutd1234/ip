@@ -315,9 +315,9 @@ public class Main extends Application {
                     + "Try `list`, `todo ...`, or `mark #` and I'll keep your day moving.");
             appendAssistant(TaskFormatter.renderTasks(taskService.getTasks()));
         } catch (StorageException | WangsaException exception) {
-            taskService = TaskService.empty(createRepository(), parser);
-            appendAssistant("I couldn't load the saved quest log, so I opened a fresh one.\n"
-                    + exception.getMessage());
+            appendAssistant("I couldn't load the saved quest log. Commands are blocked to protect your saved tasks.\n"
+                    + exception.getMessage()
+                    + "\nFix the data or folder access, then restart Wangsa. Use `bye` to close.");
         }
         refreshHeader();
     }
@@ -373,6 +373,10 @@ public class Main extends Application {
     /** Executes a parsed command and persists mutations. */
     private void execute(String command) throws WangsaException, StorageException {
         Command parsedCommand = parser.parse(command);
+        if (taskService == null && parsedCommand.type() != Parser.CommandType.BYE) {
+            throw new StorageException("Your saved quest log is unavailable. Fix the startup error and restart "
+                    + "Wangsa before using task commands.");
+        }
         switch (parsedCommand.type()) {
         case BYE:
             appendAssistant("Quest paused. See you next time, trainer!");
@@ -424,7 +428,12 @@ public class Main extends Application {
 
     /** Refreshes the live status copy after loading or mutating tasks. */
     private void refreshHeader() {
-        if (statusText == null || taskStats == null || taskService == null) {
+        if (statusText == null || taskStats == null) {
+            return;
+        }
+        if (taskService == null) {
+            statusText.setText("STORAGE UNAVAILABLE");
+            taskStats.setText("TASK COMMANDS BLOCKED");
             return;
         }
         statusText.setText("SYSTEM READY");

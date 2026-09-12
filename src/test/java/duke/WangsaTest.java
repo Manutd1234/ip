@@ -1,6 +1,7 @@
 package duke;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
@@ -8,6 +9,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.nio.file.Files;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,22 @@ import org.junit.jupiter.api.io.TempDir;
 class WangsaTest {
     @TempDir
     Path temporaryDirectory;
+
+    @Test
+    void run_invalidSavedData_stopsBeforeProcessingCommands() throws Exception {
+        Path file = temporaryDirectory.resolve("invalid.txt");
+        String originalData = "T | 2 | keep this record\n";
+        Files.writeString(file, originalData);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Ui ui = new Ui(new ByteArrayInputStream("sort\ntodo replace\n".getBytes(StandardCharsets.UTF_8)),
+                new PrintStream(output, true, StandardCharsets.UTF_8));
+
+        new Wangsa(new Storage(file), new Parser(), ui).run();
+
+        assertEquals(originalData, Files.readString(file));
+        assertTrue(output.toString(StandardCharsets.UTF_8).contains("status must be 0 or 1"));
+        assertFalse(output.toString(StandardCharsets.UTF_8).contains("I've added this task"));
+    }
 
     @Test
     void findThenMark_nonFirstMatch_updatesTheDisplayedTask() throws Exception {
