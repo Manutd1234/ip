@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.IntStream;
 
 /**
  * Owns Wangsa's ordered task collection and the operations that change it.
@@ -137,9 +138,20 @@ public class TaskList {
      * @return matching tasks in their original order.
      */
     public List<Task> find(String keyword) {
+        return findMatches(keyword).stream().map(TaskMatch::task).toList();
+    }
+
+    /**
+     * Finds matching descriptions while preserving full-list task numbers.
+     *
+     * @param keyword text to search for, ignoring case
+     * @return matching tasks with their current one-based positions
+     */
+    public List<TaskMatch> findMatches(String keyword) {
         String normalizedKeyword = keyword.toLowerCase(Locale.ROOT);
-        return tasks.stream()
-                .filter(task -> task.getDescription().toLowerCase(Locale.ROOT).contains(normalizedKeyword))
+        return IntStream.range(0, tasks.size())
+                .filter(index -> tasks.get(index).getDescription().toLowerCase(Locale.ROOT).contains(normalizedKeyword))
+                .mapToObj(index -> new TaskMatch(index + 1, tasks.get(index)))
                 .toList();
     }
 

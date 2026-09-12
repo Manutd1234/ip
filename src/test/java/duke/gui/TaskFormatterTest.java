@@ -9,10 +9,18 @@ import org.junit.jupiter.api.Test;
 
 import duke.Deadline;
 import duke.Task;
+import duke.TaskMatch;
 import duke.Todo;
 
 /** Tests the pure text formatting used by the JavaFX conversation. */
 class TaskFormatterTest {
+    @Test
+    void renderMatches_nonFirstResult_keepsOriginalNumberAndSearchHeading() {
+        assertEquals("Here are your matching quests:" + System.lineSeparator() + "3. [T][ ] read book",
+                TaskFormatter.renderMatches(List.of(new TaskMatch(3, new Todo("read book")))));
+        assertEquals("No matching quests found. Try a different keyword.", TaskFormatter.renderMatches(List.of()));
+    }
+
     @Test
     void renderTasks_formatsEmptyAndNumberedLists() {
         assertEquals("Your quest log is clear.\nUse `todo DESCRIPTION` below to catch a new quest.",

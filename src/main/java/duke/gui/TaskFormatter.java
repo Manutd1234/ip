@@ -3,10 +3,28 @@ package duke.gui;
 import java.util.List;
 
 import duke.Task;
+import duke.TaskMatch;
 
 /** Formats task snapshots and progress summaries for the desktop conversation. */
 public final class TaskFormatter {
     private TaskFormatter() {
+    }
+
+    /**
+     * Formats search results with actionable task numbers from the full list.
+     *
+     * @param matches search results in full-list order
+     * @return matching tasks or an explicit no-match message
+     */
+    public static String renderMatches(List<TaskMatch> matches) {
+        if (matches.isEmpty()) {
+            return "No matching quests found. Try a different keyword.";
+        }
+        StringBuilder result = new StringBuilder("Here are your matching quests:");
+        for (TaskMatch match : matches) {
+            result.append(System.lineSeparator()).append(match.taskNumber()).append(". ").append(match.task());
+        }
+        return result.toString();
     }
 
     /**

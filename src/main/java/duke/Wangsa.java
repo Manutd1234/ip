@@ -85,7 +85,7 @@ public class Wangsa {
             ui.showTaskList(tasks.getTasks());
             break;
         case FIND:
-            ui.showMatchingTasks(tasks.findKeyword(((Command.Search) parsedCommand).keyword()));
+            ui.showMatchingTasks(tasks.findMatches(((Command.Search) parsedCommand).keyword()));
             break;
         case SORT:
             sortTasks(tasks);

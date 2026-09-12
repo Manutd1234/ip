@@ -14,6 +14,21 @@ import org.junit.jupiter.api.Test;
 /** Tests task-list ordering, mutations, validation, and capacity handling. */
 class TaskListTest {
     @Test
+    void findMatches_nonAdjacentResults_preservesActionableNumbers() throws WangsaException {
+        Task first = new Todo("other");
+        Task second = new Todo("read book");
+        Task last = new Todo("return book");
+        TaskList tasks = new TaskList(List.of(first, second, new Todo("meeting"), last));
+
+        assertEquals(List.of(new TaskMatch(2, second), new TaskMatch(4, last)), tasks.findMatches("BOOK"));
+        tasks.mark(tasks.findMatches("return").get(0).taskNumber());
+        assertTrue(last.isDone());
+        assertFalse(first.isDone());
+        tasks.delete(1);
+        assertEquals(3, tasks.findMatches("return").get(0).taskNumber());
+    }
+
+    @Test
     void addMarkUnmarkAndDelete_preserveTaskStateAndOrder() throws WangsaException {
         TaskList tasks = new TaskList();
         Task todo = new Todo("read book");

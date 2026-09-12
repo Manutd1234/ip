@@ -382,8 +382,8 @@ public class Main extends Application {
             appendAssistant(TaskFormatter.renderTasks(taskService.getTasks()));
             break;
         case FIND:
-            appendAssistant(TaskFormatter.renderTasks(
-                    taskService.findKeyword(((Command.Search) parsedCommand).keyword())));
+            appendAssistant(TaskFormatter.renderMatches(
+                    taskService.findMatches(((Command.Search) parsedCommand).keyword())));
             break;
         case SORT:
             taskService.sortByDeadline();

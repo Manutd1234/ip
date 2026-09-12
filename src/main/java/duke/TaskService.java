@@ -81,6 +81,16 @@ public final class TaskService {
         return tasks.find(keyword);
     }
 
+    /**
+     * Finds tasks with the same task numbers used by status and delete commands.
+     *
+     * @param keyword validated search keyword
+     * @return matching tasks with full-list positions
+     */
+    public List<TaskMatch> findMatches(String keyword) {
+        return tasks.findMatches(keyword);
+    }
+
     /** Sorts tasks by deadline and saves the resulting order.
      * @throws StorageException if the updated order cannot be saved
      */

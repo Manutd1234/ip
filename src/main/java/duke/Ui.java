@@ -77,10 +77,17 @@ public class Ui implements AutoCloseable {
     /**
      * Displays tasks matching a search keyword.
      *
-     * @param tasks matching tasks to display.
+     * @param matches matching tasks with their full-list task numbers
      */
-    public void showMatchingTasks(List<Task> tasks) {
-        showTasks("Here are the matching tasks in your list:", tasks);
+    public void showMatchingTasks(List<TaskMatch> matches) {
+        if (matches.isEmpty()) {
+            output.println("No matching tasks found.");
+            return;
+        }
+        output.println("Here are the matching tasks in your list:");
+        for (TaskMatch match : matches) {
+            output.println(match.taskNumber() + "." + match.task());
+        }
     }
 
     /** Displays tasks ordered by deadline, with undated tasks after dated tasks.
