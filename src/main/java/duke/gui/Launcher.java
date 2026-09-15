@@ -1,5 +1,7 @@
 package duke.gui;
 
+import java.io.IOException;
+
 import javafx.application.Application;
 
 /**
@@ -15,6 +17,13 @@ public final class Launcher {
      * @param args Command-line arguments.
      */
     public static void main(String[] args) {
+        try {
+            NativeLibraries.prepare();
+        } catch (IOException e) {
+            System.err.println("Wangsa could not start: " + e.getMessage());
+            System.exit(1);
+            return;
+        }
         Application.launch(Main.class, args);
     }
 }

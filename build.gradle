@@ -7,6 +7,10 @@ repositories {
     mavenCentral()
 }
 
+configurations {
+    javafxPlatforms
+}
+
 dependencies {
     String javaFxVersion = '17.0.7'
     String osName = System.getProperty('os.name').toLowerCase()
@@ -20,6 +24,11 @@ dependencies {
     implementation("org.openjfx:javafx-controls:${javaFxVersion}:${javafxPlatform}")
     implementation("org.openjfx:javafx-fxml:${javaFxVersion}:${javafxPlatform}")
     implementation("org.openjfx:javafx-graphics:${javaFxVersion}:${javafxPlatform}")
+    ['win', 'linux', 'mac', 'mac-aarch64'].each { platform ->
+        javafxPlatforms("org.openjfx:javafx-graphics:${javaFxVersion}:${platform}") {
+            transitive = false
+        }
+    }
     implementation 'org.xerial:sqlite-jdbc:3.53.4.0'
     implementation 'dev.langchain4j:langchain4j-open-ai:1.10.0'
     runtimeOnly 'org.slf4j:slf4j-nop:2.0.17'
@@ -38,17 +47,42 @@ application {
     applicationDefaultJvmArgs = ['--enable-native-access=ALL-UNNAMED']
 }
 
-tasks.named('jar', Jar) {
-    archiveBaseName = 'Wangsa'
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    from {
-        configurations.runtimeClasspath.collect { dependency ->
-            dependency.isDirectory() ? dependency : zipTree(dependency)
+// Intel and Apple Silicon libraries have identical names, so keep each platform in its own folder.
+def javafxNativeDirectory = layout.buildDirectory.dir('generated/javafx-natives')
+tasks.register('prepareJavafxNatives') {
+    inputs.files(configurations.javafxPlatforms)
+    outputs.dir(javafxNativeDirectory)
+    doLast {
+        delete(javafxNativeDirectory)
+        configurations.javafxPlatforms.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+            def platformDirectory = javafxNativeDirectory.get().dir("javafx-natives/${artifact.classifier}").asFile
+            copy {
+                from zipTree(artifact.file)
+                include '*.dll', '*.so', '*.dylib'
+                into platformDirectory
+            }
+            new File(platformDirectory, 'libraries.list').text =
+                    platformDirectory.listFiles().collect { it.name }.sort().join('\n') + '\n'
         }
     }
+}
+
+tasks.named('jar', Jar) {
+    dependsOn 'prepareJavafxNatives'
+    archiveBaseName = 'Wangsa'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from({
+        (configurations.runtimeClasspath + configurations.javafxPlatforms).collect { dependency ->
+            dependency.isDirectory() ? dependency : zipTree(dependency)
+        }
+    }) {
+        // SQLite keeps its own platform folders; only move JavaFX's root-level native libraries.
+        exclude '*.dll', '*.so', '*.dylib'
+    }
+    from javafxNativeDirectory
     exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'module-info.class'
     manifest {
-        attributes('Main-Class': application.mainClass.get())
+        attributes('Main-Class': application.mainClass.get(), 'Enable-Native-Access': 'ALL-UNNAMED')
     }
 }
 

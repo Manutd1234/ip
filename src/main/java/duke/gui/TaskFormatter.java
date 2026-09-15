@@ -40,7 +40,7 @@ public final class TaskFormatter {
             return "Your quest log is empty.\nTry `todo read a book` to add your first task.";
         }
 
-        StringBuilder result = new StringBuilder("Here's your current quest log:\n");
+        StringBuilder result = new StringBuilder("Here's your current quest log:").append(System.lineSeparator());
         for (int i = 0; i < tasks.size(); i++) {
             result.append(i + 1).append(". ").append(tasks.get(i));
             if (i < tasks.size() - 1) {
