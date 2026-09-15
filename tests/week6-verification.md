@@ -72,12 +72,14 @@ SHA-256: 098c1d7f6cb5e7fd2d3c86e30105e33f3361daf530ccb9028dc217ee25c1c823
   `master` synchronized. The course PR uses `branch-Level-7` as its source.
 - The last five commit subjects were checked against the SE-EDU conventions.
   Published history and milestone tags were retained.
-- The public progress dashboard anonymizes student identities. The user should
-  confirm their own **Git Standard** cell after its daily refresh; this report
-  does not claim that the dashboard is green or verify earlier peer-review work.
-- [Artwork credits](../docs/CREDITS.md) identify the reused characters and a
-  matching Charizard reference. The original download pages were not recorded;
-  the creator and source of the particular Ash illustration remain unverified.
+- The live progress dashboard row matching the user's supplied identifier
+  (ending in 2995R) was checked on 15 September 2026. **Git Standard**,
+  **Published UG**, **Ui.png**, and **JAR released** are green. This does not
+  independently verify earlier peer-review work or guarantee grading results.
+- [Artwork credits](../docs/CREDITS.md) identify the reused characters, both
+  Pinterest download pages supplied by the project author, and a matching
+  Charizard reference. The creator of the particular Ash illustration remains
+  unverified.
 - A teammate's test drive remains unconfirmed. The
   [peer smoke-test checklist](peer-smoke-test.md) contains the steps and a
   result template. Automated cross-platform checks do not replace that result.

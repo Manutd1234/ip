@@ -12,14 +12,13 @@ reused artwork, not artwork created for this project.
 
 | File | Credit and reference |
 | --- | --- |
-| `src/main/resources/duke/gui/assets/charizard.jpg` | Charizard artwork attributed to Sugimori in the [Pokémon Database artwork gallery](https://pokemondb.net/artwork/charizard). The gallery's main illustration matches the artwork used here. |
-| `src/main/resources/duke/gui/assets/ash.jpeg` | Ash Ketchum, a character from the Pokémon animated series. The creator and original download page of this particular illustration were not recorded with the file and remain unverified. |
+| `src/main/resources/duke/gui/assets/charizard.jpg` | Downloaded from [this Pinterest pin](https://in.pinterest.com/pin/890164682599959089/), as confirmed by the project author. The matching illustration is attributed to Sugimori in the [Pokémon Database artwork gallery](https://pokemondb.net/artwork/charizard). |
+| `src/main/resources/duke/gui/assets/ash.jpeg` | Ash Ketchum, a character from the Pokémon animated series. Downloaded from [this Pinterest pin](https://ru.pinterest.com/pin/729442470942034338/), as confirmed by the project author. The creator of this particular illustration remains unverified. |
 
 Pokémon and its characters belong to their respective rights holders. Wangsa
 does not claim ownership of these pictures or affiliation with Pokémon.
-The Charizard link is a matching artwork reference; it is not a claim about
-where the existing file was originally downloaded. Attribution does not change
-the artwork's license.
+The Pinterest links record the download sources; they do not identify the
+original artists. Attribution does not change the artwork's license.
 
 ## Code and documentation
 
