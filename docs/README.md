@@ -278,3 +278,6 @@ The CLI exits after a storage error.
 
 Guide structure inspired by the
 [SE-EDU AddressBook Level 3 User Guide](https://se-education.org/addressbook-level3/UserGuide.html).
+
+See [Credits](https://manutd1234.github.io/ip/CREDITS.html) for character artwork
+and other reused material.

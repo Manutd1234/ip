@@ -95,6 +95,9 @@ using LangChain4j's model adapter without agents, tools, or conversation memory.
 
 ## Acknowledgements
 
+- Character artwork credits and references are recorded in
+  [the credits page](docs/CREDITS.md), including the remaining uncertainty
+  about the Ash illustration's original source.
 - The project started from the [course iP template](https://github.com/NUS-CS2103-AY2627-S1/ip),
   based on [SE-EDU Duke](https://github.com/se-edu/duke).
 - Cross-platform packaging follows the

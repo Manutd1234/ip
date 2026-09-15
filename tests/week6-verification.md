@@ -75,9 +75,12 @@ SHA-256: 098c1d7f6cb5e7fd2d3c86e30105e33f3361daf530ccb9028dc217ee25c1c823
 - The public progress dashboard anonymizes student identities. The user should
   confirm their own **Git Standard** cell after its daily refresh; this report
   does not claim that the dashboard is green or verify earlier peer-review work.
-- Original source links for the existing Ash and Charizard pictures were not
-  recorded in the repository. They have been requested from the project owner
-  so the artwork credit can be completed accurately.
+- [Artwork credits](../docs/CREDITS.md) identify the reused characters and a
+  matching Charizard reference. The original download pages were not recorded;
+  the creator and source of the particular Ash illustration remain unverified.
+- A teammate's test drive remains unconfirmed. The
+  [peer smoke-test checklist](peer-smoke-test.md) contains the steps and a
+  result template. Automated cross-platform checks do not replace that result.
 - Live Groq answer quality was not evaluated. Automated AI tests use fixtures
   and failure cases; the release works without AI setup.
 - GUI checks cover the listed GitHub runner environments, not every OS version
