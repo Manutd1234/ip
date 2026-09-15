@@ -62,7 +62,16 @@ Use the Gradle wrapper from the project root:
 
 The wrapper uses Gradle 9.1.0, which is configured for the project's Java 25 toolchain.
 The executable JAR is written to `build/libs/Wangsa.jar`; copy it to an empty
-folder and run it with `java --enable-native-access=ALL-UNNAMED -jar Wangsa.jar`.
+folder and run it with `java -jar Wangsa.jar`. The same JAR includes JavaFX for
+Windows x64, Linux x64, Intel Mac, and Apple Silicon. Linux needs a graphical
+desktop with GTK 3. JavaFX's native libraries are kept in separate platform
+folders and selected by the launcher; SQLite bundles its own native libraries.
+
+Run `./gradlew clean check jar javadoc` to check the code and build the release.
+Then run `python3 tests/release_smoke.py` (`python` on Windows) to exercise the
+packaged GUI, persistence, error handling, and offline help in temporary folders.
+On headless Linux, use `xvfb-run -a python3 tests/release_smoke.py`.
+CI runs those scenarios against one shared JAR on all four supported platforms.
 
 `./gradlew run` launches the JavaFX desktop interface. The original text
 interface remains available through `./gradlew runCli` for command-line use and
@@ -83,6 +92,18 @@ for terminal and IntelliJ setup, usage, and data sent to the provider.
 This feature follows the read-only help approach in the
 [SE-EDU AI integration tutorial](https://se-education.org/guides/tutorials/addingAiToJavaApp.html),
 using LangChain4j's model adapter without agents, tools, or conversation memory.
+
+## Acknowledgements
+
+- The project started from the [course iP template](https://github.com/NUS-CS2103-AY2627-S1/ip),
+  based on [SE-EDU Duke](https://github.com/se-edu/duke).
+- Cross-platform packaging follows the
+  [OpenJFX fat JAR guidance](https://openjfx.io/openjfx-docs/#modular).
+  The launcher uses JavaFX's native-library search path after separating libraries
+  whose filenames are identical on different processor architectures.
+- The user guide credits the SE-EDU AddressBook Level 3 guide for its structure.
+- AI assistance was used for the optional increments, refactoring, documentation,
+  and verification. The optional in-app AI feature is described above.
 
 ## Persistence details
 

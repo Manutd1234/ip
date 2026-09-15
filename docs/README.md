@@ -11,16 +11,19 @@ typing short commands. Your tasks are saved automatically.
 ## Quick start
 
 1. Install **Java 25**. Check your version by running `java -version` in a terminal.
-2. Download the JAR from the [Wangsa releases page](https://github.com/Manutd1234/ip/releases)
+2. Download `Wangsa.jar` from the [latest Wangsa release](https://github.com/Manutd1234/ip/releases/latest)
    and save it as `Wangsa.jar` in a folder you can write to.
 3. Open a terminal in that folder and run:
 
    ```shell
-   java --enable-native-access=ALL-UNNAMED -jar Wangsa.jar
+   java -jar Wangsa.jar
    ```
 
 4. The Wangsa window opens. Type a command in the box at the bottom, then press
    **Enter** or click **SEND**.
+
+The same JAR works on **Windows x64, Linux x64, and macOS with Intel or Apple
+Silicon**. No separate JavaFX installation or AI account is needed for task commands.
 
 ![Wangsa's full desktop window, showing the task list and command box](Ui.png)
 
@@ -253,7 +256,7 @@ The CLI exits after a storage error.
 | Task list is full | Delete a task before adding another. Completed tasks count towards the 100-task limit. |
 | Tasks seem to be missing | Check that you launched Wangsa from the folder containing your usual `data` folder. |
 | Cannot load or save tasks | Close other Wangsa instances and check folder access. Keep a backup before repairing data. A malformed legacy text file reports the line to correct. |
-| JAR will not open | Check that you use Java 25. The current JAR must match your operating system and processor; running from source selects the libraries for your computer. |
+| JAR will not open | Use Java 25 and the latest release. Run `java -jar Wangsa.jar` in a terminal to see the error. The release supports Windows/Linux x64 and macOS Intel/Apple Silicon; Linux needs a graphical desktop with GTK 3. |
 | AI shows offline help | Set `LLM_API_KEY` to a Groq key in the launch environment, then restart. If already configured, check connectivity, model access, and account usage limits. `help` and normal commands remain available. |
 
 ## Command summary

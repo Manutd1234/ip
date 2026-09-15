@@ -1,63 +1,84 @@
-# Week 6 quality and user guide verification
+# Week 6 verification
 
-Verified on 12 September 2026 with Java 25.0.4 on macOS ARM64, starting from
-`master` at `468668c`. Changes are on `week6-quality-user-guide`.
+Verified on **15 September 2026**, using Java 25. Release code: `985f3a0`.
+The scope is the individual project (iP), as described on the
+[Week 6 project page](https://nus-cs2103-ay2627-s1.github.io/website/schedule/week6/project.html).
+Team-project deliverables belong in the team's separate repository.
 
-## Generated feedback
+## Required increments
 
-The findings in [issue #3](https://github.com/Manutd1234/ip/issues/3) were addressed:
+The course requires at least two of these optional increments. All four are
+implemented, and their exact lightweight tags are present on GitHub.
 
-| Finding | Resolution |
+| Increment | Evidence |
 | --- | --- |
-| Boolean naming | Rename the migration flag to `isLegacyMigrationPending` and the completion parameter to `shouldMarkAsDone`. |
-| Long legacy parser method | Extract status parsing and type-specific construction; retain line-specific validation errors. |
-| Long GUI composer method | Extract command field, row, send button, and suggestion builders. |
-| Header comment | Rephrase the add-command summary and correct the legacy storage class description. |
-| Commit bodies | Wrap every new commit message at 72 characters. Existing published history is retained. |
+| `A-BetterGui` | Asymmetric conversation, readable styling, resizable window, task counts, command suggestions, and history. |
+| `A-Personality` | Wangsa's quest theme, character avatars, and friendly task responses. |
+| `A-MoreErrorHandling` | Missing values, invalid dates and numbers, duplicate markers, full lists, bad saved data, and failed saves. |
+| `A-MoreTesting` | Parser, task list, SQLite, legacy storage, shared service, CLI, formatting, AI fallback, and platform-selection regression tests. |
 
-## Automated checks
+## Java and release checks
 
-`./gradlew clean check jar javadoc` passed: **59 tests**, no failures or skips,
-both Checkstyle tasks, Javadoc generation, and executable JAR packaging.
+`./gradlew clean check jar javadoc` builds the executable JAR with Java 25.
+**80 unit tests pass**, with no failures, errors, or skips. Both Checkstyle tasks
+and Javadoc generation pass.
 
-Regression coverage includes malformed legacy records, whitespace and detail
-markers, full-list search numbers, the CLI search-to-mark flow, failed startup,
-SQLite position shifts, and retrying a corrected legacy import. The position-shift
-test was observed failing before the fix and passing afterward.
+The [release verification run](https://github.com/Manutd1234/ip/actions/runs/34981216513)
+built one JAR on Ubuntu and tested that same artifact on:
 
-## Desktop smoke checks
+| Platform | Unit/style checks | Packaged GUI and storage checks |
+| --- | --- | --- |
+| Linux x64 | Passed | Passed under Xvfb |
+| Windows x64 | Passed | Passed |
+| macOS Intel | Passed | Passed |
+| macOS Apple Silicon | Passed | Passed |
 
-A temporary JavaFX harness loaded the packaged app in isolated folders under
-`/tmp/wangsa-week6-smoke`; the repository's runtime data was not used.
+`tests/release_smoke.py` copies the JAR to a temporary folder and compiles its
+small test harness against that JAR alone. The test invokes the actual launcher
+and checks adding every task type, finding with original task numbers, marking,
+unmarking, sorting, deleting, listing, built-in help, command history, resizing,
+and `bye`. It restarts in a separate JVM to check saved state, then verifies that
+a corrupt database blocks commands and remains unchanged. The packaged CLI reads
+the same saved tasks and provides offline AI help without a key.
 
-- Add all three task types, find, mark, unmark, sort, delete, and list: passed.
-- Search numbering, no-match output, duplicate-marker rejection: passed.
-- Header counts, Up/Down command history, and suggestion prefix: passed.
-- Malformed-database startup and blocked task commands: passed.
-- Direct database inspection confirmed the normal saved order and unchanged
-  malformed row after rejected commands.
-- Scene screenshots were inspected for the normal and blocked-startup states.
+The four-platform artifact was downloaded and checked again on local macOS
+ARM64 with Java 25.0.4. The documented `java -jar Wangsa.jar` command was also
+checked in an empty folder. No repository task data was used.
 
-## Documentation checks and remaining release work
+Release artifact: `Wangsa.jar`, 29,682,266 bytes.
 
-- The refined guide renders locally with 18 headings and two tables. Its contents
-  links resolve, all ten commands have explicit formats, the screenshot exists,
-  and the Pages index includes the guide from its single source.
-- The guide follows the quick-start, feature-format/example, and command-summary
-  structure of the [AB3 user guide](https://se-education.org/addressbook-level3/UserGuide.html),
-  with credit included. Search, task numbers, dates, and saving rules were checked
-  against Wangsa's implementation rather than copied from AB3.
-- The [Week 6 guide criteria](https://nus-cs2103-ay2627-s1.github.io/website/schedule/week6/project.html)
-  are covered by the Wangsa title, full-window screenshot, Markdown guide in
-  `docs/README.md`, and instructions for every important feature. Verification
-  of the updated public Pages output still depends on merging and pushing.
-- GitHub Pages already uses `master` and `/docs`.
-- Browser policy blocked opening the local HTML preview. The published Jekyll
-  output has not been visually verified for this branch.
-- These checks were completed before publication. The branch and lightweight
-  `A-UserGuide` tag must reach GitHub, with the changes on `master`, for the
-  public website and course dashboard to update.
-- This build includes JavaFX libraries for macOS ARM64. Windows, Linux, and Intel
-  macOS execution were not tested; a cross-platform release remains separate work.
-- JavaFX 17 emitted module/Unsafe deprecation warnings on Java 25, while both
-  desktop smoke scenarios completed successfully.
+```text
+SHA-256: 098c1d7f6cb5e7fd2d3c86e30105e33f3361daf530ccb9028dc217ee25c1c823
+```
+
+## User guide and desktop
+
+- The [product website](https://manutd1234.github.io/ip/) uses GitHub Pages with
+  `master` and `/docs`; `docs/index.md` includes the guide from `docs/README.md`.
+- The published guide was inspected in a browser, including its table of contents,
+  command summary, and screenshot. Its setup instructions cover Java 25 and the
+  supported release platforms. AI remains optional.
+- `docs/Ui.png` is a fresh PNG capture of the full Wangsa window, including the
+  title and command box. The running desktop was checked with all three task
+  types, completion, list output, and header counts using disposable sample data.
+- The guide describes all commands, automatic saving, backup and recovery,
+  task numbering, the 100-task limit, and unsupported event chronology checks.
+- Credits for the starter, OpenJFX packaging guidance, AI integration guidance,
+  and user-guide structure are recorded in the README and guide.
+
+## Submission checks and limits
+
+- Keep the latest release's single `Wangsa.jar` asset, the published guide, and
+  `master` synchronized. The course PR uses `branch-Level-7` as its source.
+- The last five commit subjects were checked against the SE-EDU conventions.
+  Published history and milestone tags were retained.
+- The public progress dashboard anonymizes student identities. The user should
+  confirm their own **Git Standard** cell after its daily refresh; this report
+  does not claim that the dashboard is green or verify earlier peer-review work.
+- Original source links for the existing Ash and Charizard pictures were not
+  recorded in the repository. They have been requested from the project owner
+  so the artwork credit can be completed accurately.
+- Live Groq answer quality was not evaluated. Automated AI tests use fixtures
+  and failure cases; the release works without AI setup.
+- GUI checks cover the listed GitHub runner environments, not every OS version
+  or display setup. JavaFX 17 can emit compatibility warnings on Java 25.
