@@ -1,44 +1,38 @@
-# Teammate test drive
+# Manual test checklist
 
-Status: **Awaiting a teammate's result.** Automated release tests have passed
-on four platforms; this checklist records the separate human test requested
-by the Week 6 instructions.
+Extract the download ZIP into an empty folder and open its start script, or copy
+the JAR there and run `java -jar Wangsa.jar`. Check Java 25 with `java -version`.
+No API key is needed.
 
-Download the single `Wangsa.jar` asset from
-[v0.4](https://github.com/Manutd1234/ip/releases/tag/v0.4), put it in a new empty
-folder, and open a terminal there. Run `java -version` to confirm Java 25, then
-run `java -jar Wangsa.jar`. No API key is needed.
-
-Use this short sequence in the desktop command box:
+Enter these commands in order:
 
 | Command or action | Expected result |
 | --- | --- |
 | `todo read a book` | A todo is added. |
-| `deadline return book /by 2026-09-20` | A deadline is added with the correct date. |
+| `deadline return book /by 2026-09-20` | A deadline is added. |
 | `event lunch /from 12pm /to 1pm` | An event is added with both times. |
 | `list` | Three tasks appear, numbered 1–3. |
 | `find book` | The todo and deadline appear with their original numbers. |
-| `mark 1`, then `unmark 1` | The todo changes to completed, then incomplete. |
-| `deadline test /by 2026-02-30` | A helpful date error appears; no task is added. |
-| `mark 99` | An invalid-number error appears; existing tasks stay intact. |
-| `sort`, then `list` | The three tasks remain present; use their current numbers. |
-| `delete NUMBER` | The task with that displayed number is removed. |
-| `help` | A command reference appears. |
-| Resize the window and scroll | Messages and the command box remain usable. |
-| `bye`, then run the JAR again from the same folder | The two remaining tasks are restored. |
+| `mark 1`, then `unmark 1` | The todo becomes complete, then incomplete. |
+| `deadline test /by 2026-02-30` | A date error appears; no task is added. |
+| `mark 99` | A number error appears; tasks stay unchanged. |
+| `sort`, then `list` | The deadline comes first, then the todo and event. |
+| `delete 2` | The todo is removed, leaving the deadline and event. |
+| `help` | The command reference appears. |
+| `@ai How do I add a task?` without a key | Offline help appears. |
+| Resize the window and scroll | Messages wrap; avatars, header, and input stay aligned. |
+| `bye`, then restart the same JAR from another working folder | The deadline and event are restored from the text file beside the JAR. |
 
-Also try a few commands of your own using the
-[user guide](https://manutd1234.github.io/ip/). Report anything confusing, even
-if the app did not crash.
+Try a few commands from the [user guide](../docs/README.md) as well.
+For any problem, record the exact command, expected result, and actual result.
 
-## Result to record
+## Test record
 
 - Tester:
 - Date:
-- OS and processor architecture:
-- Output of `java -version`:
-- Release: v0.4
-- Result: pending
-- Problems found, with the exact command and observed behavior:
-
-Do not mark the test as passed until a teammate has run it and reported back.
+- OS and processor:
+- Java version:
+- Release or commit:
+- JAR SHA-256:
+- Result:
+- Problems found:

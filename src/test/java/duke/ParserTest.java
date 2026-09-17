@@ -15,6 +15,12 @@ class ParserTest {
     private final Parser parser = new Parser();
 
     @ParameterizedTest
+    @ValueSource(strings = {"+10000-09-20", "-0001-09-20", "2026-9-20", "2026-09-31"})
+    void parseTask_nonCanonicalOrImpossibleDate_rejectsInput(String date) {
+        assertThrows(WangsaException.class, () -> parser.parseTask("deadline task /by " + date));
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {"@ai How do I add a deadline?", "  @ai\tHow do I add a deadline?  "})
     void parse_aiQuestion_preservesQuestionAndRecognizesCommand(String input) throws WangsaException {
         Command.AiQuestion command = assertInstanceOf(Command.AiQuestion.class, parser.parse(input));

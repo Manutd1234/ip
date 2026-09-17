@@ -2,8 +2,10 @@ package duke;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -12,8 +14,8 @@ import java.util.List;
 /**
  * Loads and saves Wangsa tasks using a human-readable text file.
  *
- * <p>The application uses {@link SqliteTaskRepository} for normal saves. This
- * adapter preserves the legacy text format for migration and compatibility.</p>
+ * <p>A save is written to a temporary file before replacing the previous version.
+ * Reading invalid data reports an error instead of discarding existing tasks.</p>
  */
 public class Storage implements TaskRepository {
     private static final String FIELD_SEPARATOR = " | ";
@@ -47,9 +49,11 @@ public class Storage implements TaskRepository {
             for (int i = 0; i < lines.size(); i++) {
                 loadedTasks.add(parseTask(lines.get(i), i + 1));
             }
+            validateTasks(loadedTasks);
             return loadedTasks;
         } catch (IOException exception) {
-            throw new StorageException("I couldn't read saved tasks from " + filePath + ".", exception);
+            throw new StorageException("I couldn't read " + filePath.toAbsolutePath() + ".\n"
+                    + "Close other copies of Wangsa and check that you can open this file, then restart.", exception);
         }
     }
 
@@ -61,19 +65,53 @@ public class Storage implements TaskRepository {
      */
     @Override
     public void saveTasks(List<Task> tasks) throws StorageException {
+        validateTasks(tasks);
         List<String> lines = new ArrayList<>();
         for (Task task : tasks) {
             lines.add(formatTask(task));
         }
 
+        Path temporaryFile = null;
         try {
-            Path parentDirectory = filePath.getParent();
-            if (parentDirectory != null) {
-                Files.createDirectories(parentDirectory);
+            Path destination = filePath.toAbsolutePath();
+            Path parentDirectory = destination.getParent();
+            Files.createDirectories(parentDirectory);
+            if (Files.exists(destination) && !Files.isWritable(destination)) {
+                throw new IOException("The save file is read-only.");
             }
-            Files.write(filePath, lines, StandardCharsets.UTF_8);
+            temporaryFile = Files.createTempFile(parentDirectory, "wangsa-", ".tmp");
+            Files.write(temporaryFile, lines, StandardCharsets.UTF_8);
+            replaceSaveFile(temporaryFile, destination);
         } catch (IOException exception) {
-            throw new StorageException("I couldn't save tasks to " + filePath + ".", exception);
+            throw new StorageException("I couldn't save this change to " + filePath.toAbsolutePath() + ".\n"
+                    + "Close other copies of Wangsa. Check folder access and free space, then try again.", exception);
+        } finally {
+            if (temporaryFile != null) {
+                try {
+                    Files.deleteIfExists(temporaryFile);
+                } catch (IOException exception) {
+                    // A leftover temporary file is harmless; do not misreport a completed save as failed.
+                }
+            }
+        }
+    }
+
+    /** Replaces the old file atomically where the file system supports it. */
+    private void replaceSaveFile(Path temporaryFile, Path destination) throws IOException {
+        try {
+            Files.move(temporaryFile, destination, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException exception) {
+            Files.move(temporaryFile, destination, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    /** Applies the same capacity and field rules as the task-management code. */
+    private void validateTasks(List<Task> tasks) throws StorageException {
+        try {
+            new TaskList(tasks);
+        } catch (WangsaException exception) {
+            throw new StorageException("The task list is invalid: " + exception.getMessage()
+                    + "\nCheck " + filePath.toAbsolutePath() + " or restore a backup, then restart.", exception);
         }
     }
 
@@ -130,7 +168,7 @@ public class Storage implements TaskRepository {
     }
 
     /**
-     * Validates type-specific fields before constructing a legacy task.
+     * Validates type-specific fields before constructing a saved task.
      */
     private Task createTask(List<String> fields, String description, int lineNumber) throws StorageException {
         return switch (fields.get(0)) {
@@ -161,6 +199,9 @@ public class Storage implements TaskRepository {
      */
     private LocalDate parseDeadlineDate(String value, int lineNumber) throws StorageException {
         try {
+            if (!value.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                throw createInvalidLineException(lineNumber, "deadline date must use yyyy-MM-dd format");
+            }
             return LocalDate.parse(value);
         } catch (DateTimeParseException exception) {
             throw createInvalidLineException(lineNumber, "deadline date must be valid and use yyyy-MM-dd format");
@@ -181,7 +222,7 @@ public class Storage implements TaskRepository {
      * Escapes separator and escape characters that occur in user-entered text.
      */
     private String escapeField(String field) {
-        return field.replace("\\", "\\\\").replace("|", "\\|");
+        return field.replace("\\", "\\\\").replace("|", "\\|").replace("\n", "\\n").replace("\r", "\\r");
     }
 
     /**
@@ -195,10 +236,13 @@ public class Storage implements TaskRepository {
         for (int i = 0; i < line.length(); i++) {
             char character = line.charAt(i);
             if (isEscaped) {
-                if (character != '\\' && character != '|') {
-                    throw createInvalidLineException(lineNumber, "invalid escape sequence");
-                }
-                currentField.append(character);
+                char decoded = switch (character) {
+                    case '\\', '|' -> character;
+                    case 'n' -> '\n';
+                    case 'r' -> '\r';
+                    default -> throw createInvalidLineException(lineNumber, "invalid escape sequence");
+                };
+                currentField.append(decoded);
                 isEscaped = false;
             } else if (character == '\\') {
                 isEscaped = true;
@@ -222,6 +266,8 @@ public class Storage implements TaskRepository {
      */
     private StorageException createInvalidLineException(int lineNumber, String reason) {
         return new StorageException("Saved task data is invalid at line "
-                + lineNumber + ": " + reason + ".");
+                + lineNumber + ": " + reason + ".\n"
+                + "Close Wangsa, back up " + filePath.toAbsolutePath()
+                + ", then correct that line or restore a backup and restart.");
     }
 }

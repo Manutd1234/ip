@@ -1,6 +1,5 @@
 package duke.gui;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,7 +7,8 @@ import duke.AiHelper;
 import duke.Command;
 import duke.CommandHelp;
 import duke.Parser;
-import duke.SqliteTaskRepository;
+import duke.SaveLocation;
+import duke.Storage;
 import duke.StorageException;
 import duke.Task;
 import duke.TaskRepository;
@@ -18,24 +18,24 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import javafx.scene.shape.Rectangle;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 /**
@@ -45,15 +45,7 @@ import javafx.stage.Stage;
  * AI requests run in the background so the window stays responsive.</p>
  */
 public class Main extends Application {
-    private static final Path DATABASE_PATH = Path.of("data", "wangsa.db");
-
-    private static final Path LEGACY_DATA_FILE_PATH = Path.of("data", "wangsa.txt");
-
     private static final String STYLESHEET_PATH = "main.css";
-
-    private static final String CHARIZARD_IMAGE_PATH = "/duke/gui/assets/charizard.jpg";
-
-    private static final String ASH_IMAGE_PATH = "/duke/gui/assets/ash.jpeg";
 
     private final Parser parser = new Parser();
 
@@ -92,13 +84,15 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) {
         BorderPane root = createRoot();
-        Scene scene = new Scene(root, 1180, 760);
+        Rectangle2D screen = Screen.getPrimary().getVisualBounds();
+        Scene scene = new Scene(root, Math.min(1120, screen.getWidth() - 48),
+                Math.min(700, screen.getHeight() - 76));
         String stylesheet = Main.class.getResource(STYLESHEET_PATH).toExternalForm();
         scene.getStylesheets().add(stylesheet);
 
         stage.setTitle("Wangsa // Level 10");
-        stage.setMinWidth(900);
-        stage.setMinHeight(620);
+        stage.setMinWidth(780);
+        stage.setMinHeight(580);
         stage.setScene(scene);
         stage.show();
 
@@ -136,8 +130,8 @@ public class Main extends Application {
         header.setAlignment(Pos.CENTER_LEFT);
         header.getStyleClass().add("top-bar");
 
-        StackPane pokeball = createPokeball(16);
-        pokeball.getStyleClass().add("brand-mark");
+        QuestIcon emblem = new QuestIcon(34, false);
+        emblem.getStyleClass().add("brand-mark");
 
         Label appName = new Label("WANGSA");
         appName.getStyleClass().add("brand-name");
@@ -151,18 +145,28 @@ public class Main extends Application {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
+        header.getChildren().addAll(emblem, brand, levelBadge, spacer, createStatusPanel());
+        return header;
+    }
+
+    /**
+     * Aligns the status indicator with its heading and both text lines in a shared column.
+     */
+    private Node createStatusPanel() {
         Circle statusDot = new Circle(4, Color.web("#8ee7bd"));
+        statusDot.getStyleClass().add("status-dot");
         statusText = new Label("SYSTEM READY");
         statusText.getStyleClass().add("status-text");
         taskStats = new Label("0 QUESTS  ·  0 DONE");
         taskStats.getStyleClass().add("task-stats");
-        VBox statusCopy = new VBox(1, statusText, taskStats);
-        statusCopy.setAlignment(Pos.CENTER_RIGHT);
-        HBox status = new HBox(7, statusDot, statusCopy);
-        status.setAlignment(Pos.CENTER);
-
-        header.getChildren().addAll(pokeball, brand, levelBadge, spacer, status);
-        return header;
+        GridPane status = new GridPane();
+        status.setHgap(8);
+        status.setVgap(3);
+        status.setAlignment(Pos.CENTER_RIGHT);
+        status.add(statusDot, 0, 0);
+        status.add(statusText, 1, 0);
+        status.add(taskStats, 1, 1);
+        return status;
     }
 
     /**
@@ -171,7 +175,7 @@ public class Main extends Application {
     private Node createChatPanel() {
         VBox chatPanel = new VBox(12);
         chatPanel.getStyleClass().add("chat-panel");
-        chatPanel.setPadding(new Insets(16, 30, 10, 30));
+        chatPanel.setPadding(new Insets(14, 24, 8, 24));
 
         HBox chatHeading = new HBox(8);
         chatHeading.setAlignment(Pos.CENTER_LEFT);
@@ -187,8 +191,8 @@ public class Main extends Application {
         liveBadge.getStyleClass().add("live-badge");
         chatHeading.getChildren().addAll(heading, divider, headingHint, headingSpacer, liveBadge);
 
-        messageList = new VBox(14);
-        messageList.setPadding(new Insets(2, 4, 20, 4));
+        messageList = new VBox(12);
+        messageList.setPadding(new Insets(8, 0, 12, 0));
         messageList.setFillWidth(true);
 
         chatScrollPane = new ScrollPane(messageList);
@@ -218,12 +222,10 @@ public class Main extends Application {
     private Node createComposerRow() {
         HBox composerRow = new HBox(10);
         composerRow.setAlignment(Pos.CENTER_LEFT);
-        Label prompt = new Label(">_");
-        prompt.getStyleClass().add("prompt-symbol");
 
         commandField = createCommandField();
         HBox.setHgrow(commandField, Priority.ALWAYS);
-        composerRow.getChildren().addAll(prompt, commandField, createSendButton());
+        composerRow.getChildren().addAll(commandField, createSendButton());
         return composerRow;
     }
 
@@ -234,6 +236,10 @@ public class Main extends Application {
         TextField field = new TextField();
         field.setPromptText("Type a command, then press Enter");
         field.setAccessibleText("Wangsa command input");
+        field.setMinWidth(0);
+        field.setMinHeight(48);
+        field.setPrefHeight(48);
+        field.setMaxHeight(48);
         field.getStyleClass().add("command-field");
         field.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ENTER) {
@@ -252,6 +258,10 @@ public class Main extends Application {
      */
     private Button createSendButton() {
         Button sendButton = new Button("SEND  ↗");
+        sendButton.setMinWidth(92);
+        sendButton.setMinHeight(48);
+        sendButton.setPrefHeight(48);
+        sendButton.setMaxHeight(48);
         sendButton.getStyleClass().add("send-button");
         sendButton.setDefaultButton(true);
         sendButton.setOnAction(event -> handleCommand());
@@ -286,20 +296,35 @@ public class Main extends Application {
      * Creates the compact command reference above the composer.
      */
     private Node createCheatsheet() {
-        VBox cheatsheet = new VBox(3);
+        GridPane cheatsheet = new GridPane();
+        cheatsheet.setHgap(10);
+        cheatsheet.setVgap(3);
         cheatsheet.getStyleClass().add("cheatsheet");
+        ColumnConstraints category = new ColumnConstraints(48);
+        ColumnConstraints examples = new ColumnConstraints();
+        examples.setMinWidth(0);
+        examples.setHgrow(Priority.ALWAYS);
+        cheatsheet.getColumnConstraints().addAll(category, examples);
+        addCheatsheetRow(cheatsheet, 0, "ADD", "todo <description>  ·  deadline <description> /by <yyyy-MM-dd>");
+        addCheatsheetRow(cheatsheet, 1, "EVENT", "event <description> /from <start> /to <end>");
+        addCheatsheetRow(cheatsheet, 2, "TASKS",
+                "list  ·  find <keyword>  ·  sort  ·  mark <#>  ·  unmark <#>  ·  delete <#>");
+        addCheatsheetRow(cheatsheet, 3, "HELP", "help  ·  @ai <question>  ·  bye");
+        return cheatsheet;
+    }
 
-        Label title = new Label("COMMAND CHEATSHEET");
-        title.getStyleClass().add("cheatsheet-title");
-        Label commands = new Label("ADD  todo <description>  ·  deadline <description> /by <yyyy-MM-dd>  ·  "
-                + "event <description> /from <start> /to <end>\n"
-                + "VIEW  list  ·  find <keyword>  ·  sort    STATUS  mark <#>  ·  unmark <#>    "
-                + "REMOVE  delete <#>    EXIT  bye\n"
-                + "HELP  help  ·  @ai <question>");
+    /**
+     * Aligns command groups in real columns so wrapped text keeps its indentation.
+     */
+    private void addCheatsheetRow(GridPane grid, int row, String category, String examples) {
+        Label heading = new Label(category);
+        heading.getStyleClass().add("cheatsheet-title");
+        Label commands = new Label(examples);
+        commands.setMinWidth(0);
+        commands.setMaxWidth(Double.MAX_VALUE);
         commands.setWrapText(true);
         commands.getStyleClass().add("cheatsheet-text");
-        cheatsheet.getChildren().addAll(title, commands);
-        return cheatsheet;
+        grid.addRow(row, heading, commands);
     }
 
     /**
@@ -318,57 +343,20 @@ public class Main extends Application {
     }
 
     /**
-     * Creates a simple Pokéball-inspired icon without requiring an image asset.
-     */
-    private StackPane createPokeball(double radius) {
-        StackPane icon = new StackPane();
-        Circle ball = new Circle(radius, Color.web("#d4473f"));
-        ball.setStroke(Color.web("#f8f1e5"));
-        ball.setStrokeWidth(1.5);
-        Rectangle band = new Rectangle(radius * 2, 3);
-        band.setFill(Color.web("#20263b"));
-        Circle button = new Circle(radius * 0.34, Color.web("#f8f1e5"));
-        button.setStroke(Color.web("#20263b"));
-        button.setStrokeWidth(1.2);
-        icon.getChildren().addAll(ball, band, button);
-        return icon;
-    }
-
-    /**
-     * Creates a fixed-size character frame backed by an image resource.
-     */
-    private StackPane createCharacterAvatar(String resourcePath, double width, double height, String styleClass) {
-        StackPane frame = new StackPane();
-        frame.setMinSize(width, height);
-        frame.setPrefSize(width, height);
-        frame.setMaxSize(width, height);
-        frame.getStyleClass().addAll("character-avatar", styleClass);
-
-        // Decode at the source resolution; ImageView performs the final display scaling.
-        Image image = new Image(Main.class.getResource(resourcePath).toExternalForm());
-        ImageView imageView = new ImageView(image);
-        imageView.setFitWidth(width - 4);
-        imageView.setFitHeight(height - 4);
-        imageView.setPreserveRatio(true);
-        imageView.setSmooth(true);
-        frame.getChildren().add(imageView);
-        return frame;
-    }
-
-    /**
      * Loads persisted tasks and renders the initial conversation.
      */
     private void loadTasks() {
         try {
             taskService = new TaskService(createRepository(), parser);
-            appendAssistant("Hi, trainer! I'm Wangsa. What would you like to work on today?\n"
-                    + "Try `todo read a book` to add a task, or `help` to see the commands.\n"
-                    + "You can also ask about commands with `@ai How do I add a deadline?`.");
+            appendAssistant("Hi! I'm Wangsa. Let's keep track of your tasks.\n"
+                    + "Try `todo read a book`, or type `help` for all commands.\n"
+                    + "Your tasks save automatically. No setup needed.\n"
+                    + "Save file: " + SaveLocation.getDefaultFile());
             appendAssistant(TaskFormatter.renderTasks(taskService.getTasks()));
         } catch (StorageException | WangsaException exception) {
-            appendAssistant("I couldn't load the saved quest log. Commands are blocked to protect your saved tasks.\n"
+            appendError("I couldn't load your saved tasks. Nothing has been changed.\n"
                     + exception.getMessage()
-                    + "\nFix the data or folder access, then restart Wangsa. Use `bye` to close.");
+                    + "\nType `help` for commands or `bye` to close.");
         }
         refreshHeader();
     }
@@ -377,7 +365,7 @@ public class Main extends Application {
      * Creates the default repository shared by the JavaFX workflows.
      */
     private TaskRepository createRepository() {
-        return new SqliteTaskRepository(DATABASE_PATH, LEGACY_DATA_FILE_PATH);
+        return new Storage(SaveLocation.getDefaultFile());
     }
 
     /**
@@ -394,7 +382,7 @@ public class Main extends Application {
             execute(command);
             rememberCommand(command);
         } catch (WangsaException | StorageException exception) {
-            appendAssistant(exception.getMessage());
+            appendError(exception.getMessage());
         }
         refreshHeader();
     }
@@ -436,7 +424,8 @@ public class Main extends Application {
      */
     private void execute(String command) throws WangsaException, StorageException {
         Command parsedCommand = parser.parse(command);
-        if (taskService == null && parsedCommand.type() != Parser.CommandType.BYE) {
+        if (taskService == null && parsedCommand.type() != Parser.CommandType.BYE
+                && parsedCommand.type() != Parser.CommandType.HELP) {
             throw new StorageException("Your saved quest log is unavailable. Fix the startup error and restart "
                     + "Wangsa before using task commands.");
         }
@@ -565,37 +554,18 @@ public class Main extends Application {
     }
 
     /**
+     * Makes failures distinguishable by both text and color, not color alone.
+     */
+    private void appendError(String message) {
+        messageList.getChildren().add(new ChatMessage(message, ChatMessage.Role.ERROR));
+        scrollToLatestMessage();
+    }
+
+    /**
      * Creates a left-aligned assistant or right-aligned user message bubble.
      */
     private Node createMessage(String message, boolean isUser) {
-        HBox row = new HBox(10);
-        row.setAlignment(isUser ? Pos.TOP_RIGHT : Pos.TOP_LEFT);
-        row.setMaxWidth(Double.MAX_VALUE);
-        row.getStyleClass().add("message-row");
-
-        VBox bubble = new VBox(6);
-        bubble.setMaxWidth(720);
-        bubble.getStyleClass().add(isUser ? "user-bubble" : "assistant-bubble");
-
-        Label speaker = new Label(isUser ? "TRAINER" : "WANGSA  //  YOUR QUEST PARTNER");
-        speaker.getStyleClass().add("message-speaker");
-        Label body = new Label(message);
-        body.setWrapText(true);
-        body.setMaxWidth(690);
-        body.getStyleClass().add("message-body");
-        Label metadata = new Label(isUser ? "COMMAND SENT" : "READY TO HELP");
-        metadata.getStyleClass().add("message-metadata");
-        bubble.getChildren().addAll(speaker, body, metadata);
-
-        Node avatar = isUser
-                ? createCharacterAvatar(ASH_IMAGE_PATH, 76, 104, "ash-avatar")
-                : createCharacterAvatar(CHARIZARD_IMAGE_PATH, 110, 84, "charizard-avatar");
-        if (isUser) {
-            row.getChildren().addAll(bubble, avatar);
-        } else {
-            row.getChildren().addAll(avatar, bubble);
-        }
-        return row;
+        return new ChatMessage(message, isUser ? ChatMessage.Role.USER : ChatMessage.Role.ASSISTANT);
     }
 
     /**

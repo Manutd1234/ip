@@ -1,5 +1,6 @@
 package duke;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -108,7 +109,7 @@ public final class TaskService {
     public Task add(Task task) throws WangsaException, StorageException {
         tasks.add(task);
         try {
-            repository.insertTask(task, tasks.size() - 1);
+            repository.saveTasks(tasks.getTasks());
         } catch (StorageException exception) {
             rollbackAddedTask(exception);
             throw exception;
@@ -177,7 +178,7 @@ public final class TaskService {
             task.markAsNotDone();
         }
         try {
-            repository.updateTask(task, taskNumber - 1);
+            repository.saveTasks(tasks.getTasks());
         } catch (StorageException exception) {
             restoreStatus(task, wasDone);
             throw exception;
@@ -208,7 +209,9 @@ public final class TaskService {
      */
     public Task delete(int taskNumber) throws WangsaException, StorageException {
         Task task = tasks.get(taskNumber);
-        repository.deleteTask(taskNumber - 1);
+        List<Task> remainingTasks = new ArrayList<>(tasks.getTasks());
+        remainingTasks.remove(taskNumber - 1);
+        repository.saveTasks(remainingTasks);
         tasks.delete(taskNumber);
         return task;
     }

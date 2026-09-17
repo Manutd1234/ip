@@ -27,13 +27,15 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Run tests and quality checks
-        run: ./gradlew clean check jar javadoc
+        run: ./gradlew clean check jar portableZip javadoc
 
       - name: Upload the cross-platform release JAR
         uses: actions/upload-artifact@v4
         with:
           name: Wangsa-release
-          path: build/libs/Wangsa.jar
+          path: |
+            build/libs/Wangsa.jar
+            build/distributions/Wangsa.zip
 
   verify-release:
     needs: build
@@ -70,8 +72,8 @@ jobs:
 
       - name: Test the shared JAR on Linux
         if: runner.os == 'Linux'
-        run: xvfb-run -a python tests/release_smoke.py release/Wangsa.jar
+        run: xvfb-run -a python tests/release_smoke.py release/libs/Wangsa.jar release/distributions/Wangsa.zip
 
       - name: Test the shared JAR on Windows and macOS
         if: runner.os != 'Linux'
-        run: python tests/release_smoke.py release/Wangsa.jar
+        run: python tests/release_smoke.py release/libs/Wangsa.jar release/distributions/Wangsa.zip

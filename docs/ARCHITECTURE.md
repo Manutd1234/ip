@@ -1,110 +1,69 @@
-# Wangsa Architecture
+# Wangsa architecture
 
-Wangsa keeps user-interface code separate from task-management code so the CLI and JavaFX interfaces can share the same behavior.
+The desktop and terminal interfaces use the same task logic. A command is parsed
+once, passed to the task service, saved if it changes data, and then shown to the user.
 
-## Responsibilities
+## Main classes
 
-```text
-User input
-    |
-    +--> duke.Wangsa      (CLI presentation and command loop)
-    |
-    +--> duke.gui.Main    (JavaFX controls and rendering)
-             |
-             v
-       duke.Parser        (command syntax and validation)
-             |
-             v
-       duke.Command      (typed command objects)
-             |
-             v
-       duke.TaskService   (application workflows)
-          |          |
-          v          v
-  duke.TaskList    duke.TaskRepository
-  (domain state)   (persistence contract)
-                         |
-                         v
-             duke.SqliteTaskRepository
-             (transactional SQLite database)
-```
+| Classes | Responsibility |
+| --- | --- |
+| `gui.Main`, `Wangsa`, `Ui` | Desktop controls and terminal input/output |
+| `Parser`, `Command` | Check command syntax and carry the parsed arguments |
+| `TaskService` | Carry out commands and coordinate saving |
+| `TaskList`, `TaskMatch` | Manage order, capacity, search, and task numbers |
+| `Task`, `Todo`, `Deadline`, `Event`, `TaskType` | Represent tasks and their details |
+| `TaskRepository` | Define the storage operations |
+| `Storage` | Read, validate, and save tasks in a plain text file |
+| `SaveLocation` | Keep downloaded users' saves beside the JAR |
+| `gui.ChatMessage`, `gui.CharacterAvatar`, `gui.QuestIcon`, `gui.TaskFormatter` | Render messages, artwork, and task lists |
+| `CommandHelp`, `AiHelper` | Provide built-in help and optional AI explanations |
+| `gui.Launcher`, `gui.NativeLibraries` | Select the JavaFX native libraries before opening the window |
 
-- `Task`, `Todo`, `Deadline`, `Event`, and `TaskType` model task data and display behavior.
-- `TaskList` owns ordering, capacity, search, and task mutations.
-- `TaskMatch` pairs a search result with its full-list number, keeping displayed
-  search numbers consistent with mark, unmark, and delete commands.
-- `Parser` translates command text into validated `Command` objects, task values, and
-  backwards-compatible parsing helpers. Each command shape owns the arguments valid
-  for that action, so interfaces do not need to parse raw strings again.
-- `TaskService` coordinates a complete use case, such as adding a task and saving it.
-- `TaskRepository` defines persistence without committing the application to a storage format.
-- `SqliteTaskRepository` implements `TaskRepository` using indexed, transactional SQLite rows.
-- SQLite uses WAL mode for reader/writer concurrency and immediate write transactions so position checks and
-  updates acquire the writer lock together. Unique position indexes and task-type checks protect ordering and
-  task-specific fields at the database boundary, including for databases created by earlier versions.
-- `Storage` remains the legacy text-file reader used for one-time migration from `data/wangsa.txt`.
-- `Ui` and `duke.gui.Main` format output for their respective interfaces.
-  The GUI builds its composer from small control builders and keeps task commands
-  blocked after a failed load; it never replaces unreadable saved data with a
-  writable empty service. The CLI exits on a failed load.
-- `CommandHelp` keeps the command reference in one place for built-in help, AI
-  prompts, and offline responses. It has no AI or network dependencies.
-- `AiHelper` answers optional `@ai` questions through LangChain4j's Groq-compatible
-  chat adapter. Client setup, response formatting, and offline help each have a
-  small helper method. It has no access to the repository or task service, so
-  model output cannot change tasks.
+## Task changes and saving
+
+`TaskList` holds up to 100 valid tasks. Search results keep the numbers used by
+the full list. Sorting puts deadlines first and keeps equal-date or undated
+tasks in their previous relative order.
+
+`TaskService` reports success only after saving. If an add, mark, unmark, or sort
+cannot be saved, it restores the previous in-memory state. A delete is saved
+before it is applied to memory.
+
+`Storage` writes the complete list to a temporary UTF-8 file in the save folder,
+then replaces `wangsa.txt`. It uses an atomic move where supported, with a regular
+replacement as a fallback. Each line records the type, completion flag, description,
+and any date or event times. Separators, backslashes, and line breaks are escaped.
+
+Loading validates every line and the 100-task limit. Invalid data is reported
+with its line number and file path; it is not silently discarded. The desktop
+keeps `help` and `bye` available if loading fails. The terminal exits.
+
+The packaged app saves under its own folder, regardless of the terminal's current
+folder. Source-code runs save under the project folder. Old database files are
+not read, changed, or deleted.
 
 ## Optional AI help
 
-`Parser` produces a `Command.AiQuestion` with a non-empty question of at most 1000
-characters. Both interfaces pass the question to `AiHelper.ask`. The helper lazily
-creates its model from `LLM_API_KEY` and optional `LLM_MODEL`; no key is required
-at startup. Each request contains only a system message with the command reference
-and the current user question. There is no conversation memory, tool execution,
-or access to the saved task list.
+`CommandHelp` holds the command reference used by offline help and AI prompts.
+`AiHelper` sends only that reference and the current question to Groq. It cannot
+access saved tasks or execute commands, and it keeps no conversation history.
 
-The JavaFX adapter runs the blocking call in a daemon thread using a JavaFX `Task`,
-allows normal commands while waiting, and replaces the corresponding loading
-bubble on the application thread. Only one AI request is allowed at a time, and
-closing the application cancels it. The CLI processes questions synchronously.
-The model uses a 20-second timeout, no retries, and a bounded response token budget.
-Missing configuration, empty responses, and provider failures return labelled
-offline help. Raw provider errors are never shown because they may contain request data.
+The desktop runs one request at a time in a background thread; task commands
+remain usable. The terminal waits for the response. Requests have a 20-second
+timeout and no retries. Missing configuration, empty replies, or provider errors
+return offline help. Raw provider errors are not displayed because they may
+contain request details.
 
-AI tests inject a `ChatModel` so automated checks never need credentials or call
-an external provider. Keep the built-in reference up to date when adding commands.
-
-The `C-Sort` extension follows the same flow as other commands: `Parser` recognizes
-`sort`, `TaskService` persists the reordered snapshot, and each interface renders
-the resulting task order. `TaskList` keeps the sorting rule close to the task data
-structure so both interfaces behave identically.
+Tests supply a fake model, so they need no API key or network connection.
 
 ## Adding a feature
 
-1. Add or update the domain model in the task classes when the feature introduces new task data or behavior.
-2. Add command syntax and validation in `Parser`, then add a typed `Command` shape when the feature needs new arguments.
-3. Add the state-changing workflow in `TaskService`; keep its primary API typed and save mutations through `TaskRepository`.
-4. Add focused unit tests beside the affected class. Prefer testing `TaskService` and the domain classes instead of JavaFX controls.
-5. Add CLI output in `Ui` and JavaFX output in `duke.gui.Main` only after the shared workflow works.
-6. Update the user guide and this architecture guide when the public command set or a layer responsibility changes.
+1. Update the task model if new data is needed.
+2. Add syntax and validation in `Parser`, with a matching `Command` type.
+3. Put shared behaviour in `TaskService`; use `TaskRepository` for storage.
+4. Add tests for valid input, invalid input, and failed saving.
+5. Add desktop and terminal output, then update the user guide.
 
-## Extension points
-
-- A new persistence backend can implement `TaskRepository` without changing `TaskService`.
-- The SQLite repository keeps schema creation and transaction handling in one adapter, so a future
-  remote database can replace it without leaking JDBC details into the domain or interfaces.
-- Schema initialization is idempotent: it adds missing indexes and validation triggers whenever an existing
-  database is opened, while malformed legacy rows are reported instead of being silently changed.
-- Position shifts update rows toward a free slot, from the end for insertion and
-  from the beginning for deletion. This preserves the unique position index even
-  when insertion order differs from display order. Insert validation takes place
-  inside the same write transaction as the shift and insertion.
-- Legacy text is validated before opening a new database, so a malformed file
-  does not create an empty database that prevents retrying the import.
-- A new interface can construct a `TaskService` and reuse the existing parser and workflows.
-- A new interface can parse once, switch on `Command.type()`, and pass typed values to
-  `TaskService`; it does not need to duplicate command-token parsing.
-- A new task type should extend `Task`, define its own details, and be handled by `Parser` and
-  `SqliteTaskRepository` for creation and persistence.
-
-Keep commits focused by separating domain changes, service changes, interface changes, tests, and documentation where practical.
+A different storage backend can implement `TaskRepository` without changing the
+task service. A new task type should extend `Task` and be supported by the parser
+and storage adapter.

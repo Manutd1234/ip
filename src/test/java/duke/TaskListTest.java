@@ -14,6 +14,21 @@ import org.junit.jupiter.api.Test;
 /** Tests task-list ordering, mutations, validation, and capacity handling. */
 class TaskListTest {
     @Test
+    void invalidTaskFields_areRejectedAtEveryCollectionEntryPoint() throws WangsaException {
+        List<Task> invalidTasks = List.of(new Todo(null), new Todo("  "),
+                new Deadline("missing date", null), new Event("missing start", " ", "4pm"),
+                new Event("missing end", "2pm", null));
+        TaskList tasks = new TaskList();
+        for (Task task : invalidTasks) {
+            assertThrows(WangsaException.class, () -> tasks.add(task));
+            assertThrows(WangsaException.class, () -> tasks.addAll(new Todo("valid"), task));
+            assertThrows(WangsaException.class, () -> new TaskList(List.of(task)));
+            assertTrue(tasks.getTasks().isEmpty());
+        }
+        assertThrows(WangsaException.class, () -> new TaskList(null));
+    }
+
+    @Test
     void findMatches_nonAdjacentResults_preservesActionableNumbers() throws WangsaException {
         Task first = new Todo("other");
         Task second = new Todo("read book");

@@ -211,6 +211,9 @@ public class Parser {
         }
 
         try {
+            if (!by.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}")) {
+                throw new DateTimeParseException("Expected a four-digit year", by, 0);
+            }
             return new Deadline(description, LocalDate.parse(by));
         } catch (DateTimeParseException exception) {
             throw new WangsaException("Deadline date must be valid and use yyyy-MM-dd format "

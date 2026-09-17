@@ -28,12 +28,18 @@ public class TaskList {
      * Creates a task list containing the supplied saved tasks.
      *
      * @param savedTasks Tasks loaded from storage.
-     * @throws WangsaException If the saved list exceeds Wangsa's capacity.
+     * @throws WangsaException If the saved list is invalid or exceeds Wangsa's capacity.
      */
     public TaskList(List<Task> savedTasks) throws WangsaException {
+        if (savedTasks == null) {
+            throw new WangsaException("The saved task list cannot be null.");
+        }
         if (savedTasks.size() > MAX_TASKS) {
             throw new WangsaException("The saved task list contains more than "
                     + MAX_TASKS + " tasks.");
+        }
+        for (Task task : savedTasks) {
+            validateTask(task);
         }
         this.tasks = new ArrayList<>(savedTasks);
         assertInvariant();
@@ -75,7 +81,7 @@ public class TaskList {
      *
      * @param task Task to add.
      * @return The added task.
-     * @throws WangsaException If the list is full.
+     * @throws WangsaException If the task is invalid or the list is full.
      */
     public Task add(Task task) throws WangsaException {
         validateTask(task);
@@ -91,7 +97,7 @@ public class TaskList {
      * Adds several tasks as one capacity-checked operation.
      *
      * @param newTasks Tasks to add.
-     * @throws WangsaException If the combined list would exceed capacity.
+     * @throws WangsaException If a task is invalid or the combined list would exceed capacity.
      */
     public void addAll(Task... newTasks) throws WangsaException {
         if (newTasks == null) {
@@ -200,11 +206,21 @@ public class TaskList {
     }
 
     /**
-     * Rejects null task values before they can enter the domain collection.
+     * Rejects incomplete tasks before they can enter the domain collection.
      */
     private void validateTask(Task task) throws WangsaException {
         if (task == null) {
             throw new WangsaException("A task cannot be null.");
+        }
+        if (task.getDescription() == null || task.getDescription().isBlank()) {
+            throw new WangsaException("A task description cannot be blank.");
+        }
+        if (task instanceof Deadline deadline && deadline.getBy() == null) {
+            throw new WangsaException("A deadline must have a date.");
+        }
+        if (task instanceof Event event && (event.getFrom() == null || event.getFrom().isBlank()
+                || event.getTo() == null || event.getTo().isBlank())) {
+            throw new WangsaException("An event must have a start and an end.");
         }
     }
 

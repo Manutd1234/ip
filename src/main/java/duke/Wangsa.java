@@ -9,8 +9,6 @@ import java.nio.file.Path;
  * This class connects those operations to the console and handles errors.</p>
  */
 public class Wangsa {
-    private static final Path DATABASE_PATH = Path.of("data", "wangsa.db");
-
     private final TaskRepository repository;
 
     private final Parser parser;
@@ -20,13 +18,12 @@ public class Wangsa {
     private final AiHelper aiHelper;
 
     /**
-     * Creates Wangsa with console interaction and a SQLite database at the supplied path.
+     * Creates Wangsa with console interaction and a text save file at the supplied path.
      *
-     * @param databasePath Database location.
+     * @param filePath Save-file location.
      */
-    public Wangsa(Path databasePath) {
-        this(new SqliteTaskRepository(databasePath, databasePath.resolveSibling("wangsa.txt")),
-                new Parser(), new Ui());
+    public Wangsa(Path filePath) {
+        this(new Storage(filePath), new Parser(), new Ui());
     }
 
     /**
@@ -144,11 +141,11 @@ public class Wangsa {
     }
 
     /**
-     * Starts Wangsa using its default relative database path.
+     * Starts Wangsa using the normal save file beside the JAR or in the source project.
      *
      * @param args Command-line arguments (unused).
      */
     public static void main(String[] args) {
-        new Wangsa(DATABASE_PATH).run();
+        new Wangsa(SaveLocation.getDefaultFile()).run();
     }
 }

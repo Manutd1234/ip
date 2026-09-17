@@ -1,4 +1,7 @@
-# Wangsa Test Plan
+# Wangsa test plan
+
+Run manual checks in a disposable folder, not against your own saved tasks.
+Use the [manual checklist](peer-smoke-test.md) for a quick test of the JAR.
 
 ## Automated checks
 
@@ -7,19 +10,31 @@
 - Checkstyle also checks four-space switch indentation, consistent import order,
   and Javadoc formatting against the SE-EDU conventions.
 - `./gradlew clean check` runs the complete local verification used by CI.
+- `./gradlew shadowJar portableZip` builds the portable JAR and easy-start ZIP. Run
+  `python3 tests/release_smoke.py build/libs/Wangsa.jar` to test it outside the source tree.
 - `./gradlew runCli` launches the terminal interface directly from Gradle.
 
 ## Persistence acceptance checks
 
-1. Start Wangsa with no database and add a task; confirm `data/wangsa.db` is created.
-2. If `data/wangsa.txt` exists, start Wangsa once and confirm its tasks appear in the database-backed list.
-3. Delete all migrated tasks, restart Wangsa, and confirm the legacy file is not imported again.
-4. Stop or interrupt a write and confirm the database contains either the old snapshot or the complete new snapshot.
-5. Open an existing database and confirm task order remains stable and malformed task-specific fields are reported.
-6. Try migrating a malformed legacy file; confirm no database is created. Correct
-   the reported line, restart, and confirm the legacy tasks are imported.
-7. Insert at the front and middle of a saved list through the repository, then
-   delete earlier positions. Confirm ordering survives without unique-index errors.
+1. Start with no save file and add a task; confirm `data/wangsa.txt` is created beside the JAR.
+2. Restart the JAR from a different working folder. Confirm the same tasks appear.
+3. Delete all tasks and restart. Confirm the list stays empty.
+4. Add todos, deadlines, and events containing Unicode, pipes, and backslashes.
+   Confirm descriptions, times, order, and completion survive a restart.
+5. Try an invalid status, date, escape sequence, or a file with 101 tasks.
+   Confirm loading fails with a clear error and the original file is unchanged.
+6. Make the save destination unwritable. Confirm an attempted change fails without
+   changing the displayed list. Restore access and try again.
+7. Confirm temporary save files are removed after successful and failed saves.
+8. Place an old `wangsa.db` beside the app. Confirm it is not opened or changed.
+
+## Download checks
+
+1. Extract `Wangsa.zip` into a folder with spaces in its name.
+2. On Windows, open `Start-Wangsa.bat`. On Mac, open `Start-Wangsa.command`.
+   Confirm the app opens with Java 25 and no database setup.
+3. Without Java on the path, confirm the script points to the quick-start instructions.
+4. Confirm the ZIP contains the current JAR, instructions, and scripts, but no personal data.
 
 ## GUI acceptance checks
 
@@ -36,7 +51,9 @@
 6. Find a task that is not first in the full list. Confirm its displayed number
    marks that same task, and a search with no matches says so explicitly.
 7. Start with malformed saved data. Confirm the header says STORAGE UNAVAILABLE,
-   task commands are rejected, the original data remains intact, and `bye` exits.
+   task commands are rejected, the original data remains intact, `help` works, and `bye` exits.
+8. At narrow and normal window sizes, check avatar/bubble alignment, long-message
+   wrapping, equal input/button heights, and the status dot beside its heading.
 
 ## User guide acceptance checks
 
@@ -67,9 +84,9 @@
 8. Check empty lists and single-task confirmations. Messages should suggest a useful
    next step and use "1 task" or "1 quest" rather than a plural.
 
-Automated tests use injected models for normal replies, failures, empty replies,
-request separation, offline fallback, and the guarantee that AI output is never
-executed. They do not verify live model answer quality or require a Groq key.
+Automated tests use fake models to check replies, failures, empty replies,
+independent requests, offline fallback, and that AI output is not executed.
+They do not check live answer quality or require a Groq key.
 
 ## C-Sort acceptance checks
 
@@ -77,4 +94,4 @@ executed. They do not verify live model answer quality or require a Groq key.
 2. Run `sort`.
 3. Confirm deadlines appear from earliest to latest.
 4. Confirm undated tasks appear after deadlines and retain their relative order.
-5. Restart Wangsa and confirm the sorted order is restored from `data/wangsa.db`.
+5. Restart Wangsa and confirm the sorted order is restored from `data/wangsa.txt`.

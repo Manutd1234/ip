@@ -9,11 +9,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /** Tests durable task round-trips, first-run behavior, and corrupted data handling. */
 class StorageTest {
@@ -37,6 +39,8 @@ class StorageTest {
         StorageException exception = assertThrows(StorageException.class, new Storage(file)::loadTasks);
 
         assertTrue(exception.getMessage().contains("line 2: " + reason));
+        assertTrue(exception.getMessage().contains(file.toString()));
+        assertEquals("T | 0 | valid\n" + line + "\n", Files.readString(file));
     }
 
     @Test
@@ -76,5 +80,114 @@ class StorageTest {
         StorageException exception = assertThrows(StorageException.class, new Storage(file)::loadTasks);
         assertTrue(exception.getMessage().contains("line 1"));
         assertTrue(exception.getMessage().contains("yyyy-MM-dd"));
+    }
+
+    @Test
+    void saveAndLoadTasks_preservesUnicodeAndEscapedEventFields() throws Exception {
+        Storage storage = new Storage(temporaryDirectory.resolve("My tasks 王/wangsa.txt"));
+        Event event = new Event("réviser 王\nchapter 2", "Monday | 2pm", "Tuesday\\evening\r4pm");
+
+        storage.saveTasks(List.of(event));
+        Event reloaded = (Event) storage.loadTasks().getFirst();
+
+        assertEquals(event.getDescription(), reloaded.getDescription());
+        assertEquals(event.getFrom(), reloaded.getFrom());
+        assertEquals(event.getTo(), reloaded.getTo());
+    }
+
+    @Test
+    void saveTasks_repeatedAndEmptySaves_replaceFileAndLeaveNoTemporaryFiles() throws Exception {
+        Path file = temporaryDirectory.resolve("tasks.txt");
+        Storage storage = new Storage(file);
+        storage.saveTasks(List.of(new Todo("first")));
+        storage.saveTasks(List.of(new Todo("second")));
+        assertEquals("second", storage.loadTasks().getFirst().getDescription());
+
+        storage.saveTasks(List.of());
+
+        assertTrue(storage.loadTasks().isEmpty());
+        assertEquals("", Files.readString(file));
+        try (var files = Files.list(temporaryDirectory)) {
+            assertEquals(List.of(file), files.toList());
+        }
+    }
+
+    @Test
+    void saveTasks_invalidSnapshot_doesNotReplaceExistingData() throws Exception {
+        Path file = temporaryDirectory.resolve("tasks.txt");
+        Storage storage = new Storage(file);
+        storage.saveTasks(List.of(new Todo("keep this")));
+        String original = Files.readString(file);
+
+        assertThrows(StorageException.class, () -> storage.saveTasks(List.of(new Todo(" "))));
+        assertThrows(StorageException.class, () -> storage.saveTasks(null));
+
+        assertEquals(original, Files.readString(file));
+    }
+
+    @Test
+    void saveTasks_destinationIsDirectory_preservesContentsAndCleansTemporaryFile() throws Exception {
+        Path file = Files.createDirectory(temporaryDirectory.resolve("tasks.txt"));
+        Path marker = file.resolve("keep.txt");
+        Files.writeString(marker, "keep this data");
+
+        StorageException exception = assertThrows(StorageException.class,
+                () -> new Storage(file).saveTasks(List.of(new Todo("cannot save"))));
+
+        assertTrue(exception.getMessage().contains("couldn't save"));
+        assertEquals("keep this data", Files.readString(marker));
+        try (var files = Files.list(temporaryDirectory)) {
+            assertEquals(List.of(file), files.toList());
+        }
+    }
+
+    @Test
+    void saveTasks_parentIsAFile_reportsRecoveryAdviceWithoutChangingIt() throws Exception {
+        Path parent = temporaryDirectory.resolve("data");
+        Files.writeString(parent, "do not overwrite");
+
+        StorageException exception = assertThrows(StorageException.class,
+                () -> new Storage(parent.resolve("tasks.txt")).saveTasks(List.of(new Todo("task"))));
+
+        assertTrue(exception.getMessage().contains("Check folder access"));
+        assertEquals("do not overwrite", Files.readString(parent));
+    }
+
+    @Test
+    void loadAndSaveTasks_overCapacity_rejectWithoutChangingFile() throws Exception {
+        Path file = temporaryDirectory.resolve("tasks.txt");
+        String oversized = "T | 0 | task\n".repeat(101);
+        Files.writeString(file, oversized);
+        Storage storage = new Storage(file);
+
+        assertThrows(StorageException.class, storage::loadTasks);
+        List<Task> tasks = IntStream.range(0, 101).mapToObj(index -> (Task) new Todo("task")).toList();
+        assertThrows(StorageException.class, () -> storage.saveTasks(tasks));
+
+        assertEquals(oversized, Files.readString(file));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"2026-02-30", "26-09-20", "+10000-09-20", "2026-9-2"})
+    void loadTasks_invalidDate_rejectsWithoutChangingFile(String date) throws Exception {
+        Path file = temporaryDirectory.resolve("tasks.txt");
+        String original = "D | 0 | task | " + date + "\n";
+        Files.writeString(file, original);
+
+        assertThrows(StorageException.class, new Storage(file)::loadTasks);
+
+        assertEquals(original, Files.readString(file));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"T | 0 | bad\\q", "T | 0 | unfinished\\"})
+    void loadTasks_invalidEscape_reportsLineWithoutChangingFile(String original) throws Exception {
+        Path file = temporaryDirectory.resolve("tasks.txt");
+        Files.writeString(file, original);
+
+        StorageException exception = assertThrows(StorageException.class, new Storage(file)::loadTasks);
+
+        assertTrue(exception.getMessage().contains("line 1"));
+        assertEquals(original, Files.readString(file));
     }
 }

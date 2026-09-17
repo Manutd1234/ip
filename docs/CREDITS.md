@@ -5,35 +5,53 @@ title: Wangsa credits
 
 # Credits
 
-Wangsa is a student project inspired by Pokémon. The character pictures are
-reused artwork, not artwork created for this project.
+## AI assistance
 
-## Character artwork
+Manutd1234 used **OpenAI Codex with [GPT-6 Astra](https://developers.openai.com/api/docs/models/gpt-6-astra)**
+for help with implementation, OOP refactoring, GUI layout, error handling,
+tests, JAR packaging, and documentation. AI helped write and revise substantial
+parts of the project. The project author is responsible for the final work.
 
-| File | Credit and reference |
+The optional `@ai` command is separate: it uses Groq through LangChain4j.
+Its default model is `openai/gpt-oss-20b`, not GPT-6 Astra.
+
+## Artwork
+
+The Charizard and Ash images are reused artwork, not original illustrations
+by the project author or AI.
+
+| Image | Source |
 | --- | --- |
-| `src/main/resources/duke/gui/assets/charizard.jpg` | Downloaded from [this Pinterest pin](https://in.pinterest.com/pin/890164682599959089/), as confirmed by the project author. The matching illustration is attributed to Sugimori in the [Pokémon Database artwork gallery](https://pokemondb.net/artwork/charizard). |
-| `src/main/resources/duke/gui/assets/ash.jpeg` | Ash Ketchum, a character from the Pokémon animated series. Downloaded from [this Pinterest pin](https://ru.pinterest.com/pin/729442470942034338/), as confirmed by the project author. The creator of this particular illustration remains unverified. |
+| Charizard (`charizard.jpg`) | [Pinterest download source](https://in.pinterest.com/pin/890164682599959089/). The matching illustration is credited to Sugimori in the [Pokémon Database gallery](https://pokemondb.net/artwork/charizard). |
+| Ash Ketchum (`ash.jpeg`) | [Pinterest download source](https://ru.pinterest.com/pin/729442470942034338/). The artist of this particular image has not been identified. |
 
-Pokémon and its characters belong to their respective rights holders. Wangsa
-does not claim ownership of these pictures or affiliation with Pokémon.
-The Pinterest links record the download sources; they do not identify the
-original artists. Attribution does not change the artwork's license.
+The source links were supplied by the project author. Pokémon and its characters
+belong to their respective rights holders. Wangsa does not claim ownership of the
+images or affiliation with Pokémon.
 
-## Code and documentation
+## Starter code and guides
 
-- The project started from the
-  [course iP template](https://github.com/NUS-CS2103-AY2627-S1/ip), based on
-  [SE-EDU Duke](https://github.com/se-edu/duke).
-- Cross-platform packaging follows the
-  [OpenJFX fat JAR guidance](https://openjfx.io/openjfx-docs/#modular).
-- Optional AI command help follows the read-only approach in the
-  [SE-EDU AI integration tutorial](https://se-education.org/guides/tutorials/addingAiToJavaApp.html).
-- The guide structure was inspired by the
-  [SE-EDU AddressBook Level 3 User Guide](https://se-education.org/addressbook-level3/UserGuide.html).
-- AI assistance was used for optional increments, refactoring, documentation,
-  and verification. The project's automated checks and release checks are
-  described in the
-  [verification report](https://github.com/Manutd1234/ip/blob/master/tests/week6-verification.md).
+- [Course iP template](https://github.com/NUS-CS2103-AY2627-S1/ip), based on
+  [SE-EDU Duke](https://github.com/se-edu/duke): starting project.
+- [OpenJFX fat-JAR guidance](https://openjfx.io/openjfx-docs/#modular):
+  cross-platform packaging.
+- [SE-EDU AI tutorial](https://se-education.org/guides/tutorials/addingAiToJavaApp.html):
+  read-only AI command help.
+- [AddressBook Level 3 User Guide](https://se-education.org/addressbook-level3/UserGuide.html):
+  inspiration for the user-guide structure.
+
+## Libraries and tools
+
+| Library or tool | Used for |
+| --- | --- |
+| [JavaFX](https://openjfx.io/) | Desktop interface |
+| [LangChain4j](https://github.com/langchain4j/langchain4j) | Connecting to Groq |
+| [SLF4J](https://www.slf4j.org/) | Dependency logging |
+| [JUnit](https://junit.org/) | Unit tests |
+| [Gradle](https://gradle.org/) | Building and running the project |
+| [Checkstyle](https://checkstyle.org/) | Checking Java style |
+
+Versions are listed in `build.gradle`. Each dependency has its own licence.
+This credits page is also included in the JAR at `META-INF/wangsa/CREDITS.md`.
 
 [Back to the user guide](./)

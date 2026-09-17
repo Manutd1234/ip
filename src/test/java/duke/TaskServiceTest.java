@@ -67,16 +67,16 @@ class TaskServiceTest {
     }
 
     @Test
-    void taskOperations_usingSqliteRepository_persistIncrementalChanges() throws Exception {
-        Path databasePath = temporaryDirectory.resolve("wangsa.db");
-        TaskService service = new TaskService(new SqliteTaskRepository(databasePath, null), new Parser());
+    void taskOperations_usingTextFile_persistChangesAcrossRestarts() throws Exception {
+        Path filePath = temporaryDirectory.resolve("wangsa.txt");
+        TaskService service = new TaskService(new Storage(filePath), new Parser());
 
         service.add("todo first");
         service.add("todo second");
         service.mark("mark 1");
         service.delete("delete 2");
 
-        TaskService reloaded = new TaskService(new SqliteTaskRepository(databasePath, null), new Parser());
+        TaskService reloaded = new TaskService(new Storage(filePath), new Parser());
         assertEquals(List.of("first"), reloaded.getTasks().stream().map(Task::getDescription).toList());
         assertTrue(reloaded.getTasks().get(0).isDone());
     }
@@ -98,12 +98,24 @@ class TaskServiceTest {
     @Test
     void sort_restoresOriginalOrderWhenPersistenceFails() throws Exception {
         List<Task> initialTasks = List.of(
-                new Deadline("later", java.time.LocalDate.of(2026, 10, 20)), new Todo("undated"));
+                new Todo("undated"), new Deadline("later", java.time.LocalDate.of(2026, 10, 20)),
+                new Deadline("earlier", java.time.LocalDate.of(2026, 9, 20)));
         TaskService service = new TaskService(new FailingRepository(initialTasks), new Parser());
 
         assertThrows(StorageException.class, service::sortByDeadline);
-        assertEquals(List.of("later", "undated"), service.getTasks().stream()
+        assertEquals(List.of("undated", "later", "earlier"), service.getTasks().stream()
                 .map(Task::getDescription).toList());
+    }
+
+    @Test
+    void addAndDelete_failedPersistence_leaveExistingTasksUnchanged() throws Exception {
+        Task original = new Todo("original");
+        TaskService service = new TaskService(new FailingRepository(List.of(original)), new Parser());
+
+        assertThrows(StorageException.class, () -> service.add("todo cannot save"));
+        assertEquals(List.of(original), service.getTasks());
+        assertThrows(StorageException.class, () -> service.delete(1));
+        assertEquals(List.of(original), service.getTasks());
     }
 
     /** Repository test double that fails every write while retaining an initial snapshot. */
@@ -121,21 +133,6 @@ class TaskServiceTest {
 
         @Override
         public void saveTasks(List<Task> tasks) throws StorageException {
-            throw failure();
-        }
-
-        @Override
-        public void insertTask(Task task, int position) throws StorageException {
-            throw failure();
-        }
-
-        @Override
-        public void updateTask(Task task, int position) throws StorageException {
-            throw failure();
-        }
-
-        @Override
-        public void deleteTask(int position) throws StorageException {
             throw failure();
         }
 
