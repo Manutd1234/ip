@@ -13,6 +13,9 @@ import dev.langchain4j.model.openai.OpenAiChatModel;
  *
  * <p>Each question is independent. Only the command reference and the question are
  * sent to the model; this helper has no access to saved tasks or command execution.</p>
+ *
+ * <p>Integration approach inspired by the
+ * <a href="https://se-education.org/guides/tutorials/addingAiToJavaApp.html">SE-EDU AI tutorial</a>.</p>
  */
 public final class AiHelper {
     private static final String DEFAULT_MODEL = "openai/gpt-oss-20b";

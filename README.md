@@ -73,6 +73,15 @@ prepare the JAR, and write documentation. AI contributed to substantial parts of
 the project, not just wording. The project author is responsible for the final work.
 This development assistance is separate from the optional Groq feature in the app.
 
+## Acknowledgements
+
 Wangsa started from the [course iP template](https://github.com/NUS-CS2103-AY2627-S1/ip),
-based on [SE-EDU Duke](https://github.com/se-edu/duke). The
-[credits page](docs/CREDITS.md) lists the artwork sources, tutorials, and libraries.
+based on [SE-EDU Duke](https://github.com/se-edu/duke).
+
+- [JavaFX](https://openjfx.io/) provides the desktop interface.
+- [LangChain4j](https://github.com/langchain4j/langchain4j) connects optional command help to Groq.
+- [SLF4J](https://www.slf4j.org/) handles dependency logging.
+- [JUnit](https://junit.org/), [Gradle](https://gradle.org/), and
+  [Checkstyle](https://checkstyle.org/) support testing, builds, and style checks.
+
+The [credits page](docs/CREDITS.md) lists the artwork sources and tutorials.

@@ -46,6 +46,7 @@ application {
     applicationDefaultJvmArgs = ['--enable-native-access=ALL-UNNAMED']
 }
 
+// Packaging approach inspired by https://openjfx.io/openjfx-docs/#modular.
 // Intel and Apple Silicon libraries have identical names, so keep each platform in its own folder.
 def javafxNativeDirectory = layout.buildDirectory.dir('generated/javafx-natives')
 tasks.register('prepareJavafxNatives') {
