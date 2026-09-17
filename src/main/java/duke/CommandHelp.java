@@ -1,5 +1,7 @@
 package duke;
 
+import java.util.List;
+
 /**
  * Provides the command reference shown by {@code help} and used in AI answers.
  *
@@ -7,24 +9,54 @@ package duke;
  * an AI client. Update this text whenever a command's behavior changes.</p>
  */
 public final class CommandHelp {
-    private static final String REFERENCE = """
-            Wangsa commands:
-            todo DESCRIPTION - add a task without a date.
-            deadline DESCRIPTION /by YYYY-MM-DD - add a task due on a valid date.
-            event DESCRIPTION /from START /to END - add an event; start and end are free-form text.
-            list - show all tasks and their numbers.
-            find KEYWORD - find descriptions containing a phrase, ignoring case; keep full-list numbers.
-            sort - put deadlines first, earliest to latest, then undated tasks; save the new order.
-            mark NUMBER - complete a task using its current list number.
-            unmark NUMBER - reopen a completed task.
-            delete NUMBER - immediately remove a task; there is no undo.
-            help - show this command reference without AI or internet access.
-            @ai QUESTION - ask about Wangsa commands; replies do not execute commands.
-            bye - exit Wangsa.
+    /**
+     * One command's syntax, short explanation, and ready-to-type example.
+     *
+     * @param format The accepted command format.
+     * @param description A short explanation of the command.
+     * @param example A valid example command.
+     */
+    public record Entry(String format, String description, String example) {
+    }
 
-            Use lowercase commands and markers. Task numbers start at 1; sorting or deleting can change them.
-            You can keep up to 100 tasks, including completed ones. Your changes are saved automatically.
-            Priorities, reminders, recurring tasks, and editing task descriptions are not supported.
+    /**
+     * A named, immutable group of related commands.
+     *
+     * @param title The group heading.
+     * @param entries The commands in display order.
+     */
+    public record Section(String title, List<Entry> entries) {
+        /** Copies the entries so callers cannot change the shared reference. */
+        public Section {
+            entries = List.copyOf(entries);
+        }
+    }
+
+    private static final List<Section> SECTIONS = List.of(
+            new Section("Add tasks", List.of(
+                    new Entry("todo DESCRIPTION", "Add a task", "todo read a book"),
+                    new Entry("deadline DESCRIPTION /by YYYY-MM-DD", "Add a due date",
+                            "deadline submit report /by 2026-09-20"),
+                    new Entry("event DESCRIPTION /from START /to END", "Add an event",
+                            "event lunch /from 12pm /to 1pm"))),
+            new Section("View and find", List.of(
+                    new Entry("list", "Show your tasks and numbers", "list"),
+                    new Entry("find KEYWORD", "Find matching descriptions", "find book"),
+                    new Entry("sort", "Put the earliest deadlines first", "sort"))),
+            new Section("Update tasks", List.of(
+                    new Entry("mark NUMBER", "Mark a task done", "mark 1"),
+                    new Entry("unmark NUMBER", "Mark a task not done", "unmark 1"),
+                    new Entry("delete NUMBER", "Delete a task (no undo)", "delete 1"))),
+            new Section("Help and exit", List.of(
+                    new Entry("help", "Show this offline guide", "help"),
+                    new Entry("@ai QUESTION", "Ask optional AI for command help", "@ai How do I add a task?"),
+                    new Entry("bye", "Close Wangsa", "bye"))));
+
+    private static final String NOTES = """
+            • Use lowercase commands. Dates use YYYY-MM-DD.
+            • Use task numbers from list. Check again after sorting or deleting.
+            • Tasks save automatically. You can keep up to 100 tasks.
+            • AI is optional. All task commands work offline.
             """.strip();
 
     private CommandHelp() {
@@ -36,6 +68,37 @@ public final class CommandHelp {
      * @return The command reference as plain text.
      */
     public static String getText() {
-        return REFERENCE;
+        StringBuilder reference = new StringBuilder("Wangsa commands:\n");
+        for (Section section : SECTIONS) {
+            reference.append('\n').append(section.title()).append('\n');
+            for (Entry entry : section.entries()) {
+                reference.append("• ").append(entry.format()).append(" — ")
+                        .append(entry.description()).append('\n');
+            }
+        }
+        return reference.append('\n').append(NOTES).append("\n\n")
+                .append("Find ignores case and keeps full-list numbers. Sort puts undated tasks last.\n")
+                .append("Event start/end values are free-form text, without date-order checking.\n")
+                .append("AI replies do not execute commands.\n")
+                .append("Priorities, reminders, recurring tasks, and editing descriptions are not supported.")
+                .toString();
+    }
+
+    /**
+     * Returns the same command groups used by the desktop, terminal, and AI reference.
+     *
+     * @return Immutable command groups in display order.
+     */
+    public static List<Section> getSections() {
+        return SECTIONS;
+    }
+
+    /**
+     * Returns the short usage reminders displayed below the desktop help.
+     *
+     * @return Bulleted usage reminders.
+     */
+    public static String getNotes() {
+        return NOTES;
     }
 }

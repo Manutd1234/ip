@@ -34,16 +34,17 @@ def verify_contents(jar):
             assert all(folder + library in names for library in libraries)
         assert "duke/gui/main.css" in names
         assert "duke/gui/QuestIcon.class" in names
-        assert "duke/gui/assets/ash.jpeg" in names
-        assert "duke/gui/assets/charizard.jpg" in names
+        assert "duke/gui/MessageIcon.class" in names
+        media_extensions = (".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".ico",
+                            ".mp3", ".wav", ".ogg", ".m4a", ".aac", ".flac", ".mp4")
+        assert not any(name.startswith("duke/") and name.lower().endswith(media_extensions) for name in names)
         assert "META-INF/wangsa/CREDITS.md" in names
         assert "duke/Storage.class" in names
         assert not any(name.startswith("org/sqlite/") for name in names)
         assert "duke/SqliteTaskRepository.class" not in names
-        assert "duke/gui/assets/companion.png" not in names
-        assert "duke/gui/assets/explorer.png" not in names
+        assert "duke/gui/CharacterAvatar.class" not in names
         assert not any("/" not in name and name.endswith((".dll", ".so", ".dylib")) for name in names)
-    print("PASS: all four JavaFX platforms and GUI assets are packaged; no SQLite dependency")
+    print("PASS: four JavaFX platforms and code-drawn symbols; no app image/audio assets or SQLite dependency")
 
 
 def main():

@@ -15,9 +15,32 @@ once, passed to the task service, saved if it changes data, and then shown to th
 | `TaskRepository` | Define the storage operations |
 | `Storage` | Read, validate, and save tasks in a plain text file |
 | `SaveLocation` | Keep downloaded users' saves beside the JAR |
-| `gui.ChatMessage`, `gui.CharacterAvatar`, `gui.QuestIcon`, `gui.TaskFormatter` | Render messages, artwork, and task lists |
-| `CommandHelp`, `AiHelper` | Provide built-in help and optional AI explanations |
+| `gui.ChatMessage`, `gui.MessageIcon`, `gui.QuestIcon` | Render message bubbles and simple speaker symbols |
+| `gui.TaskView`, `gui.TaskFormatter` | Lay out task rows and format their literal text |
+| `gui.Typography` | Choose an installed font for readable desktop text |
+| `CommandHelp`, `gui.HelpView`, `AiHelper` | Share command definitions, show grouped examples, and provide optional AI explanations |
 | `gui.Launcher`, `gui.NativeLibraries` | Select the JavaFX native libraries before opening the window |
+
+The interface draws its arrows and compass using JavaFX shapes. There are no
+image or audio resources to load.
+`gui.Typography` selects an installed font; it does not download or bundle fonts.
+Message rows span the window, with Wangsa on the left and the user on the right.
+Individual bubbles keep a maximum width so long lines stay readable.
+`TaskView` uses a marker column for bullets or task numbers and a content column
+for the status, description, and detail lines. Due dates and event times share
+the title's left edge, without leading-space padding. Each reply is a snapshot,
+so completing a task later does not change an earlier message.
+
+## Input validation
+
+`Parser` checks command names and required markers before creating a task.
+For a deadline, `/by` is required; plain `by` is not a marker. `LocalDate` also
+checks that the date exists, so `2026-09-31` is rejected even though its format
+looks right. Validation happens before task changes or saving.
+
+An invalid command produces an error reply, leaving existing tasks unchanged.
+The user can type the corrected command into the same input box. Both Enter and
+SEND use the same submission handler.
 
 ## Task changes and saving
 
@@ -44,7 +67,10 @@ not read, changed, or deleted.
 
 ## Optional AI help
 
-`CommandHelp` holds the command reference used by offline help and AI prompts.
+`CommandHelp` holds immutable command groups used by the desktop, terminal, and
+AI prompts. `HelpView` lays out those groups as responsive cards, without copying
+command definitions into the GUI. `TaskFormatter` keeps readable desktop output
+separate from the compact terminal and storage formats.
 `AiHelper` sends only that reference and the current question to Groq. It cannot
 access saved tasks or execute commands, and it keeps no conversation history.
 

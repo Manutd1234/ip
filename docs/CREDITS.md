@@ -15,19 +15,11 @@ parts of the project. The project author is responsible for the final work.
 The optional `@ai` command is separate: it uses Groq through LangChain4j.
 Its default model is `openai/gpt-oss-20b`, not GPT-6 Astra.
 
-## Artwork
+## Interface symbols
 
-The Charizard and Ash images are reused artwork, not original illustrations
-by the project author or AI.
-
-| Image | Source |
-| --- | --- |
-| Charizard (`charizard.jpg`) | [Pinterest download source](https://in.pinterest.com/pin/890164682599959089/). The matching illustration is credited to Sugimori in the [Pokémon Database gallery](https://pokemondb.net/artwork/charizard). |
-| Ash Ketchum (`ash.jpeg`) | [Pinterest download source](https://ru.pinterest.com/pin/729442470942034338/). The artist of this particular image has not been identified. |
-
-The source links were supplied by the project author. Pokémon and its characters
-belong to their respective rights holders. Wangsa does not claim ownership of the
-images or affiliation with Pokémon.
+Wangsa uses simple arrows and a compass drawn in JavaFX code. It does not use
+third-party artwork, character images, generated illustrations, or audio.
+The user guide shows a screenshot of the app itself.
 
 ## Starter code and guides
 

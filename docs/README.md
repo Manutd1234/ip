@@ -17,7 +17,8 @@ to add a task, find it, or mark it done. Changes are saved automatically.
 3. Open the extracted folder. On Windows, double-click **Start-Wangsa.bat**.
    On Mac, double-click **Start-Wangsa.command**. On Linux, open a terminal in
    that folder and run `java -jar Wangsa.jar`.
-4. Type a command in the box at the bottom. Press **Enter** or click **SEND**.
+4. Click the command box at the bottom. Type one complete command, then press
+   **Enter** or click **SEND**. Do not type commands into the conversation area.
 
 Prefer just the JAR? Download `Wangsa.jar`, put it in a folder you own, and run:
 
@@ -33,6 +34,9 @@ Linux needs a graphical desktop with GTK 3. You do not need to install JavaFX
 separately or set up AI to manage tasks.
 
 ![Wangsa desktop with its task list and command box](Ui.png)
+
+Messages are labelled **YOU** and **WANGSA**, with small arrow symbols to distinguish
+the two sides. The app uses no external artwork or audio.
 
 Try these commands one at a time, starting with an empty list:
 
@@ -52,7 +56,8 @@ for the terminal interface. On Windows, use `gradlew.bat` instead of `./gradlew`
 
 ### Before you start
 
-- Use lowercase commands. Type `list`, not `/list`.
+- Use lowercase command names and markers. Type `list`, not `/list`.
+  Your task description can use capitals, such as `ST2334`.
 - Replace placeholders with your own text: `todo DESCRIPTION` becomes
   `todo read a book`. Do not type the angle brackets shown in the desktop hints.
 - Put spaces around `/by`, `/from`, and `/to`. Use each required marker once,
@@ -63,8 +68,12 @@ for the terminal interface. On Windows, use `gradlew.bat` instead of `./gradlew`
   Sorting or deleting can change them, so check the current list.
 - The limit is **100 tasks**, including completed ones. Duplicate tasks are allowed.
 
-`[T]` means todo, `[D]` means deadline, and `[E]` means event.
-`[ ]` means incomplete; `[X]` means complete.
+The desktop shows **[To do]** or **[Done]** beside each task. Due dates and event
+times appear underneath, aligned with the task text. Use the number at the start of the task for
+`mark`, `unmark`, or `delete`.
+
+The optional terminal interface uses compact markers: `[T]` for todo, `[D]` for
+deadline, `[E]` for event, `[ ]` for incomplete, and `[X]` for complete.
 
 ### Adding a todo: `todo`
 
@@ -72,7 +81,7 @@ for the terminal interface. On Windows, use `gradlew.bat` instead of `./gradlew`
 
 Example: `todo read a book`
 
-Adds a task without a date to the end of the list: `[T][ ] read a book`.
+Adds a task without a date to the end of the list: `[To do] read a book`.
 
 ### Adding a deadline: `deadline`
 
@@ -80,10 +89,16 @@ Adds a task without a date to the end of the list: `[T][ ] read a book`.
 
 Example: `deadline submit report /by 2026-09-20`
 
-Adds `[D][ ] submit report (by: Sep 20 2026)`.
-Use a real date with a four-digit year, two-digit month, and two-digit day.
-Past dates are allowed. Times are not supported, and dates such as `2026-02-30`
-are rejected.
+Adds `[To do] submit report`, with **Due: 20 Sep 2026** underneath.
+
+- Keep the slash in `/by`, with a space on each side. Plain `by` does not work.
+- Use `YYYY-MM-DD`: a four-digit year, two-digit month, and two-digit day.
+- The date must exist. September has 30 days, so `2026-09-31` is invalid.
+- Past dates are allowed. Times are not supported.
+
+For example, type `deadline ST2334 /by 2026-09-30` to add ST2334 due on 30 September.
+If you see an error, no task was added. Enter the corrected command in the box
+at the bottom; you do not need to delete anything first.
 
 ### Adding an event: `event`
 
@@ -91,7 +106,8 @@ are rejected.
 
 Example: `event project meeting /from Monday 2pm /to Monday 4pm`
 
-Adds `[E][ ] project meeting (from: Monday 2pm to: Monday 4pm)`.
+Adds `[To do] project meeting`, with **From: Monday 2pm** and **To: Monday 4pm**
+on separate lines.
 Both start and end are required. They are stored as text: Wangsa does not check
 their order or send reminders.
 
@@ -122,14 +138,14 @@ Completed tasks follow the same rule. The new order is saved and displayed.
 
 **Format:** `mark NUMBER`
 
-Example: `mark 2` changes task 2 from `[ ]` to `[X]`.
+Example: `mark 2` changes task 2 from **[To do]** to **[Done]**.
 The task stays in the list. Marking it again has no further effect.
 
 ### Reopening a task: `unmark`
 
 **Format:** `unmark NUMBER`
 
-Example: `unmark 2` changes task 2 from `[X]` to `[ ]`.
+Example: `unmark 2` changes task 2 from **[Done]** to **[To do]**.
 Unmarking an incomplete task has no further effect.
 
 ### Deleting a task: `delete`
@@ -147,8 +163,10 @@ Closing the window also keeps those changes.
 
 ### Built-in command help: `help`
 
-`help` shows the command reference. It works offline, without an API key,
-in both the desktop and terminal interfaces.
+`help` shows four groups: **Add tasks**, **View and find**, **Update tasks**, and
+**Help and exit**. The desktop gives a short explanation and an example you can
+type for each command. The terminal shows the command formats as bullet points.
+Both work offline, without an API key.
 
 ### Optional AI command help: `@ai`
 
@@ -207,6 +225,9 @@ processing another command. Closing the desktop cancels the request.
 - **new todo**, **find**, **mark #**, and **ask AI** fill in a command for you to finish.
 - **Up/Down** in the command box recall successful commands from this session.
 - Resize the window or scroll to read longer conversations.
+- Wangsa replies stay on the left and your messages stay on the right, even when maximized.
+- Long replies open at their beginning. Scroll down to read the rest.
+- Help groups stack into one column when there is less room.
 
 The header shows total and completed task counts. Errors have a red border and
 an **ACTION NEEDED** label. Tasks are saved, but the chat and command history
@@ -216,7 +237,7 @@ reset when the app closes.
 
 Tasks save automatically to **`data/wangsa.txt` beside `Wangsa.jar`**.
 The folder and file are created after your first change. There is no database
-to install or set up. The welcome message shows the full save-file location.
+to install or set up. Open the folder containing the JAR to find your `data` folder.
 The desktop and terminal share this file; run one instance at a time.
 
 When running from source, the save file is in the project's `data` folder.
@@ -241,10 +262,11 @@ backup, then restart. The terminal exits after a storage error.
 | Problem | What to try |
 | --- | --- |
 | Unknown command or missing value | Use lowercase commands without a leading slash. Follow the formats above. `list`, `sort`, `help`, and `bye` take no extra values. |
-| Invalid date | Use a real date in `YYYY-MM-DD` format, such as `2026-09-20`. |
+| Deadline needs a `/by` date | Include the slash: `deadline ST2334 /by 2026-09-30`, not `deadline ST2334 by 2026-09-30`. |
+| Invalid date | Check the calendar as well as the format. `2026-09-31` does not exist; use `2026-09-30` if you mean the last day of September. Re-enter the whole corrected command. |
 | Invalid task number | Run `list` and use a number shown there. Add a task first if the list is empty. |
 | Task list is full | Delete a task before adding another. Completed tasks count towards the limit. |
-| Tasks seem missing | Check the save path in the welcome message. Keep your usual `data` folder beside the JAR. |
+| Tasks seem missing | Check the folder containing the JAR you opened. Keep your usual `data` folder beside that JAR. |
 | Cannot load or save | Close other instances and check folder access. Back up the data before repairing it. |
 | App will not open | Extract the ZIP first and check Java 25 with `java -version`. Run `java -jar Wangsa.jar` in a terminal to see the error. Linux also needs GTK 3 and a graphical desktop. |
 | AI shows offline help | Check the Groq key, connection, model access, and usage limits. Restart after changing settings. `help` works without AI. |
@@ -271,5 +293,5 @@ backup, then restart. The terminal exits after a storage error.
 The guide structure draws on the
 [AddressBook Level 3 User Guide](https://se-education.org/addressbook-level3/UserGuide.html).
 Development and documentation were assisted by OpenAI Codex with GPT-6 Astra.
-See [Credits](https://manutd1234.github.io/ip/CREDITS.html) for AI usage, artwork sources,
-and libraries.
+See [Credits](https://manutd1234.github.io/ip/CREDITS.html) for AI usage, code sources,
+and libraries. The interface symbols are drawn in code, without external media.

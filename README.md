@@ -1,11 +1,25 @@
 # Wangsa
 
-Wangsa is a Pokémon-inspired task manager with a desktop window and a terminal
+Wangsa is a task manager with a desktop window and a terminal
 interface. It tracks todos, deadlines, and events, and saves changes automatically.
 
 [User guide](https://manutd1234.github.io/ip/) ·
 [Download](https://github.com/Manutd1234/ip/releases/latest) ·
 [Credits](docs/CREDITS.md)
+
+## Try it
+
+Click the command box at the bottom of the window. Enter one command at a time,
+then press **Enter** or click **SEND**:
+
+```text
+todo read a book
+deadline ST2334 /by 2026-09-30
+list
+```
+
+Keep the slash in `/by`. Dates must exist: September has 30 days, so
+`2026-09-31` is not valid. Type `help` for more examples.
 
 ## Run from source
 
@@ -33,7 +47,9 @@ python3 tests/release_smoke.py build/libs/Wangsa.jar
 The first command runs the unit tests and style checks, generates Javadoc, and
 builds `build/libs/Wangsa.jar` and `build/distributions/Wangsa.zip`. The ZIP includes
 Windows and Mac start scripts and a short quick start. The second checks the packaged app in temporary
-folders, without changing your saved tasks. It needs a graphical desktop.
+folders, without changing your saved tasks. It sets the command field and invokes
+SEND programmatically; it does not replace clicking and typing through the
+[manual checklist](tests/peer-smoke-test.md). It needs a graphical desktop.
 Use `python` on Windows or `xvfb-run -a python3` on headless Linux.
 
 The `shadowJar` task is an alias for Wangsa's custom fat-JAR builder. The JAR
@@ -84,4 +100,5 @@ based on [SE-EDU Duke](https://github.com/se-edu/duke).
 - [JUnit](https://junit.org/), [Gradle](https://gradle.org/), and
   [Checkstyle](https://checkstyle.org/) support testing, builds, and style checks.
 
-The [credits page](docs/CREDITS.md) lists the artwork sources and tutorials.
+The interface uses simple symbols drawn in JavaFX, with no external artwork or audio.
+The [credits page](docs/CREDITS.md) lists the code sources, tutorials, and AI assistance.

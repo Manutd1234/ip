@@ -1,14 +1,19 @@
 package duke.gui;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import duke.Deadline;
+import duke.Event;
 import duke.SaveLocation;
 import duke.Storage;
 import duke.StorageException;
 import duke.Task;
+import duke.TaskMatch;
 import javafx.application.Platform;
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
@@ -20,6 +25,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Region;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontSmoothingType;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 
@@ -73,7 +81,7 @@ public final class ReleaseSmoke {
     private void verify(String scenario) throws StorageException {
         check(stage.getTitle().contains("Wangsa"), "The window must use the product name");
         check(stage.isShowing(), "The release window must open");
-        check(stage.getScene().lookup(".charizard-avatar") != null, "The Charizard artwork must be present");
+        check(stage.getScene().lookup(".assistant-icon") != null, "Replies must use a simple speaker symbol");
         if (scenario.equals("blocked")) {
             check(lastReply().contains("couldn't load"), "Corrupt data must produce a startup error");
             send("todo must not overwrite data");
@@ -83,8 +91,8 @@ public final class ReleaseSmoke {
             check(lastReply().contains("todo DESCRIPTION"), "Offline help must remain available after a load error");
             verifyLayout(780, 550);
         } else if (scenario.equals("reload")) {
-            check(lastReply().contains("[D][X] submit report"), "Saved completion must survive a restart");
-            check(lastReply().contains("[E][ ] team meeting"), "Saved events must survive a restart");
+            check(lastReply().contains("[Done] submit report"), "Saved completion must survive a restart");
+            check(lastReply().contains("[To do] team meeting"), "Saved events must survive a restart");
             check(savedTasks().size() == 2, "Saved deletions must survive a restart");
         } else {
             verifyCommands();
@@ -96,12 +104,14 @@ public final class ReleaseSmoke {
     private void verifyCommands() throws StorageException {
         check(lastReply().contains("empty"), "A fresh release must start with an empty task list");
         send("  todo read book  ");
-        check(stage.getScene().lookup(".ash-avatar") != null, "The Ash artwork must be present");
+        Node userIcon = stage.getScene().lookup(".user-icon");
+        check(userIcon != null, "User messages must use a simple speaker symbol");
+        check(userIcon.getAccessibleText().equals("Your message"), "Speaker symbols must have accessible labels");
         send("deadline submit report /by 2026-09-20");
         send("event team meeting /from Monday 2pm /to Monday 4pm");
         check(savedTasks().size() == 3, "All three task types must save");
         send("find REPORT");
-        check(lastReply().contains("2. [D][ ] submit report"), "Search must retain the full-list task number");
+        check(lastReply().contains("2. [To do] submit report"), "Search must retain the full-list task number");
         send("mark 2");
         check(savedTasks().get(1).isDone(), "Mark must save completion");
         send("unmark 2");
@@ -112,8 +122,8 @@ public final class ReleaseSmoke {
         send("delete 2");
         check(savedTasks().size() == 2, "Delete must save the smaller task list");
         send("list");
-        check(lastReply().contains("1. [D][X] submit report"), "List must show current numbering and status");
-        check(lastReply().contains("2. [E][ ] team meeting"), "List must retain event details");
+        check(lastReply().contains("1. [Done] submit report"), "List must show current numbering and status");
+        check(lastReply().contains("2. [To do] team meeting"), "List must retain event details");
         send("find nothing-matches-this");
         check(lastReply().contains("No matching"), "An empty search must be explained");
         send("deadline impossible /by 2026-02-30");
@@ -125,6 +135,12 @@ public final class ReleaseSmoke {
         check(savedTasks().size() == 2, "Invalid indexes must not delete tasks");
         send("help");
         check(lastReply().contains("todo DESCRIPTION"), "Built-in help must work without AI configuration");
+        check(stage.getScene().getRoot().lookupAll(".help-section").size() == 4,
+                "Help must group commands into four sections");
+        verifyLayout(780, 550);
+        verifyLayout(1120, 700);
+        verifyLayout(1700, 950);
+        verifyLongTaskRows();
 
         TextField field = commandField();
         field.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.UP, false, false, false, false));
@@ -143,6 +159,7 @@ public final class ReleaseSmoke {
         root.applyCss();
         root.layout();
         verifyHeaderAlignment(root);
+        verifyTypography(root);
         Node field = commandField();
         Node sendButton = root.lookup(".send-button");
         check(field.getBoundsInParent().getWidth() >= 200, "The command field must retain usable width");
@@ -150,19 +167,129 @@ public final class ReleaseSmoke {
                 "The input and send button must have equal heights");
         Bounds inputBounds = field.localToScene(field.getLayoutBounds());
         check(inputBounds.getMaxY() <= height, "The command field must fit inside the resized window");
+        Parent messages = (Parent) root.lookup("#messages");
         ScrollPane chat = (ScrollPane) root.lookup(".chat-scroll");
-        for (Node row : ((Parent) chat.getContent()).getChildrenUnmodifiable()) {
-            Node avatar = row.lookup(".character-avatar");
-            check(avatar.getLayoutBounds().getWidth() == 72, "Avatars must share the same column width");
+        check(Math.abs(messages.getLayoutBounds().getWidth() - chat.getViewportBounds().getWidth()) < 1,
+                "The conversation must use the viewport width instead of a centered column");
+        for (Node row : messages.getChildrenUnmodifiable()) {
+            Node icon = row.lookup(".message-icon");
+            check(icon.getLayoutBounds().getWidth() == 36, "Speaker symbols must share the same column width");
             Node bubble = row.lookup(".assistant-bubble");
             bubble = bubble == null ? row.lookup(".user-bubble") : bubble;
-            check(Math.abs(avatar.getLayoutY() - bubble.getLayoutY()) < 1,
-                    "Avatar frames and message bubbles must align at the top");
+            check(Math.abs(icon.getLayoutY() - bubble.getLayoutY()) < 1,
+                    "Speaker symbols and message bubbles must align at the top");
+            if (icon.getStyleClass().contains("assistant-icon")) {
+                check(icon.getBoundsInParent().getMinX() <= 3,
+                        "Wangsa replies must remain anchored to the left at every window size");
+                check(bubble.getLayoutBounds().getWidth() <= 781,
+                        "Assistant text must retain a readable width on wide screens");
+            } else {
+                check(row.getLayoutBounds().getWidth() - icon.getBoundsInParent().getMaxX() <= 3,
+                        "User messages must remain anchored to the right at every window size");
+            }
             check(bubble.getBoundsInParent().getMaxX() <= row.getLayoutBounds().getWidth() + 1,
                     "Long messages must stay inside their row");
-            Label body = (Label) row.lookup(".message-body");
+            Node body = row.lookup(".message-body");
             check(body.getBoundsInParent().getMaxX() <= bubble.getLayoutBounds().getWidth() + 1,
                     "Message text must wrap inside its bubble");
+        }
+        for (Node section : root.lookupAll(".help-section")) {
+            Bounds sectionBounds = section.localToScene(section.getLayoutBounds());
+            check(sectionBounds.getMaxX() <= width, "Help groups must not overflow the window");
+        }
+        verifyHelpColumns(root, width);
+        verifyTaskAlignment(root);
+    }
+
+    /** Checks the original bug in confirmations, lists, search results, and wrapped details. */
+    private void verifyTaskAlignment(Parent root) {
+        for (Node node : root.lookupAll(".task-content")) {
+            Parent content = (Parent) node;
+            Label title = (Label) content.lookup(".task-title");
+            Bounds titleBounds = title.localToScene(title.getLayoutBounds());
+            double previousBottom = titleBounds.getMaxY();
+            for (Node child : content.getChildrenUnmodifiable()) {
+                if (!child.getStyleClass().contains("task-detail")) {
+                    continue;
+                }
+                Label detail = (Label) child;
+                Bounds bounds = detail.localToScene(detail.getLayoutBounds());
+                check(Math.abs(bounds.getMinX() - titleBounds.getMinX()) < 1,
+                        "Due, From, and To must share the task title's left edge");
+                check(bounds.getMinY() >= previousBottom,
+                        "Wrapped task titles and details must not overlap");
+                check(detail.getText().equals(detail.getText().stripLeading()),
+                        "Task details must not rely on leading spaces for alignment");
+                previousBottom = bounds.getMaxY();
+            }
+        }
+    }
+
+    /** Exercises three-digit search numbers and literal, wrapping text without changing saved tasks. */
+    private void verifyLongTaskRows() {
+        Parent messages = (Parent) stage.getScene().lookup("#messages");
+        var messageList = (javafx.scene.layout.VBox) messages;
+        Task deadline = new Deadline("ST2334 <notes> & " + "long description ".repeat(20),
+                LocalDate.of(2026, 9, 30));
+        Task event = new Event("meeting", "start time ".repeat(40), "end time ".repeat(40));
+        TaskView view = TaskView.matches(List.of(new TaskMatch(10, deadline), new TaskMatch(100, event)));
+        ChatMessage message = ChatMessage.tasks(view);
+        messageList.getChildren().add(message);
+        try {
+            verifyLayout(780, 550);
+            Label title = (Label) view.lookup(".task-title");
+            check(title.getHeight() > title.getFont().getSize() * 2, "The long test title must actually wrap");
+            check(view.getAccessibleText().contains("100. [To do] meeting"),
+                    "Three-digit task numbers must retain their meaning");
+            deadline.markAsDone();
+            check(title.getText().startsWith("[To do]"), "Earlier replies must remain snapshots");
+            verifyLayout(1120, 700);
+            verifyLayout(1700, 950);
+        } finally {
+            messageList.getChildren().remove(message);
+        }
+    }
+
+    /** Checks the rendered font and smoothing rather than only checking stylesheet text. */
+    private void verifyTypography(Parent root) {
+        Label brand = (Label) root.lookup(".brand-name");
+        check(brand.getFont().getFamily().equals(Typography.selectFontFamily(Font.getFamilies())),
+                "The interface must use an installed preferred font");
+        check(brand.getFont().getSize() == 20, "The product heading must have clear visual emphasis");
+        check(brand.getFont().getStyle().toLowerCase(Locale.ROOT).contains("bold"),
+                "The product heading must resolve to a bold font face");
+        check(commandField().getFont().getSize() == 14, "The input must use a readable font size");
+        for (Node node : root.lookupAll(".message-body")) {
+            if (node instanceof Label label) {
+                check(!label.getFont().getStyle().toLowerCase(Locale.ROOT).contains("bold"),
+                        "Body text must not accidentally resolve to a bold font face");
+            }
+        }
+        for (Node node : root.lookupAll(".text")) {
+            if (node instanceof Text text) {
+                check(text.getFontSmoothingType() == FontSmoothingType.GRAY,
+                        "Text must use grayscale smoothing to avoid coloured fringes");
+            }
+        }
+    }
+
+    /** Checks that help genuinely stacks at the smallest supported window size. */
+    private void verifyHelpColumns(Parent root, double width) {
+        Parent help = (Parent) root.lookup(".help-view");
+        if (help == null) {
+            return;
+        }
+        Parent groups = (Parent) help.getChildrenUnmodifiable().get(2);
+        Node first = groups.getChildrenUnmodifiable().get(0);
+        Node second = groups.getChildrenUnmodifiable().get(1);
+        if (width <= 780) {
+            check(Math.abs(first.getLayoutX() - second.getLayoutX()) < 1,
+                    "Help must stack into one column in a narrow window");
+            check(second.getLayoutY() >= first.getBoundsInParent().getMaxY(),
+                    "Stacked help groups must not overlap");
+        } else {
+            check(second.getLayoutX() >= first.getBoundsInParent().getMaxX(),
+                    "Help must use two columns when the window has enough room");
         }
     }
 
@@ -177,9 +304,9 @@ public final class ReleaseSmoke {
         check(Math.abs(dotBounds.getCenterY() - statusBounds.getCenterY()) < 1,
                 "The status dot must be vertically centered on the status heading");
         check(Math.abs(statusBounds.getMinX() - countBounds.getMinX()) < 1,
-                "Status and quest counts must share a left edge");
+                "Status and task counts must share a left edge");
         check(countBounds.getMinY() >= statusBounds.getMaxY() + 2,
-                "Quest counts must have a clear gap below the status heading");
+                "Task counts must have a clear gap below the status heading");
     }
 
     private void send(String command) {
@@ -192,9 +319,9 @@ public final class ReleaseSmoke {
     }
 
     private String lastReply() {
-        ScrollPane chat = (ScrollPane) stage.getScene().lookup(".chat-scroll");
-        List<Node> messages = ((Parent) chat.getContent()).getChildrenUnmodifiable();
-        return ((Label) messages.getLast().lookup(".message-body")).getText();
+        Parent messages = (Parent) stage.getScene().lookup("#messages");
+        Node body = messages.getChildrenUnmodifiable().getLast().lookup(".message-body");
+        return body instanceof Label label ? label.getText() : body.getAccessibleText();
     }
 
     private List<Task> savedTasks() throws StorageException {

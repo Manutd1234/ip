@@ -14,13 +14,24 @@ WANGSA - QUICK START
    Linux: open a terminal here and run java -jar Wangsa.jar.
    You can also run java -jar Wangsa.jar in a terminal on Windows or Mac.
 
-4. Try these commands in Wangsa, one at a time:
+4. Click the command box at the bottom of Wangsa. Type one command at a time,
+   then press Enter or click SEND:
    todo read a book
+   deadline ST2334 /by 2026-09-30
    list
    mark 1
 
+Starting from an empty list, you now have two tasks; the first is marked done.
 Type help for all commands. Type bye to close.
 Tasks save automatically. No database, account, or API key is needed.
+
+IF A COMMAND IS REJECTED
+
+- Use lowercase command names: list, not /list or List.
+- Keep the slash in /by: deadline ST2334 /by 2026-09-30.
+- Use a real date in YYYY-MM-DD format. September has 30 days, not 31.
+- After an error, type the whole corrected command again. No task was added.
+- For mark, unmark, or delete, use a task number from list.
 
 YOUR TASKS
 

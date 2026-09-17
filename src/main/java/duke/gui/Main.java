@@ -5,7 +5,6 @@ import java.util.List;
 
 import duke.AiHelper;
 import duke.Command;
-import duke.CommandHelp;
 import duke.Parser;
 import duke.SaveLocation;
 import duke.Storage;
@@ -84,13 +83,14 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) {
         BorderPane root = createRoot();
+        Typography.apply(root);
         Rectangle2D screen = Screen.getPrimary().getVisualBounds();
         Scene scene = new Scene(root, Math.min(1120, screen.getWidth() - 48),
                 Math.min(700, screen.getHeight() - 76));
         String stylesheet = Main.class.getResource(STYLESHEET_PATH).toExternalForm();
         scene.getStylesheets().add(stylesheet);
 
-        stage.setTitle("Wangsa // Level 10");
+        stage.setTitle("Wangsa");
         stage.setMinWidth(780);
         stage.setMinHeight(580);
         stage.setScene(scene);
@@ -135,17 +135,14 @@ public class Main extends Application {
 
         Label appName = new Label("WANGSA");
         appName.getStyleClass().add("brand-name");
-        Label appSubtitle = new Label("YOUR QUEST PARTNER");
+        Label appSubtitle = new Label("YOUR TASK COMPANION");
         appSubtitle.getStyleClass().add("brand-subtitle");
         VBox brand = new VBox(1, appName, appSubtitle);
-
-        Label levelBadge = new Label("LEVEL 10");
-        levelBadge.getStyleClass().add("level-badge");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        header.getChildren().addAll(emblem, brand, levelBadge, spacer, createStatusPanel());
+        header.getChildren().addAll(emblem, brand, spacer, createStatusPanel());
         return header;
     }
 
@@ -157,7 +154,7 @@ public class Main extends Application {
         statusDot.getStyleClass().add("status-dot");
         statusText = new Label("SYSTEM READY");
         statusText.getStyleClass().add("status-text");
-        taskStats = new Label("0 QUESTS  ·  0 DONE");
+        taskStats = new Label("0 TASKS  ·  0 DONE");
         taskStats.getStyleClass().add("task-stats");
         GridPane status = new GridPane();
         status.setHgap(8);
@@ -179,11 +176,11 @@ public class Main extends Application {
 
         HBox chatHeading = new HBox(8);
         chatHeading.setAlignment(Pos.CENTER_LEFT);
-        Label heading = new Label("FIELD NOTES");
+        Label heading = new Label("CHAT");
         heading.getStyleClass().add("section-kicker");
         Label divider = new Label("/");
         divider.getStyleClass().add("heading-divider");
-        Label headingHint = new Label("Your live quest conversation");
+        Label headingHint = new Label("One task at a time");
         headingHint.getStyleClass().add("heading-hint");
         Region headingSpacer = new Region();
         HBox.setHgrow(headingSpacer, Priority.ALWAYS);
@@ -192,6 +189,8 @@ public class Main extends Application {
         chatHeading.getChildren().addAll(heading, divider, headingHint, headingSpacer, liveBadge);
 
         messageList = new VBox(12);
+        messageList.setId("messages");
+        messageList.setMaxWidth(Double.MAX_VALUE);
         messageList.setPadding(new Insets(8, 0, 12, 0));
         messageList.setFillWidth(true);
 
@@ -348,11 +347,11 @@ public class Main extends Application {
     private void loadTasks() {
         try {
             taskService = new TaskService(createRepository(), parser);
-            appendAssistant("Hi! I'm Wangsa. Let's keep track of your tasks.\n"
-                    + "Try `todo read a book`, or type `help` for all commands.\n"
-                    + "Your tasks save automatically. No setup needed.\n"
-                    + "Save file: " + SaveLocation.getDefaultFile());
-            appendAssistant(TaskFormatter.renderTasks(taskService.getTasks()));
+            appendAssistant("Hi! I'm Wangsa. Let's make room for what matters.\n\n"
+                    + "• Add a task: todo read a book\n"
+                    + "• See command examples: help\n"
+                    + "• Your changes save automatically.");
+            appendTasks(TaskView.tasks(taskService.getTasks()));
         } catch (StorageException | WangsaException exception) {
             appendError("I couldn't load your saved tasks. Nothing has been changed.\n"
                     + exception.getMessage()
@@ -426,18 +425,21 @@ public class Main extends Application {
         Command parsedCommand = parser.parse(command);
         if (taskService == null && parsedCommand.type() != Parser.CommandType.BYE
                 && parsedCommand.type() != Parser.CommandType.HELP) {
-            throw new StorageException("Your saved quest log is unavailable. Fix the startup error and restart "
+            throw new StorageException("Your saved task list is unavailable. Fix the startup error and restart "
                     + "Wangsa before using task commands.");
         }
         switch (parsedCommand.type()) {
             case BYE -> {
-                appendAssistant("See you next time, trainer.");
+                appendAssistant("See you next time!");
                 Platform.exit();
             }
-            case LIST -> appendAssistant(TaskFormatter.renderTasks(taskService.getTasks()));
-            case HELP -> appendAssistant(CommandHelp.getText());
+            case LIST -> appendTasks(TaskView.tasks(taskService.getTasks()));
+            case HELP -> {
+                messageList.getChildren().add(ChatMessage.help());
+                scrollToLatestMessage();
+            }
             case AI -> askAi(((Command.AiQuestion) parsedCommand).question());
-            case FIND -> appendAssistant(TaskFormatter.renderMatches(
+            case FIND -> appendTasks(TaskView.matches(
                     taskService.findMatches(((Command.Search) parsedCommand).keyword())));
             case SORT -> sortTasks();
             case MARK, UNMARK -> updateStatus((Command.TaskNumber) parsedCommand);
@@ -452,8 +454,7 @@ public class Main extends Application {
      */
     private void sortTasks() throws StorageException {
         taskService.sortByDeadline();
-        appendAssistant("I've put the earliest deadlines first, followed by tasks without dates.\n"
-                + TaskFormatter.renderTasks(taskService.getTasks()));
+        appendTasks(TaskView.sorted(taskService.getTasks()));
     }
 
     /**
@@ -461,8 +462,8 @@ public class Main extends Application {
      */
     private void deleteTask(Command.TaskNumber command) throws WangsaException, StorageException {
         Task removedTask = taskService.delete(command.taskNumber());
-        appendAssistant("I've removed this quest:\n" + removedTask + "\n\n"
-                + TaskFormatter.formatProgressSummary(taskService.getTasks()));
+        appendTasks(TaskView.confirmation("Deleted:", removedTask,
+                TaskFormatter.formatProgressSummary(taskService.getTasks())));
     }
 
     /**
@@ -470,8 +471,8 @@ public class Main extends Application {
      */
     private void addTask(Command.AddTask command) throws WangsaException, StorageException {
         Task addedTask = taskService.add(command.task());
-        appendAssistant("Added to your quest log:\n" + addedTask + "\n\n"
-                + TaskFormatter.formatProgressSummary(taskService.getTasks()));
+        appendTasks(TaskView.confirmation("Added:", addedTask,
+                TaskFormatter.formatProgressSummary(taskService.getTasks())));
     }
 
     /**
@@ -517,8 +518,8 @@ public class Main extends Application {
             throws WangsaException, StorageException {
         boolean isMarked = command.type() == Parser.CommandType.MARK;
         Task updatedTask = isMarked ? taskService.mark(command.taskNumber()) : taskService.unmark(command.taskNumber());
-        appendAssistant((isMarked ? "Nice work! You've completed:\n" : "I've reopened this quest for you:\n")
-                + updatedTask + "\n\n" + TaskFormatter.formatProgressSummary(taskService.getTasks()));
+        appendTasks(TaskView.confirmation(isMarked ? "Nice work! Completed:" : "Ready to work on again:",
+                updatedTask, TaskFormatter.formatProgressSummary(taskService.getTasks())));
     }
 
     /**
@@ -542,6 +543,12 @@ public class Main extends Application {
      */
     private void appendAssistant(String message) {
         messageList.getChildren().add(createMessage(message, false));
+        scrollToLatestMessage();
+    }
+
+    /** Adds a structured task snapshot using the same scrolling behavior as other replies. */
+    private void appendTasks(TaskView tasks) {
+        messageList.getChildren().add(ChatMessage.tasks(tasks));
         scrollToLatestMessage();
     }
 
@@ -569,10 +576,17 @@ public class Main extends Application {
     }
 
     /**
-     * Scrolls the transcript after JavaFX has laid out the newly added message.
+     * Reveals the start of a long reply so users can read it from the beginning.
      */
     private void scrollToLatestMessage() {
-        Platform.runLater(() -> chatScrollPane.setVvalue(1.0));
+        Platform.runLater(() -> {
+            chatScrollPane.getScene().getRoot().applyCss();
+            chatScrollPane.getScene().getRoot().layout();
+            double scrollableHeight = chatScrollPane.getContent().getBoundsInLocal().getHeight()
+                    - chatScrollPane.getViewportBounds().getHeight();
+            double lastMessageTop = messageList.getChildren().getLast().getBoundsInParent().getMinY();
+            chatScrollPane.setVvalue(scrollableHeight <= 0 ? 0 : Math.min(1, lastMessageTop / scrollableHeight));
+        });
     }
 
 }

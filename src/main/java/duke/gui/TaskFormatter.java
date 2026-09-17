@@ -1,7 +1,11 @@
 package duke.gui;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 
+import duke.Deadline;
+import duke.Event;
 import duke.Task;
 import duke.TaskMatch;
 
@@ -9,6 +13,8 @@ import duke.TaskMatch;
  * Formats task snapshots and progress summaries for the desktop conversation.
  */
 public final class TaskFormatter {
+    private static final DateTimeFormatter DISPLAY_DATE = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH);
+
     private TaskFormatter() {
     }
 
@@ -20,11 +26,11 @@ public final class TaskFormatter {
      */
     public static String renderMatches(List<TaskMatch> matches) {
         if (matches.isEmpty()) {
-            return "No matching quests found. Try a different keyword.";
+            return "No matching tasks found.\n• Try a different keyword.\n• Type list to see all tasks.";
         }
-        StringBuilder result = new StringBuilder("Here are your matching quests:");
+        StringBuilder result = new StringBuilder("Matching tasks:");
         for (TaskMatch match : matches) {
-            result.append(System.lineSeparator()).append(match.taskNumber()).append(". ").append(match.task());
+            result.append("\n\n").append(match.taskNumber()).append(". ").append(formatTask(match.task()));
         }
         return result.toString();
     }
@@ -37,17 +43,54 @@ public final class TaskFormatter {
      */
     public static String renderTasks(List<Task> tasks) {
         if (tasks.isEmpty()) {
-            return "Your quest log is empty.\nTry `todo read a book` to add your first task.";
+            return "Your task list is empty.\n• Add your first task: todo read a book";
         }
 
-        StringBuilder result = new StringBuilder("Here's your current quest log:").append(System.lineSeparator());
+        StringBuilder result = new StringBuilder("Your tasks:");
         for (int i = 0; i < tasks.size(); i++) {
-            result.append(i + 1).append(". ").append(tasks.get(i));
-            if (i < tasks.size() - 1) {
-                result.append(System.lineSeparator());
-            }
+            result.append("\n\n").append(i + 1).append(". ").append(formatTask(tasks.get(i)));
         }
         return result.toString();
+    }
+
+    /**
+     * Formats one task with readable status and separate lines for dates or event times.
+     *
+     * @param task The task to display.
+     * @return A concise display string without changing the terminal or storage format.
+     */
+    public static String formatTask(Task task) {
+        String text = formatTitle(task);
+        for (String detail : formatDetails(task)) {
+            text += "\n" + detail;
+        }
+        return text;
+    }
+
+    /**
+     * Formats the task status and description without any layout padding.
+     *
+     * @param task Task whose title should be displayed.
+     * @return Literal status and description text.
+     */
+    public static String formatTitle(Task task) {
+        return (task.isDone() ? "[Done] " : "[To do] ") + task.getDescription();
+    }
+
+    /**
+     * Formats detail lines; the view, rather than leading spaces, controls their alignment.
+     *
+     * @param task Task whose dates or times should be displayed.
+     * @return Immutable detail lines, or an empty list for a todo.
+     */
+    public static List<String> formatDetails(Task task) {
+        if (task instanceof Deadline deadline) {
+            return List.of("Due: " + deadline.getBy().format(DISPLAY_DATE));
+        }
+        if (task instanceof Event event) {
+            return List.of("From: " + event.getFrom(), "To: " + event.getTo());
+        }
+        return List.of();
     }
 
     /**
@@ -60,14 +103,14 @@ public final class TaskFormatter {
         int completed = (int) tasks.stream().filter(Task::isDone).count();
         int total = tasks.size();
         if (total == 0) {
-            return "No quests in your log. Add one whenever you're ready.";
+            return "No tasks yet. Add one whenever you're ready.";
         }
-        String questLabel = total == 1 ? "quest" : "quests";
+        String taskLabel = total == 1 ? "task" : "tasks";
         if (completed == total) {
-            return "You've finished " + (total == 1 ? "your quest" : "all " + total + " quests")
-                    + ". Nice work, trainer!";
+            return "You've finished " + (total == 1 ? "your task" : "all " + total + " tasks")
+                    + ". Nice work!";
         }
-        return completed + " of " + total + " " + questLabel + " complete. One step at a time.";
+        return completed + " of " + total + " " + taskLabel + " done. One step at a time.";
     }
 
     /**
@@ -78,6 +121,6 @@ public final class TaskFormatter {
      */
     public static String formatHeaderStats(List<Task> tasks) {
         long completed = tasks.stream().filter(Task::isDone).count();
-        return tasks.size() + " QUEST" + (tasks.size() == 1 ? "" : "S") + "  ·  " + completed + " DONE";
+        return tasks.size() + " TASK" + (tasks.size() == 1 ? "" : "S") + "  ·  " + completed + " DONE";
     }
 }

@@ -1,9 +1,16 @@
-/* Wangsa // Level-10 Pokédex-inspired desktop theme. */
+/* Wangsa desktop theme. All symbols are drawn in code; no image or audio assets are used. */
 
 .root {
-    -fx-font-family: "Avenir Next", "Helvetica Neue", sans-serif;
-    -fx-font-size: 14px;
+    -fx-font-family: "System";
+    -fx-font-size: 15px;
+    -fx-font-weight: normal;
     -fx-background-color: #f4ede1;
+}
+
+/* Grayscale antialiasing avoids coloured fringes on scaled and high-density displays. */
+.root Text,
+.root .text {
+    -fx-font-smoothing-type: gray;
 }
 
 .app-shell {
@@ -27,9 +34,8 @@
 
 .brand-name {
     -fx-text-fill: #fff9ec;
-    -fx-font-size: 18px;
+    -fx-font-size: 20px;
     -fx-font-weight: bold;
-    -fx-letter-spacing: 1.4px;
 }
 
 .brand-subtitle,
@@ -41,7 +47,6 @@
 .message-metadata {
     -fx-font-size: 10px;
     -fx-font-weight: bold;
-    -fx-letter-spacing: 1px;
 }
 
 .brand-subtitle,
@@ -51,41 +56,36 @@
 
 .task-stats {
     -fx-text-fill: #e4b63d;
-    -fx-font-family: "Menlo", "Monaco", monospace;
-    -fx-font-size: 9px;
-    -fx-font-weight: bold;
-    -fx-letter-spacing: 0.7px;
-}
-
-.level-badge {
-    -fx-padding: 7px 13px;
-    -fx-background-color: #e4b63d;
-    -fx-background-radius: 999px;
-    -fx-text-fill: #20263b;
     -fx-font-size: 10px;
-    -fx-font-weight: bold;
-    -fx-letter-spacing: 1px;
+    -fx-font-weight: normal;
 }
 
 .section-kicker {
     -fx-text-fill: #847963;
 }
 
-.character-avatar {
-    -fx-background-color: #fffdf7;
-    -fx-background-radius: 12px;
-    -fx-border-color: #d9ccb8;
-    -fx-border-radius: 12px;
-    -fx-border-width: 1.5px;
-    -fx-padding: 3px;
+.message-icon {
+    -fx-background-radius: 18px;
+    -fx-border-radius: 18px;
+    -fx-border-width: 1px;
 }
 
-.charizard-avatar {
+.assistant-icon {
+    -fx-background-color: #f5ddaa;
     -fx-border-color: #d4a936;
 }
 
-.ash-avatar {
+.user-icon {
+    -fx-background-color: #e2f0f2;
     -fx-border-color: #347383;
+}
+
+.message-arrow {
+    -fx-fill: transparent;
+    -fx-stroke: #303a51;
+    -fx-stroke-width: 2px;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
 }
 
 .chat-panel {
@@ -98,8 +98,8 @@
 }
 
 .heading-hint {
-    -fx-text-fill: #9a907e;
-    -fx-font-size: 12px;
+    -fx-text-fill: #756c5d;
+    -fx-font-size: 13px;
 }
 
 .live-badge {
@@ -144,7 +144,7 @@
 }
 
 .assistant-bubble {
-    -fx-background-color: linear-gradient(to bottom right, #fffdf8, #fff7e9);
+    -fx-background-color: #fffdf8;
     -fx-border-color: #e0d1bd;
     -fx-effect: dropshadow(gaussian, rgba(32, 38, 59, 0.10), 10, 0, 0, 4);
 }
@@ -179,7 +179,7 @@
 .message-body {
     -fx-font-size: 15px;
     -fx-font-weight: normal;
-    -fx-line-spacing: 3px;
+    -fx-line-spacing: 4px;
 }
 
 .assistant-bubble .message-body {
@@ -188,8 +188,58 @@
 
 .user-bubble .message-body {
     -fx-text-fill: #fff8ed;
-    -fx-font-family: "Menlo", "Monaco", monospace;
+    -fx-font-size: 15px;
+}
+
+.task-view .label {
+    -fx-font-size: 15px;
+    -fx-font-weight: normal;
+    -fx-text-fill: #302d3b;
+    -fx-line-spacing: 4px;
+}
+
+.task-view .task-detail {
+    -fx-font-size: 14px;
+    -fx-text-fill: #5c6370;
+}
+
+.help-title {
+    -fx-font-size: 19px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #253149;
+}
+
+.help-intro,
+.help-notes {
+    -fx-font-size: 12px;
+    -fx-font-weight: normal;
+    -fx-text-fill: #5c6370;
+    -fx-line-spacing: 3px;
+}
+
+.help-section {
+    -fx-padding: 12px;
+    -fx-background-color: #f5f2eb;
+    -fx-background-radius: 8px;
+}
+
+.help-section-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #253149;
+}
+
+.help-description {
     -fx-font-size: 13px;
+    -fx-font-weight: normal;
+    -fx-text-fill: #404652;
+}
+
+.help-example {
+    -fx-font-family: monospace;
+    -fx-font-size: 12px;
+    -fx-font-weight: normal;
+    -fx-text-fill: #235767;
 }
 
 .composer {
@@ -211,15 +261,14 @@
 
 .cheatsheet-title {
     -fx-text-fill: #b33a38;
-    -fx-font-size: 9px;
+    -fx-font-size: 10px;
     -fx-font-weight: bold;
-    -fx-letter-spacing: 1px;
 }
 
 .cheatsheet-text {
     -fx-text-fill: #6e6659;
-    -fx-font-family: "Menlo", "Monaco", monospace;
-    -fx-font-size: 10px;
+    -fx-font-family: monospace;
+    -fx-font-size: 11px;
     -fx-line-spacing: 4px;
 }
 
@@ -230,10 +279,9 @@
     -fx-border-color: #cbbba5;
     -fx-border-radius: 10px;
     -fx-border-width: 1.5px;
-    -fx-prompt-text-fill: #a9a08f;
+    -fx-prompt-text-fill: #81796c;
     -fx-text-fill: #302d3b;
-    -fx-font-family: "Menlo", "Monaco", monospace;
-    -fx-font-size: 12px;
+    -fx-font-size: 14px;
 }
 
 .command-field:focused {
@@ -253,7 +301,7 @@
     -fx-border-radius: 10px;
     -fx-border-width: 1.5px;
     -fx-text-fill: #fff8ed;
-    -fx-font-size: 11px;
+    -fx-font-size: 12px;
     -fx-font-weight: bold;
 }
 
@@ -284,8 +332,7 @@
     -fx-border-color: #cfc2ad;
     -fx-border-radius: 999px;
     -fx-text-fill: #6e6659;
-    -fx-font-family: "Menlo", "Monaco", monospace;
-    -fx-font-size: 10px;
+    -fx-font-size: 12px;
 }
 
 .suggestion-chip:hover {
@@ -301,7 +348,5 @@
 
 .keyboard-hint {
     -fx-text-fill: #a09786;
-    -fx-font-family: "Menlo", "Monaco", monospace;
-    -fx-font-size: 9px;
-    -fx-letter-spacing: 0.8px;
+    -fx-font-size: 10px;
 }

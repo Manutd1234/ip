@@ -14,6 +14,11 @@ Use the [manual checklist](peer-smoke-test.md) for a quick test of the JAR.
   `python3 tests/release_smoke.py build/libs/Wangsa.jar` to test it outside the source tree.
 - `./gradlew runCli` launches the terminal interface directly from Gradle.
 
+The packaged GUI checks set the input text and invoke SEND programmatically.
+Also run the manual checklist by clicking the input, typing commands, and using
+both Enter and SEND. Record which checks were actually performed; automated
+results are not a peer-test sign-off or a live AI quality check.
+
 ## Persistence acceptance checks
 
 1. Start with no save file and add a task; confirm `data/wangsa.txt` is created beside the JAR.
@@ -47,21 +52,39 @@ Use the [manual checklist](peer-smoke-test.md) for a quick test of the JAR.
 4. Click the suggestion chips and use Up/Down history navigation; confirm commands
    are inserted or executed as described in the user guide.
 5. Enter invalid commands and confirm an explanatory message appears without
-   changing the task count.
+   changing the task count or saved tasks. Check these separately:
+
+   - `deadline ST2334 by 2026-09-30`: missing slash before `by`.
+   - `deadline ST2334 /by 2026-09-31`: September has no day 31.
+   - `deadline ST2334 /by 2026-09-30`: corrected command adds one task.
 6. Find a task that is not first in the full list. Confirm its displayed number
    marks that same task, and a search with no matches says so explicitly.
 7. Start with malformed saved data. Confirm the header says STORAGE UNAVAILABLE,
    task commands are rejected, the original data remains intact, `help` works, and `bye` exits.
-8. At narrow and normal window sizes, check avatar/bubble alignment, long-message
+8. Check the code-drawn arrows and the YOU/WANGSA labels; no pictures or audio are used.
+   At narrow and normal window sizes, check symbol/bubble alignment, long-message
    wrapping, equal input/button heights, and the status dot beside its heading.
+   Maximize the window: Wangsa replies must stay at the left edge, with user
+   messages on the right. Check readable font weights and no coloured text fringes.
+9. Enter `help`. Check four readable groups, all twelve command examples, and
+   single-column wrapping when there is less room. Long replies should open at
+   the beginning, with the input still available below the conversation.
+10. Check that task output uses [To do]/[Done], with dates and event times on
+    separate lines aligned with the task title. Check add, mark, unmark, delete,
+    list, find, and sort replies, including long wrapped descriptions and task
+    numbers 10 and 100. Earlier messages must not change when a task is marked.
+    Search results must retain the numbers from the full list.
 
 ## User guide acceptance checks
 
 1. Follow the quick-start example in `docs/README.md` using an empty launch folder.
-2. Confirm the full-window `docs/Ui.png` exists and both Markdown tables render.
+2. Confirm the full-window `docs/Ui.png` shows the current GUI and all Markdown tables render.
 3. Check that the Pages index includes the guide from `README.md` without copying it.
 4. After merging and pushing, open the public Pages site and verify the guide,
    screenshot, links, and tables there. Local rendering does not replace this check.
+5. Check the root README and the ZIP's `QUICK-START.txt` against the same commands.
+   All instructions should distinguish the literal `/by` marker from the date,
+   and explain that an invalid date does not add a task.
 
 ## Optional AI help acceptance checks
 
@@ -82,7 +105,7 @@ Use the [manual checklist](peer-smoke-test.md) for a quick test of the JAR.
    offline help without showing request details, and normal commands still work.
 7. Close the desktop during a request. Confirm the application exits promptly.
 8. Check empty lists and single-task confirmations. Messages should suggest a useful
-   next step and use "1 task" or "1 quest" rather than a plural.
+   next step and use "1 task" rather than a plural.
 
 Automated tests use fake models to check replies, failures, empty replies,
 independent requests, offline fallback, and that AI output is not executed.
