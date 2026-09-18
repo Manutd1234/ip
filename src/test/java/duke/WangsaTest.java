@@ -40,7 +40,23 @@ class WangsaTest {
         assertTrue(transcript.contains("Offline help:"));
         assertTrue(transcript.contains("1.[T][X] read book"));
         assertTrue(transcript.contains("Bye. Hope to see you again soon!"));
+        assertFalse(transcript.contains("•"));
+        assertFalse(transcript.contains("—"));
         assertTrue(repository.loadTasks().get(0).isDone());
+    }
+
+    @Test
+    void run_help_usesAsciiPunctuation_forConsoleEncodings() {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Ui ui = new Ui(new ByteArrayInputStream("help\nbye\n".getBytes(StandardCharsets.UTF_8)),
+                new PrintStream(output, true, StandardCharsets.UTF_8));
+
+        new Wangsa(new Storage(temporaryDirectory.resolve("help.txt")), new Parser(), ui).run();
+
+        String transcript = output.toString(StandardCharsets.UTF_8);
+        assertTrue(transcript.contains("- todo DESCRIPTION -- Add a task"));
+        assertFalse(transcript.contains("•"));
+        assertFalse(transcript.contains("—"));
     }
 
     @Test

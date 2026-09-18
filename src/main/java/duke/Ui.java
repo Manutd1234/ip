@@ -79,12 +79,12 @@ public class Ui implements AutoCloseable {
     }
 
     /**
-     * Displays command help or an AI answer as plain text.
+     * Displays command help or an AI answer using console-safe punctuation.
      *
      * @param message Response to display.
      */
     public void showMessage(String message) {
-        output.println(message);
+        output.println(message.replace("•", "-").replace("—", "--"));
     }
 
     /**

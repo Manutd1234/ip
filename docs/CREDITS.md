@@ -72,9 +72,14 @@ than an already-published JAR.
 
 ## Peer testing
 
-Thanks to [@lingsongc](https://github.com/lingsongc) for testing v0.6 on Windows
-11 Pro with Java 25.0.4.1. The author reports that it is "all good and works".
-The [test record](https://github.com/Manutd1234/ip/blob/master/tests/peer-smoke-test.md)
-separates the peer's overall result from independently run automated checks.
+Thanks to [@lingsongc](https://github.com/lingsongc),
+[@Papangkorn-Pann](https://github.com/Papangkorn-Pann),
+[@Dancodes2](https://github.com/Dancodes2), and
+[@LINGSIHAN](https://github.com/LINGSIHAN) for Windows smoke testing v0.6.
+Their reports, environments, and scope are recorded in the
+[test record](https://github.com/Manutd1234/ip/blob/master/tests/peer-smoke-test.md)
+and [issue #471](https://github.com/NUS-CS2103-AY2627-S1/forum/issues/471).
+Dancodes2's low-severity CLI encoding finding led to the ASCII-safe terminal help
+rendering; the published v0.6 JAR predates that source fix.
 
 [Back to the user guide](https://manutd1234.github.io/ip/)

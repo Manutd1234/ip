@@ -67,8 +67,34 @@ tasks.register('prepareJavafxNatives') {
     }
 }
 
+// Dependency JARs can use the same notice paths. Preserve each supplied notice separately
+// so the fat JAR's duplicate-entry handling cannot discard another library's attribution.
+def dependencyNoticeDirectory = layout.buildDirectory.dir('generated/dependency-notices')
+tasks.register('prepareDependencyNotices') {
+    inputs.files(configurations.runtimeClasspath, configurations.javafxPlatforms)
+    outputs.dir(dependencyNoticeDirectory)
+    doLast {
+        delete(dependencyNoticeDirectory)
+        def artifacts = (configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts
+                + configurations.javafxPlatforms.resolvedConfiguration.resolvedArtifacts)
+        artifacts.each { artifact ->
+            def version = artifact.moduleVersion.id
+            def classifier = artifact.classifier ? "-${artifact.classifier}" : ''
+            def noticePath = ("META-INF/wangsa/dependency-notices/${version.group}/"
+                    + "${artifact.name}-${version.version}${classifier}")
+            copy {
+                from zipTree(artifact.file)
+                include '**/*LICENSE*', '**/*NOTICE*', '**/COPYING*', '**/COPYRIGHT*', '**/legal/**'
+                caseSensitive = false
+                includeEmptyDirs = false
+                into dependencyNoticeDirectory.get().dir(noticePath)
+            }
+        }
+    }
+}
+
 tasks.named('jar', Jar) {
-    dependsOn 'prepareJavafxNatives'
+    dependsOn 'prepareJavafxNatives', 'prepareDependencyNotices'
     archiveBaseName = 'Wangsa'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from({
@@ -80,6 +106,7 @@ tasks.named('jar', Jar) {
         exclude '*.dll', '*.so', '*.dylib'
     }
     from javafxNativeDirectory
+    from dependencyNoticeDirectory
     from('docs/CREDITS.md') {
         into 'META-INF/wangsa'
     }

@@ -105,8 +105,11 @@ based on [SE-EDU Duke](https://github.com/se-edu/duke).
   [Checkstyle](https://checkstyle.org/) support testing, builds, and style checks.
 - [GitHub Pages](https://pages.github.com/), [Jekyll](https://jekyllrb.com/), and
   the [Primer theme](https://github.com/pages-themes/primer) publish the user guide.
-- [@lingsongc](https://github.com/lingsongc) provided Windows peer testing of v0.6;
-  the environment and exact JAR checksum are in the [test record](tests/peer-smoke-test.md).
+- [@lingsongc](https://github.com/lingsongc), [@Papangkorn-Pann](https://github.com/Papangkorn-Pann),
+  [@Dancodes2](https://github.com/Dancodes2), and [@LINGSIHAN](https://github.com/LINGSIHAN)
+  provided Windows smoke testing of v0.6. Their reports and the follow-up CLI finding are
+  recorded in the [test record](tests/peer-smoke-test.md) and
+  [issue #471](https://github.com/NUS-CS2103-AY2627-S1/forum/issues/471).
 
 The interface uses simple symbols drawn in JavaFX, with no external artwork or audio.
 The [credits page](docs/CREDITS.md) lists the code sources, tutorials, and AI assistance.

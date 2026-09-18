@@ -39,12 +39,19 @@ def verify_contents(jar):
                             ".mp3", ".wav", ".ogg", ".m4a", ".aac", ".flac", ".mp4")
         assert not any(name.startswith("duke/") and name.lower().endswith(media_extensions) for name in names)
         assert "META-INF/wangsa/CREDITS.md" in names
+        notice_root = "META-INF/wangsa/dependency-notices/"
+        for library in ("jackson-core", "jackson-databind"):
+            prefix = notice_root + f"com.fasterxml.jackson.core/{library}-"
+            notices = [name for name in names if name.startswith(prefix) and name.endswith("/META-INF/NOTICE")]
+            assert len(notices) == 1, f"Missing separate notice for {library}"
+            assert archive.read(notices[0]).strip(), f"Empty notice for {library}"
         assert "duke/Storage.class" in names
         assert not any(name.startswith("org/sqlite/") for name in names)
         assert "duke/SqliteTaskRepository.class" not in names
         assert "duke/gui/CharacterAvatar.class" not in names
         assert not any("/" not in name and name.endswith((".dll", ".so", ".dylib")) for name in names)
     print("PASS: four JavaFX platforms and code-drawn symbols; no app image/audio assets or SQLite dependency")
+    print("PASS: dependency notice files with identical names are preserved separately")
 
 
 def main():
@@ -87,8 +94,9 @@ def main():
                      folder, environment, "list\n@ai How do I add a task?\nbye\n")
         assert "[D][X] submit report" in output and "[E][ ] team meeting" in output
         assert "Offline help:" in output and "todo DESCRIPTION" in output
+        assert "•" not in output and "—" not in output
         print("PASS: GUI/CLI share text saves beside the JAR, even from a different launch folder")
-        print("PASS: old databases remain untouched and optional AI falls back offline")
+        print("PASS: old databases remain untouched and optional AI falls back with console-safe text")
         blocked = folder / "blocked"
         (blocked / "data").mkdir(parents=True)
         save_file = blocked / "data/wangsa.txt"

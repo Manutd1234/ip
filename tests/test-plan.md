@@ -14,6 +14,10 @@ Use the [manual checklist](peer-smoke-test.md) for a quick test of the JAR.
   `python3 tests/release_smoke.py build/libs/Wangsa.jar` to test it outside the source tree.
 - `./gradlew runCli` launches the terminal interface directly from Gradle.
 
+The terminal `help` command uses ASCII bullets and separators so the optional CLI
+remains readable on Windows consoles with limited Unicode support. The desktop
+help keeps its Unicode presentation.
+
 The packaged GUI checks set the input text and invoke SEND programmatically.
 Also run the manual checklist by clicking the input, typing commands, and using
 both Enter and SEND. Record which checks were actually performed; automated
@@ -40,6 +44,9 @@ results are not a peer-test sign-off or a live AI quality check.
    Confirm the app opens with Java 25 and no database setup.
 3. Without Java on the path, confirm the script points to the quick-start instructions.
 4. Confirm the ZIP contains the current JAR, instructions, and scripts, but no personal data.
+5. Inspect the JAR's `META-INF/wangsa/CREDITS.md` and `dependency-notices` folder.
+   Confirm notices supplied by different dependencies are preserved separately,
+   including both Jackson Core and Jackson Databind `META-INF/NOTICE` files.
 
 ## GUI acceptance checks
 

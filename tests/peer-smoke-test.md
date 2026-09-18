@@ -111,13 +111,45 @@ mouse-wheel/trackpad scrolling or replace the Windows peer's observations.
 The example's slash-formatted deadline and `sort /by date` are not valid Wangsa
 commands. Use the adapted cases above when describing this project's behavior.
 
-## Later local packaging check
+## Additional issue #471 tester credits
+
+The following students also reported Windows smoke-test results on the public
+[release-testing request](https://github.com/NUS-CS2103-AY2627-S1/forum/issues/471):
+
+- [@Papangkorn-Pann](https://github.com/Papangkorn-Pann): Windows 11 Home Single
+  Language on AMD64 with Java 25.0.4.1; reported a successful launch and normal
+  overall behavior, with a suggestion about grouping `event` beside task-creation commands.
+- [@Dancodes2](https://github.com/Dancodes2): Windows 11 Pro with OpenJDK 25.0.4.1;
+  reported normal GUI behavior and identified the low-severity CLI `help` punctuation
+  encoding issue. The source fix renders terminal help with ASCII punctuation.
+- [@LINGSIHAN](https://github.com/LINGSIHAN): Windows 11 with Java 25.0.4.1;
+  reported that the documented commands, help, and persistence behavior worked.
+
+These are tester-reported observations for the published v0.6 JAR. They are credited
+separately from the local source fix, which still needs a fresh packaged-release and
+Windows verification before any new JAR is published.
+
+## Earlier local packaging check (before issue #471 fix)
 
 After the v0.6 peer test, a local follow-up expanded the credits and preserved
-dependency notice files in separate folders. No Java application source changed.
+dependency notice files in separate folders. At that point, no Java application
+source changed.
 The new local JAR has SHA-256
 `d270597cb90cab2d4eec71bd957027f5b3cd7252df74df8630731553f824590a`.
 It passed the automated packaged GUI/CLI checks on macOS on 2026-09-18, including
 normal operation, reload, help, layout, invalid-data protection, and ZIP contents.
 It is **not** the JAR identified by @lingsongc's Windows test above, and it has
 not been released. Keep a new peer test separate if this candidate is published.
+
+## Current issue #471 follow-up (not published)
+
+The CLI help fix was then built and tested locally with Java 25. The current
+local JAR has SHA-256
+`1badf3814af4f1b13054e556622aaf47757ad0aa402c08b037ae6258f7da6be4`.
+`./gradlew check javadoc shadowJar portableZip` passed with 106 JUnit tests,
+Checkstyle, and Javadoc. The complete packaged smoke runner passed on macOS,
+including normal, reload, and blocked-storage GUI scenarios, persistence, CLI
+interoperability, dependency notices, and ZIP contents. A direct CLI run also
+confirmed that `help` uses ASCII `-` and `--` punctuation with no Unicode bullets
+or em dashes. This candidate has not been published as a release or received a
+fresh Windows peer test.
