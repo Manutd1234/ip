@@ -46,9 +46,9 @@ python3 tests/release_smoke.py build/libs/Wangsa.jar
 
 The first command runs the unit tests and style checks, generates Javadoc, and
 builds `build/libs/Wangsa.jar` and `build/distributions/Wangsa.zip`. The ZIP includes
-Windows and Mac start scripts and a short quick start. The second checks the packaged app in temporary
-folders, without changing your saved tasks. It sets the command field and invokes
-SEND programmatically; it does not replace clicking and typing through the
+Windows and Mac start scripts and a short quick start. The second checks the
+packaged app in temporary folders, without changing your saved tasks. It sets the
+command field and invokes SEND programmatically; it does not replace clicking and typing through the
 [manual checklist](tests/peer-smoke-test.md). It needs a graphical desktop.
 Use `python` on Windows or `xvfb-run -a python3` on headless Linux.
 
@@ -79,7 +79,8 @@ and `/docs`.
 change tasks. Set `LLM_API_KEY` to a Groq key to enable it. The default in-app
 model is `openai/gpt-oss-20b`; `LLM_MODEL` can override it.
 
-See [AI setup and privacy](docs/README.md#optional-ai-command-help-ai).
+See [AI setup](docs/README.md#optional-ai-setup) and
+[privacy and limitations](docs/README.md#optional-ai-command-help-ai).
 
 ## AI assistance and credits
 
@@ -97,8 +98,15 @@ based on [SE-EDU Duke](https://github.com/se-edu/duke).
 - [JavaFX](https://openjfx.io/) provides the desktop interface.
 - [LangChain4j](https://github.com/langchain4j/langchain4j) connects optional command help to Groq.
 - [SLF4J](https://www.slf4j.org/) handles dependency logging.
+- LangChain4j also brings in [Jackson](https://github.com/FasterXML/jackson),
+  [JSpecify](https://jspecify.dev/), and [JTokkit](https://github.com/knuddelsgmbh/jtokkit).
+  These libraries are included in the JAR; they are not Wangsa-authored code.
 - [JUnit](https://junit.org/), [Gradle](https://gradle.org/), and
   [Checkstyle](https://checkstyle.org/) support testing, builds, and style checks.
+- [GitHub Pages](https://pages.github.com/), [Jekyll](https://jekyllrb.com/), and
+  the [Primer theme](https://github.com/pages-themes/primer) publish the user guide.
+- [@lingsongc](https://github.com/lingsongc) provided Windows peer testing of v0.6;
+  the environment and exact JAR checksum are in the [test record](tests/peer-smoke-test.md).
 
 The interface uses simple symbols drawn in JavaFX, with no external artwork or audio.
 The [credits page](docs/CREDITS.md) lists the code sources, tutorials, and AI assistance.

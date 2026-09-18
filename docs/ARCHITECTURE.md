@@ -3,6 +3,20 @@
 The desktop and terminal interfaces use the same task logic. A command is parsed
 once, passed to the task service, saved if it changes data, and then shown to the user.
 
+## OOP in this project
+
+| Principle | How Wangsa uses it |
+| --- | --- |
+| Inheritance | `Todo`, `Deadline`, and `Event` extend `Task`, sharing its description and completion state. |
+| Polymorphism | `Task.toString()` calls `getDetails()`. Deadlines and events override it to supply their own details. |
+| Encapsulation | Task fields and the task collection are private. `TaskList` controls capacity and indexing and returns an unmodifiable copy of its order. The task objects themselves remain mutable. |
+| Abstraction | `TaskService` depends on `TaskRepository`, not file operations. `Storage` implements it; tests use fake repositories to simulate saving failures. |
+
+The GUI and CLI compose the same service rather than duplicating saving rules.
+Formatting belongs to the interfaces, while validation and task changes stay in
+the shared classes. This is enough separation for a small task manager; no extra
+framework or database is needed.
+
 ## Main classes
 
 | Classes | Responsibility |
