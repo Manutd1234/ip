@@ -9,7 +9,7 @@
   [Dancodes2](https://github.com/Dancodes2), and
   [LINGSIHAN](https://github.com/LINGSIHAN): additional Windows smoke testing of
   release v0.6 through [issue #471](https://github.com/NUS-CS2103-AY2627-S1/forum/issues/471).
-  Dancodes2 also reported the low-severity CLI encoding issue fixed in this change.
+  Dancodes2 also reported the low-severity CLI encoding issue fixed in v0.7.
 
 AI development assistance from OpenAI Codex with GPT-6 Astra is described in the
 [README](README.md#ai-assistance-and-credits) and [credits](docs/CREDITS.md).

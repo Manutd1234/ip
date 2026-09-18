@@ -37,14 +37,20 @@ results are not a peer-test sign-off or a live AI quality check.
 7. Confirm temporary save files are removed after successful and failed saves.
 8. Place an old `wangsa.db` beside the app. Confirm it is not opened or changed.
 
-## Download checks
+## Release and portable-package checks
 
-1. Extract `Wangsa.zip` into a folder with spaces in its name.
-2. On Windows, open `Start-Wangsa.bat`. On Mac, open `Start-Wangsa.command`.
+The public course release contains one standalone `Wangsa.jar`. CI also builds
+and checks an optional `Wangsa.zip` convenience package, but it is not uploaded
+as a second course-submission asset.
+
+1. Copy the release JAR into a new folder with spaces in its name and run
+   `java -jar Wangsa.jar` there.
+2. Extract the optional CI-built `Wangsa.zip` into a folder with spaces in its name.
+3. On Windows, open `Start-Wangsa.bat`. On Mac, open `Start-Wangsa.command`.
    Confirm the app opens with Java 25 and no database setup.
-3. Without Java on the path, confirm the script points to the quick-start instructions.
-4. Confirm the ZIP contains the current JAR, instructions, and scripts, but no personal data.
-5. Inspect the JAR's `META-INF/wangsa/CREDITS.md` and `dependency-notices` folder.
+4. Without Java on the path, confirm the script points to the quick-start instructions.
+5. Confirm the ZIP contains the current JAR, instructions, and scripts, but no personal data.
+6. Inspect the JAR's `META-INF/wangsa/CREDITS.md` and `dependency-notices` folder.
    Confirm notices supplied by different dependencies are preserved separately,
    including both Jackson Core and Jackson Databind `META-INF/NOTICE` files.
 

@@ -7,6 +7,20 @@ interface. It tracks todos, deadlines, and events, and saves changes automatical
 [Download](https://github.com/Manutd1234/ip/releases/latest) ·
 [Credits](docs/CREDITS.md)
 
+## Current release
+
+Wangsa v0.7 incorporates the follow-up to
+[issue #471](https://github.com/NUS-CS2103-AY2627-S1/forum/issues/471).
+Terminal help now uses ASCII-safe punctuation for Windows consoles, while the
+JavaFX help display is unchanged. The release JAR also preserves dependency
+licence and notice files under `META-INF/wangsa/dependency-notices`.
+
+The exact release JAR is tested from an empty folder on Windows, Linux, Intel
+Mac, and Apple Silicon Mac. The [v0.7 release](https://github.com/Manutd1234/ip/releases/tag/v0.7)
+records the verification run and SHA-256 digest. The Windows students credited
+below tested v0.6; the v0.7 Windows result is automated and is not presented as
+a new human peer-test sign-off.
+
 ## Try it
 
 Click the command box at the bottom of the window. Enter one command at a time,
@@ -45,10 +59,12 @@ python3 tests/release_smoke.py build/libs/Wangsa.jar
 ```
 
 The first command runs the unit tests and style checks, generates Javadoc, and
-builds `build/libs/Wangsa.jar` and `build/distributions/Wangsa.zip`. The ZIP includes
-Windows and Mac start scripts and a short quick start. The second checks the
-packaged app in temporary folders, without changing your saved tasks. It sets the
-command field and invokes SEND programmatically; it does not replace clicking and typing through the
+builds `build/libs/Wangsa.jar` and the optional
+`build/distributions/Wangsa.zip`. The ZIP is a developer convenience package;
+the GitHub release contains one standalone JAR for course evaluation. The second
+checks the packaged app in temporary folders, without changing your saved tasks.
+It sets the command field and invokes SEND programmatically; it does not replace
+clicking and typing through the
 [manual checklist](tests/peer-smoke-test.md). It needs a graphical desktop.
 Use `python` on Windows or `xvfb-run -a python3` on headless Linux.
 
@@ -109,7 +125,8 @@ based on [SE-EDU Duke](https://github.com/se-edu/duke).
   [@Dancodes2](https://github.com/Dancodes2), and [@LINGSIHAN](https://github.com/LINGSIHAN)
   provided Windows smoke testing of v0.6. Their reports and the follow-up CLI finding are
   recorded in the [test record](tests/peer-smoke-test.md) and
-  [issue #471](https://github.com/NUS-CS2103-AY2627-S1/forum/issues/471).
+  [issue #471](https://github.com/NUS-CS2103-AY2627-S1/forum/issues/471). The reported
+  terminal-only punctuation issue is fixed in v0.7.
 
 The interface uses simple symbols drawn in JavaFX, with no external artwork or audio.
 The [credits page](docs/CREDITS.md) lists the code sources, tutorials, and AI assistance.

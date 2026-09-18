@@ -11,27 +11,26 @@ to add a task, find it, or mark it done. Changes are saved automatically.
 
 1. Install **[Java 25](https://adoptium.net/temurin/releases/?version=25)** if needed.
    Run `java -version` in a terminal to check.
-2. Download `Wangsa.zip` from the [latest release](https://github.com/Manutd1234/ip/releases/latest)
-   and extract it into a folder you own, such as **Documents/Wangsa**.
-   On Windows, right-click the ZIP and choose **Extract All**.
-3. Open the extracted folder. On Windows, double-click **Start-Wangsa.bat**.
-   On Mac, double-click **Start-Wangsa.command**. On Linux, open a terminal in
-   that folder and run `java -jar Wangsa.jar`.
+2. Download `Wangsa.jar` from the
+   [latest release](https://github.com/Manutd1234/ip/releases/latest) and put it
+   in a folder you own, such as **Documents/Wangsa**.
+3. Open a terminal in that folder and run `java -jar Wangsa.jar`.
 4. Click the command box at the bottom. Type one complete command, then press
    **Enter** or click **SEND**. Do not type commands into the conversation area.
-
-Prefer just the JAR? Download `Wangsa.jar`, put it in a folder you own, and run:
 
 ```shell
 java -jar Wangsa.jar
 ```
 
-This terminal command also works if a start script does not open. Do not launch
-from inside the ZIP. No database setup, account, or API key is needed.
+No database setup, account, API key, or separate JavaFX installation is needed.
 
 The JAR supports Windows x64, Linux x64, and Intel/Apple Silicon Macs.
 Linux needs a graphical desktop with GTK 3. You do not need to install JavaFX
 separately or set up AI to manage tasks.
+
+Version 0.7 makes terminal help safe for Windows consoles by using ASCII
+punctuation. The JavaFX interface and command behavior are unchanged, and saved
+`data/wangsa.txt` files from v0.6 remain compatible.
 
 ![Wangsa desktop with its task list and command box](Ui.png)
 
@@ -104,8 +103,9 @@ Adds a task without a date to the end of the list: `[To do] read a book`.
 
 ![The todo command adds read a book as an incomplete task](screenshots/todo.jpg)
 
-The screenshots use a small demo list in v0.6 on macOS. Your task numbers and
-counts depend on your own list. Commands work the same way on supported systems.
+The screenshots use a small demo list from v0.6 on macOS. The JavaFX interface
+is unchanged in v0.7. Your task numbers and counts depend on your own list, and
+commands work the same way on supported systems.
 
 ### Adding a deadline: `deadline`
 
@@ -211,8 +211,9 @@ Closing the window also keeps those changes.
 
 `help` shows four groups: **Add tasks**, **View and find**, **Update tasks**, and
 **Help and exit**. The desktop gives a short explanation and an example you can
-type for each command. The terminal shows the command formats as bullet points.
-Both work offline, without an API key.
+type for each command. The terminal uses plain `-` bullets and `--` separators
+so the same help remains readable in Windows consoles. Both work offline,
+without an API key.
 
 ![The help command opens the built-in guide with command explanations and examples](screenshots/help.jpg)
 
@@ -290,7 +291,8 @@ backup, then restart. The terminal exits after a storage error.
 | Task list is full | Delete a task before adding another. Completed tasks count towards the limit. |
 | Tasks seem missing | Check the folder containing the JAR you opened. Keep your usual `data` folder beside that JAR. |
 | Cannot load or save | Close other instances and check folder access. Back up the data before repairing it. |
-| App will not open | Extract the ZIP first and check Java 25 with `java -version`. Run `java -jar Wangsa.jar` in a terminal to see the error. Linux also needs GTK 3 and a graphical desktop. |
+| App will not open | Check Java 25 with `java -version`. Run `java -jar Wangsa.jar` in a terminal to see the error. Linux also needs GTK 3 and a graphical desktop. |
+| Terminal help has odd punctuation | Download the latest release. Version 0.7 and later use ASCII punctuation in terminal help. The desktop help is unaffected. |
 | AI shows offline help | Check the Groq key, connection, model access, and usage limits. Restart after changing settings. `help` works without AI. |
 
 ## Optional AI setup
@@ -335,4 +337,6 @@ The guide structure draws on the
 [AddressBook Level 3 User Guide](https://se-education.org/addressbook-level3/UserGuide.html).
 Development and documentation were assisted by OpenAI Codex with GPT-6 Astra.
 See [Credits](https://manutd1234.github.io/ip/CREDITS.html) for AI usage, code sources,
-and libraries. The interface symbols are drawn in code, without external media.
+libraries, and the Windows students who tested v0.6 and reported the terminal
+follow-up fixed in v0.7. The interface symbols are drawn in code, without
+external media.

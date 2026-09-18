@@ -80,6 +80,9 @@ Their reports, environments, and scope are recorded in the
 [test record](https://github.com/Manutd1234/ip/blob/master/tests/peer-smoke-test.md)
 and [issue #471](https://github.com/NUS-CS2103-AY2627-S1/forum/issues/471).
 Dancodes2's low-severity CLI encoding finding led to the ASCII-safe terminal help
-rendering; the published v0.6 JAR predates that source fix.
+rendering released in v0.7. The exact v0.7 JAR is checked by the automated
+release workflow on Windows, Linux, Intel Mac, and Apple Silicon Mac. That
+automation is recorded separately from the human v0.6 tester reports; the v0.7
+release page links its verification run and artifact digest.
 
 [Back to the user guide](https://manutd1234.github.io/ip/)

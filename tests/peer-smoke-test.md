@@ -126,30 +126,19 @@ The following students also reported Windows smoke-test results on the public
   reported that the documented commands, help, and persistence behavior worked.
 
 These are tester-reported observations for the published v0.6 JAR. They are credited
-separately from the local source fix, which still needs a fresh packaged-release and
-Windows verification before any new JAR is published.
+separately from the v0.7 release verification below.
 
-## Earlier local packaging check (before issue #471 fix)
+## v0.7 issue #471 follow-up
 
-After the v0.6 peer test, a local follow-up expanded the credits and preserved
-dependency notice files in separate folders. At that point, no Java application
-source changed.
-The new local JAR has SHA-256
-`d270597cb90cab2d4eec71bd957027f5b3cd7252df74df8630731553f824590a`.
-It passed the automated packaged GUI/CLI checks on macOS on 2026-09-18, including
-normal operation, reload, help, layout, invalid-data protection, and ZIP contents.
-It is **not** the JAR identified by @lingsongc's Windows test above, and it has
-not been released. Keep a new peer test separate if this candidate is published.
+Version 0.7 includes the ASCII-safe terminal help fix and preserved dependency
+notices. Before publication, its exact shared JAR is tested from an empty folder
+by the release workflow on Windows, Linux, Intel Mac, and Apple Silicon Mac. The
+same artifact's archive contents and terminal behavior are also checked locally
+on macOS with Java 25. Together, these checks cover GUI startup and commands,
+CLI interoperability, saving and reloading, blocked storage, offline AI help,
+dependency notices, and optional ZIP contents.
 
-## Current issue #471 follow-up (not published)
-
-The CLI help fix was then built and tested locally with Java 25. The current
-local JAR has SHA-256
-`1badf3814af4f1b13054e556622aaf47757ad0aa402c08b037ae6258f7da6be4`.
-`./gradlew check javadoc shadowJar portableZip` passed with 106 JUnit tests,
-Checkstyle, and Javadoc. The complete packaged smoke runner passed on macOS,
-including normal, reload, and blocked-storage GUI scenarios, persistence, CLI
-interoperability, dependency notices, and ZIP contents. A direct CLI run also
-confirmed that `help` uses ASCII `-` and `--` punctuation with no Unicode bullets
-or em dashes. This candidate has not been published as a release or received a
-fresh Windows peer test.
+The [v0.7 release page](https://github.com/Manutd1234/ip/releases/tag/v0.7)
+records the exact successful workflow run and SHA-256 digest. This is automated
+cross-platform verification, not a claim that the v0.6 peer testers manually
+retested v0.7. Their original contribution remains credited above.
