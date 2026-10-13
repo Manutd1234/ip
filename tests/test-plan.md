@@ -18,15 +18,16 @@ The terminal `help` command uses ASCII bullets and separators so the optional CL
 remains readable on Windows consoles with limited Unicode support. The desktop
 help keeps its Unicode presentation.
 
-The packaged GUI checks set the input text and invoke SEND programmatically.
+The packaged GUI checks exercise SEND, Enter, history, and shortcuts programmatically.
 Also run the manual checklist by clicking the input, typing commands, and using
 both Enter and SEND. Record which checks were actually performed; automated
 results are not a peer-test sign-off or a live AI quality check.
 
 ## Persistence acceptance checks
 
-1. Start with no save file and add a task; confirm `data/wangsa.txt` is created beside the JAR.
-2. Restart the JAR from a different working folder. Confirm the same tasks appear.
+1. Start with no save file and add a task; confirm `data/wangsa.txt` is created inside the launch folder.
+2. Restart from that folder and confirm the same tasks appear. Launch a JAR stored
+   elsewhere and confirm all writes stay in the launch folder, leaving the JAR's folder untouched.
 3. Delete all tasks and restart. Confirm the list stays empty.
 4. Add todos, deadlines, and events containing Unicode, pipes, and backslashes.
    Confirm descriptions, times, order, and completion survive a restart.
@@ -36,6 +37,9 @@ results are not a peer-test sign-off or a live AI quality check.
    changing the displayed list. Restore access and try again.
 7. Confirm temporary save files are removed after successful and failed saves.
 8. Place an old `wangsa.db` beside the app. Confirm it is not opened or changed.
+9. Confirm native libraries are cached under `.wangsa/javafx-natives` in the launch
+   folder, reused without rewriting, and restored after a cached copy is damaged.
+10. Load a save created by v0.7 and confirm all task types and completion flags survive.
 
 ## Release and portable-package checks
 

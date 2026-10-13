@@ -21,14 +21,15 @@ framework or database is needed.
 
 | Classes | Responsibility |
 | --- | --- |
-| `gui.Main`, `Wangsa`, `Ui` | Desktop controls and terminal input/output |
+| `gui.Main`, `Wangsa` | Coordinate desktop and terminal command execution |
+| `gui.MainView`, `Ui` | Desktop layout and controls, and terminal input/output |
 | `Parser`, `Command` | Check command syntax and carry the parsed arguments |
 | `TaskService` | Carry out commands and coordinate saving |
 | `TaskList`, `TaskMatch` | Manage order, capacity, search, and task numbers |
 | `Task`, `Todo`, `Deadline`, `Event`, `TaskType` | Represent tasks and their details |
 | `TaskRepository` | Define the storage operations |
 | `Storage` | Read, validate, and save tasks in a plain text file |
-| `SaveLocation` | Keep downloaded users' saves beside the JAR |
+| `SaveLocation` | Keep task saves inside the current working folder |
 | `gui.ChatMessage`, `gui.MessageIcon`, `gui.QuestIcon` | Render message bubbles and simple speaker symbols |
 | `gui.TaskView`, `gui.TaskFormatter` | Lay out task rows and format their literal text |
 | `gui.Typography` | Choose an installed font for readable desktop text |
@@ -44,6 +45,12 @@ Individual bubbles keep a maximum width so long lines stay readable.
 for the status, description, and detail lines. Due dates and event times share
 the title's left edge, without leading-space padding. Each reply is a snapshot,
 so completing a task later does not change an earlier message.
+
+`MainView` owns the header, conversation panel, command composer, and scrolling.
+It passes submission, history, and shortcut actions to `Main` through callbacks.
+`Main` handles those actions using the parser and task service, then asks the view
+to display messages or update the header. This keeps layout code separate from
+command execution without introducing an additional framework.
 
 ## Input validation
 
@@ -75,9 +82,16 @@ Loading validates every line and the 100-task limit. Invalid data is reported
 with its line number and file path; it is not silently discarded. The desktop
 keeps `help` and `bye` available if loading fails. The terminal exits.
 
-The packaged app saves under its own folder, regardless of the terminal's current
-folder. Source-code runs save under the project folder. Old database files are
-not read, changed, or deleted.
+Both interfaces save under the terminal's current folder. When users follow the
+quick start, this is the JAR's folder; source-code runs use the project folder.
+Unlike v0.7, version 0.8 does not write beside a
+JAR launched from a different folder. Existing save files keep the same format.
+Old database files are not read, changed, or deleted.
+
+The release launcher extracts JavaFX libraries to `.wangsa/javafx-natives/<platform>`
+inside the launch folder. It reuses identical copies and repairs damaged ones,
+avoiding repeated writes to DLLs that Windows may lock. Source runs use Gradle's
+JavaFX dependencies and do not create this cache.
 
 ## Optional AI help
 

@@ -28,9 +28,11 @@ The JAR supports Windows x64, Linux x64, and Intel/Apple Silicon Macs.
 Linux needs a graphical desktop with GTK 3. You do not need to install JavaFX
 separately or set up AI to manage tasks.
 
-Version 0.7 makes terminal help safe for Windows consoles by using ASCII
-punctuation. The JavaFX interface and command behavior are unchanged, and saved
-`data/wangsa.txt` files from v0.6 remain compatible.
+Version 0.8 improves saved-data validation and keeps application writes inside
+its launch folder. Existing `data/wangsa.txt` files from v0.6 and v0.7 remain
+compatible. Always open the terminal in the folder containing the JAR and your
+usual `data` folder before launching. The JavaFX interface and task commands
+remain the same; terminal help retains the ASCII-safe punctuation from v0.7.
 
 ![Wangsa desktop with its task list and command box](Ui.png)
 
@@ -104,7 +106,7 @@ Adds a task without a date to the end of the list: `[To do] read a book`.
 ![The todo command adds read a book as an incomplete task](screenshots/todo.jpg)
 
 The screenshots use a small demo list from v0.6 on macOS. The JavaFX interface
-is unchanged in v0.7. Your task numbers and counts depend on your own list, and
+is unchanged in v0.8. Your task numbers and counts depend on your own list, and
 commands work the same way on supported systems.
 
 ### Adding a deadline: `deadline`
@@ -258,12 +260,22 @@ reset when the app closes.
 
 ## Saving tasks
 
-Tasks save automatically to **`data/wangsa.txt` beside `Wangsa.jar`**.
+Tasks save automatically to **`data/wangsa.txt` in the launch folder**.
 The folder and file are created after your first change. There is no database
-to install or set up. Open the folder containing the JAR to find your `data` folder.
+to install or set up. When you follow the quick-start steps, this is beside the JAR.
 The desktop and terminal share this file; run one instance at a time.
 
 When running from source, the save file is in the project's `data` folder.
+
+Always launch from the folder containing your usual `data` folder. Version
+0.7 finds saves beside the JAR even if you launch from somewhere else; version
+0.8 uses the terminal's current folder instead. It does not move
+or overwrite saves in another folder. To keep using existing tasks, change to
+their folder before launching.
+
+The packaged app also creates `.wangsa/javafx-natives`
+in the launch folder. This contains bundled JavaFX libraries, not your tasks.
+It can be removed while Wangsa is closed and will be recreated on the next launch.
 
 To back up your tasks, close Wangsa and copy the entire `data` folder.
 To restore them, close Wangsa and replace its `data` folder with the backup.
@@ -289,7 +301,7 @@ backup, then restart. The terminal exits after a storage error.
 | Invalid date | Check the calendar as well as the format. `2026-09-31` does not exist; use `2026-09-30` if you mean the last day of September. Re-enter the whole corrected command. |
 | Invalid task number | Run `list` and use a number shown there. Add a task first if the list is empty. |
 | Task list is full | Delete a task before adding another. Completed tasks count towards the limit. |
-| Tasks seem missing | Check the folder containing the JAR you opened. Keep your usual `data` folder beside that JAR. |
+| Tasks seem missing | Open a terminal in the folder containing your usual `data` folder, then launch Wangsa from there. |
 | Cannot load or save | Close other instances and check folder access. Back up the data before repairing it. |
 | App will not open | Check Java 25 with `java -version`. Run `java -jar Wangsa.jar` in a terminal to see the error. Linux also needs GTK 3 and a graphical desktop. |
 | Terminal help has odd punctuation | Download the latest release. Version 0.7 and later use ASCII punctuation in terminal help. The desktop help is unaffected. |

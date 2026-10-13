@@ -83,6 +83,8 @@ Dancodes2's low-severity CLI encoding finding led to the ASCII-safe terminal hel
 rendering released in v0.7. The exact v0.7 JAR is checked by the automated
 release workflow on Windows, Linux, Intel Mac, and Apple Silicon Mac. That
 automation is recorded separately from the human v0.6 tester reports; the v0.7
-release page links its verification run and artifact digest.
+release page links its verification run and artifact digest. The
+[v0.8 release](https://github.com/Manutd1234/ip/releases/tag/v0.8) records its own
+automated results separately; earlier human reports are not relabelled as v0.8 tests.
 
 [Back to the user guide](https://manutd1234.github.io/ip/)

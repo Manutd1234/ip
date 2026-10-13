@@ -9,17 +9,23 @@ interface. It tracks todos, deadlines, and events, and saves changes automatical
 
 ## Current release
 
-Wangsa v0.7 incorporates the follow-up to
-[issue #471](https://github.com/NUS-CS2103-AY2627-S1/forum/issues/471).
-Terminal help now uses ASCII-safe punctuation for Windows consoles, while the
-JavaFX help display is unchanged. The release JAR also preserves dependency
-licence and notice files under `META-INF/wangsa/dependency-notices`.
+Wangsa v0.8 improves code readability and saved-data validation. Desktop layout
+is separate from command execution. Escaped line breaks survive reloading, and
+invalid saved fields produce clearer recovery messages.
 
-The exact release JAR is tested from an empty folder on Windows, Linux, Intel
-Mac, and Apple Silicon Mac. The [v0.7 release](https://github.com/Manutd1234/ip/releases/tag/v0.7)
-records the verification run and SHA-256 digest. The Windows students credited
-below tested v0.6; the v0.7 Windows result is automated and is not presented as
-a new human peer-test sign-off.
+Task saves and the JavaFX native-library cache stay inside the launch folder,
+following the course's file-writing constraint. Launch from the folder containing
+the JAR and your existing `data` folder to keep using the same tasks. The save-file
+format is unchanged and remains compatible with v0.7.
+
+The [v0.8 release](https://github.com/Manutd1234/ip/releases/tag/v0.8) records the
+verification run and SHA-256 digest for its single standalone JAR. The release
+workflow tests the same JAR on Windows, Linux, Intel Mac, and Apple Silicon Mac.
+The Windows students credited below tested v0.6; automated release results are
+recorded separately from those human reports.
+
+Terminal help retains the ASCII-safe punctuation introduced in v0.7 for
+[issue #471](https://github.com/NUS-CS2103-AY2627-S1/forum/issues/471).
 
 ## Try it
 
@@ -63,8 +69,8 @@ builds `build/libs/Wangsa.jar` and the optional
 `build/distributions/Wangsa.zip`. The ZIP is a developer convenience package;
 the GitHub release contains one standalone JAR for course evaluation. The second
 checks the packaged app in temporary folders, without changing your saved tasks.
-It sets the command field and invokes SEND programmatically; it does not replace
-clicking and typing through the
+It exercises SEND, Enter, history, and shortcut buttons programmatically.
+Also check actual clicking and typing through the
 [manual checklist](tests/peer-smoke-test.md). It needs a graphical desktop.
 Use `python` on Windows or `xvfb-run -a python3` on headless Linux.
 
@@ -82,8 +88,10 @@ See the [test plan](tests/test-plan.md) and [manual checklist](tests/peer-smoke-
 
 The desktop and terminal interfaces share the same parser, task service, and
 storage. `Task` subclasses represent todos, deadlines, and events. `Storage` saves
-tasks in a plain text file, `data/wangsa.txt`. The packaged app keeps this beside
-the JAR; source runs use the project folder. No database or account is needed.
+tasks in a plain text file, `data/wangsa.txt`, inside the launch folder. Follow
+the documented launch steps to keep this beside the JAR; source runs use the
+project folder. Packaged JavaFX libraries are cached under `.wangsa/javafx-natives`
+in that same folder. No database or account is needed.
 
 The [architecture guide](docs/ARCHITECTURE.md) explains the main classes.
 The user guide lives in `docs/README.md`; GitHub Pages serves it from `master`

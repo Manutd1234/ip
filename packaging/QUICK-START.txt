@@ -35,9 +35,12 @@ IF A COMMAND IS REJECTED
 
 YOUR TASKS
 
-Wangsa creates data/wangsa.txt beside Wangsa.jar after your first change.
+Wangsa creates data/wangsa.txt in its launch folder after your first change.
+The start scripts use the extracted app folder. In a terminal, change to that
+folder before launching; it should contain your usual data folder.
 Keep the JAR and data folder together. To back up tasks, close Wangsa and
 copy the data folder. To update, close Wangsa and replace only the JAR.
+The .wangsa folder caches bundled JavaFX libraries; it contains no task data.
 
 IF IT DOES NOT OPEN
 
