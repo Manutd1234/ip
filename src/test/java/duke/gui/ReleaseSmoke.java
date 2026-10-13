@@ -58,15 +58,7 @@ public final class ReleaseSmoke {
                         return;
                     }
                     watcher.shutdown();
-                    try {
-                        Stage window = (Stage) Window.getWindows().getFirst();
-                        new ReleaseSmoke(window).verify(args[0]);
-                        System.out.println("PASS: release GUI " + args[0]);
-                    } catch (Throwable error) {
-                        failure = error;
-                    } finally {
-                        Platform.exit();
-                    }
+                    verifyWindow(args[0]);
                 });
             } catch (IllegalStateException e) {
                 // The launcher has not initialized JavaFX yet; the next scheduled check will try again.
@@ -75,6 +67,21 @@ public final class ReleaseSmoke {
         Launcher.main(new String[0]);
         if (failure != null) {
             throw new AssertionError("Release smoke failed", failure);
+        }
+    }
+
+    /**
+     * Runs the scenario on the JavaFX thread and records any failure before closing the window.
+     */
+    private static void verifyWindow(String scenario) {
+        try {
+            Stage window = (Stage) Window.getWindows().getFirst();
+            new ReleaseSmoke(window).verify(scenario);
+            System.out.println("PASS: release GUI " + scenario);
+        } catch (Throwable error) {
+            failure = error;
+        } finally {
+            Platform.exit();
         }
     }
 
@@ -101,7 +108,27 @@ public final class ReleaseSmoke {
         check(lastReply().contains("See you next time"), "The bye command must exit normally");
     }
 
+    /**
+     * Runs command checks in the order needed to leave a known save file for the reload scenario.
+     */
     private void verifyCommands() throws StorageException {
+        verifyTaskCreation();
+        verifyTaskChanges();
+        verifyInvalidCommands();
+        verifyComposerActions();
+        verifyOfflineHelp();
+        verifyLayout(780, 550);
+        verifyLayout(1120, 700);
+        verifyLayout(1700, 950);
+        verifyLongTaskRows();
+        verifyCommandHistory();
+        verifyLongSearch();
+    }
+
+    /**
+     * Checks that each task type is accepted and saved.
+     */
+    private void verifyTaskCreation() throws StorageException {
         check(lastReply().contains("empty"), "A fresh release must start with an empty task list");
         send("  todo read book  ");
         Node userIcon = stage.getScene().lookup(".user-icon");
@@ -110,6 +137,12 @@ public final class ReleaseSmoke {
         send("deadline submit report /by 2026-09-20");
         send("event team meeting /from Monday 2pm /to Monday 4pm");
         check(savedTasks().size() == 3, "All three task types must save");
+    }
+
+    /**
+     * Checks search numbering, completion changes, ordering, and deletion.
+     */
+    private void verifyTaskChanges() throws StorageException {
         send("find REPORT");
         check(lastReply().contains("2. [To do] submit report"), "Search must retain the full-list task number");
         send("mark 2");
@@ -126,6 +159,12 @@ public final class ReleaseSmoke {
         check(lastReply().contains("2. [To do] team meeting"), "List must retain event details");
         send("find nothing-matches-this");
         check(lastReply().contains("No matching"), "An empty search must be explained");
+    }
+
+    /**
+     * Checks that invalid commands leave saved tasks unchanged.
+     */
+    private void verifyInvalidCommands() throws StorageException {
         send("deadline impossible /by 2026-02-30");
         check(savedTasks().size() == 2, "Invalid dates must not add tasks");
         check(stage.getScene().lookup(".error-bubble") != null, "Command errors must be visually distinct");
@@ -133,26 +172,79 @@ public final class ReleaseSmoke {
         check(savedTasks().size() == 2, "Repeated markers must not add tasks");
         send("delete 999");
         check(savedTasks().size() == 2, "Invalid indexes must not delete tasks");
+    }
+
+    /**
+     * Checks that submission and shortcut callbacks still reach the command handler.
+     */
+    private void verifyComposerActions() throws StorageException {
+        TextField field = commandField();
+        field.setText("list");
+        field.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.ENTER, false, false, false, false));
+        check(field.getText().isEmpty(), "Enter must clear the submitted command");
+        check(lastReply().contains("1. [Done] submit report"), "Enter must execute the command");
+
+        suggestion("new todo").fire();
+        check(field.getText().equals("todo "), "A task shortcut must prepare the command without submitting it");
+        check(field.getCaretPosition() == field.getText().length(), "Shortcuts must place the caret at the end");
+        check(savedTasks().size() == 2, "Preparing a shortcut must not change saved tasks");
+
+        suggestion("list").fire();
+        check(field.getText().isEmpty(), "The list shortcut must submit its command immediately");
+        check(lastReply().contains("2. [To do] team meeting"), "The list shortcut must display saved tasks");
+        Parent messages = (Parent) stage.getScene().lookup("#messages");
+        int messageCount = messages.getChildrenUnmodifiable().size();
+        send("   ");
+        check(messages.getChildrenUnmodifiable().size() == messageCount,
+                "Blank input must not add conversation messages");
+    }
+
+    /**
+     * Returns a shortcut by its visible label so its actual button action can be exercised.
+     */
+    private Button suggestion(String label) {
+        for (Node node : stage.getScene().getRoot().lookupAll(".suggestion-chip")) {
+            Button button = (Button) node;
+            if (button.getText().equals(label)) {
+                return button;
+            }
+        }
+        throw new AssertionError("Missing command shortcut: " + label);
+    }
+
+    /**
+     * Checks that help is available without AI configuration.
+     */
+    private void verifyOfflineHelp() {
         send("help");
         check(lastReply().contains("todo DESCRIPTION"), "Built-in help must work without AI configuration");
         check(stage.getScene().getRoot().lookupAll(".help-section").size() == 4,
                 "Help must group commands into four sections");
-        verifyLayout(780, 550);
-        verifyLayout(1120, 700);
-        verifyLayout(1700, 950);
-        verifyLongTaskRows();
+    }
 
+    /**
+     * Checks that arrow keys recall commands and return to an empty composer.
+     */
+    private void verifyCommandHistory() {
         TextField field = commandField();
         field.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.UP, false, false, false, false));
         check(field.getText().equals("help"), "Up must recall the last successful command");
         field.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.DOWN, false, false, false, false));
         check(field.getText().isEmpty(), "Down must return to an empty composer");
+    }
+
+    /**
+     * Checks that a long search command fits the conversation at supported widths.
+     */
+    private void verifyLongSearch() {
         send("find " + "verylongword".repeat(30));
         verifyLayout(780, 550);
         verifyLayout(1120, 700);
     }
 
-    /** Checks responsive geometry directly instead of assuming that a visible field is not clipped. */
+    /**
+     * Checks responsive geometry directly so clipped controls and overflowing content are detected.
+     */
     private void verifyLayout(double width, double height) {
         Region root = (Region) stage.getScene().getRoot();
         root.resize(width, height);
@@ -160,6 +252,16 @@ public final class ReleaseSmoke {
         root.layout();
         verifyHeaderAlignment(root);
         verifyTypography(root);
+        verifyComposer(root, height);
+        verifyConversation(root);
+        verifyHelpLayout(root, width);
+        verifyTaskAlignment(root);
+    }
+
+    /**
+     * Checks that the input and send button fit the resized window and share a height.
+     */
+    private void verifyComposer(Parent root, double height) {
         Node field = commandField();
         Node sendButton = root.lookup(".send-button");
         check(field.getBoundsInParent().getWidth() >= 200, "The command field must retain usable width");
@@ -167,38 +269,63 @@ public final class ReleaseSmoke {
                 "The input and send button must have equal heights");
         Bounds inputBounds = field.localToScene(field.getLayoutBounds());
         check(inputBounds.getMaxY() <= height, "The command field must fit inside the resized window");
+    }
+
+    /**
+     * Checks that conversation rows fill the viewport and contain their message bubbles.
+     */
+    private void verifyConversation(Parent root) {
         Parent messages = (Parent) root.lookup("#messages");
         ScrollPane chat = (ScrollPane) root.lookup(".chat-scroll");
         check(Math.abs(messages.getLayoutBounds().getWidth() - chat.getViewportBounds().getWidth()) < 1,
                 "The conversation must use the viewport width instead of a centered column");
         for (Node row : messages.getChildrenUnmodifiable()) {
-            Node icon = row.lookup(".message-icon");
-            check(icon.getLayoutBounds().getWidth() == 36, "Speaker symbols must share the same column width");
-            Node bubble = row.lookup(".assistant-bubble");
-            bubble = bubble == null ? row.lookup(".user-bubble") : bubble;
-            check(Math.abs(icon.getLayoutY() - bubble.getLayoutY()) < 1,
-                    "Speaker symbols and message bubbles must align at the top");
-            if (icon.getStyleClass().contains("assistant-icon")) {
-                check(icon.getBoundsInParent().getMinX() <= 3,
-                        "Wangsa replies must remain anchored to the left at every window size");
-                check(bubble.getLayoutBounds().getWidth() <= 781,
-                        "Assistant text must retain a readable width on wide screens");
-            } else {
-                check(row.getLayoutBounds().getWidth() - icon.getBoundsInParent().getMaxX() <= 3,
-                        "User messages must remain anchored to the right at every window size");
-            }
-            check(bubble.getBoundsInParent().getMaxX() <= row.getLayoutBounds().getWidth() + 1,
-                    "Long messages must stay inside their row");
-            Node body = row.lookup(".message-body");
-            check(body.getBoundsInParent().getMaxX() <= bubble.getLayoutBounds().getWidth() + 1,
-                    "Message text must wrap inside its bubble");
+            verifyMessageRow(row);
         }
+    }
+
+    /**
+     * Checks speaker alignment and text wrapping within one conversation row.
+     */
+    private void verifyMessageRow(Node row) {
+        Node icon = row.lookup(".message-icon");
+        check(icon.getLayoutBounds().getWidth() == 36, "Speaker symbols must share the same column width");
+        Node assistantBubble = row.lookup(".assistant-bubble");
+        Node bubble = assistantBubble == null ? row.lookup(".user-bubble") : assistantBubble;
+        check(Math.abs(icon.getLayoutY() - bubble.getLayoutY()) < 1,
+                "Speaker symbols and message bubbles must align at the top");
+        verifySpeakerPosition(row, icon, bubble);
+        check(bubble.getBoundsInParent().getMaxX() <= row.getLayoutBounds().getWidth() + 1,
+                "Long messages must stay inside their row");
+        Node body = row.lookup(".message-body");
+        check(body.getBoundsInParent().getMaxX() <= bubble.getLayoutBounds().getWidth() + 1,
+                "Message text must wrap inside its bubble");
+    }
+
+    /**
+     * Checks that each speaker stays on its own side and assistant replies keep a readable width.
+     */
+    private void verifySpeakerPosition(Node row, Node icon, Node bubble) {
+        if (icon.getStyleClass().contains("assistant-icon")) {
+            check(icon.getBoundsInParent().getMinX() <= 3,
+                    "Wangsa replies must remain anchored to the left at every window size");
+            check(bubble.getLayoutBounds().getWidth() <= 781,
+                    "Assistant text must retain a readable width on wide screens");
+        } else {
+            check(row.getLayoutBounds().getWidth() - icon.getBoundsInParent().getMaxX() <= 3,
+                    "User messages must remain anchored to the right at every window size");
+        }
+    }
+
+    /**
+     * Checks that help sections fit the window and use the appropriate number of columns.
+     */
+    private void verifyHelpLayout(Parent root, double width) {
         for (Node section : root.lookupAll(".help-section")) {
             Bounds sectionBounds = section.localToScene(section.getLayoutBounds());
             check(sectionBounds.getMaxX() <= width, "Help groups must not overflow the window");
         }
         verifyHelpColumns(root, width);
-        verifyTaskAlignment(root);
     }
 
     /** Checks the original bug in confirmations, lists, search results, and wrapped details. */

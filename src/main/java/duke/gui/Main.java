@@ -15,32 +15,18 @@ import duke.TaskService;
 import duke.WangsaException;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.ColumnConstraints;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 /**
- * Displays Wangsa's task conversation in a JavaFX window.
+ * Coordinates Wangsa's JavaFX lifecycle and conversation commands.
  *
  * <p>Task commands use the same parser and service as the terminal interface.
+ * {@link MainView} owns the window controls and layout.
  * AI requests run in the background so the window stays responsive.</p>
  */
 public class Main extends Application {
@@ -55,15 +41,7 @@ public class Main extends Application {
      */
     private javafx.concurrent.Task<String> aiRequest;
 
-    private VBox messageList;
-
-    private ScrollPane chatScrollPane;
-
-    private TextField commandField;
-
-    private Label statusText;
-
-    private Label taskStats;
+    private MainView view;
 
     private final List<String> commandHistory = new ArrayList<>();
 
@@ -82,10 +60,10 @@ public class Main extends Application {
      */
     @Override
     public void start(Stage stage) {
-        BorderPane root = createRoot();
-        Typography.apply(root);
+        view = new MainView(this::handleCommand, this::navigateHistory, this::selectSuggestion);
+        Typography.apply(view);
         Rectangle2D screen = Screen.getPrimary().getVisualBounds();
-        Scene scene = new Scene(root, Math.min(1120, screen.getWidth() - 48),
+        Scene scene = new Scene(view, Math.min(1120, screen.getWidth() - 48),
                 Math.min(700, screen.getHeight() - 76));
         String stylesheet = Main.class.getResource(STYLESHEET_PATH).toExternalForm();
         scene.getStylesheets().add(stylesheet);
@@ -97,7 +75,7 @@ public class Main extends Application {
         stage.show();
 
         loadTasks();
-        commandField.requestFocus();
+        view.requestCommandFocus();
     }
 
     /**
@@ -108,237 +86,6 @@ public class Main extends Application {
         if (aiRequest != null) {
             aiRequest.cancel();
         }
-    }
-
-    /**
-     * Builds the application shell and its three primary areas.
-     */
-    private BorderPane createRoot() {
-        BorderPane root = new BorderPane();
-        root.getStyleClass().add("app-shell");
-        root.setTop(createHeader());
-        root.setCenter(createChatPanel());
-        root.setBottom(createComposer());
-        return root;
-    }
-
-    /**
-     * Creates the compact application header.
-     */
-    private Node createHeader() {
-        HBox header = new HBox(12);
-        header.setAlignment(Pos.CENTER_LEFT);
-        header.getStyleClass().add("top-bar");
-
-        QuestIcon emblem = new QuestIcon(34, false);
-        emblem.getStyleClass().add("brand-mark");
-
-        Label appName = new Label("WANGSA");
-        appName.getStyleClass().add("brand-name");
-        Label appSubtitle = new Label("YOUR TASK COMPANION");
-        appSubtitle.getStyleClass().add("brand-subtitle");
-        VBox brand = new VBox(1, appName, appSubtitle);
-
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-
-        header.getChildren().addAll(emblem, brand, spacer, createStatusPanel());
-        return header;
-    }
-
-    /**
-     * Aligns the status indicator with its heading and both text lines in a shared column.
-     */
-    private Node createStatusPanel() {
-        Circle statusDot = new Circle(4, Color.web("#8ee7bd"));
-        statusDot.getStyleClass().add("status-dot");
-        statusText = new Label("SYSTEM READY");
-        statusText.getStyleClass().add("status-text");
-        taskStats = new Label("0 TASKS  ·  0 DONE");
-        taskStats.getStyleClass().add("task-stats");
-        GridPane status = new GridPane();
-        status.setHgap(8);
-        status.setVgap(3);
-        status.setAlignment(Pos.CENTER_RIGHT);
-        status.add(statusDot, 0, 0);
-        status.add(statusText, 1, 0);
-        status.add(taskStats, 1, 1);
-        return status;
-    }
-
-    /**
-     * Creates the central conversation panel.
-     */
-    private Node createChatPanel() {
-        VBox chatPanel = new VBox(12);
-        chatPanel.getStyleClass().add("chat-panel");
-        chatPanel.setPadding(new Insets(14, 24, 8, 24));
-
-        HBox chatHeading = new HBox(8);
-        chatHeading.setAlignment(Pos.CENTER_LEFT);
-        Label heading = new Label("CHAT");
-        heading.getStyleClass().add("section-kicker");
-        Label divider = new Label("/");
-        divider.getStyleClass().add("heading-divider");
-        Label headingHint = new Label("One task at a time");
-        headingHint.getStyleClass().add("heading-hint");
-        Region headingSpacer = new Region();
-        HBox.setHgrow(headingSpacer, Priority.ALWAYS);
-        Label liveBadge = new Label("●  LIVE");
-        liveBadge.getStyleClass().add("live-badge");
-        chatHeading.getChildren().addAll(heading, divider, headingHint, headingSpacer, liveBadge);
-
-        messageList = new VBox(12);
-        messageList.setId("messages");
-        messageList.setMaxWidth(Double.MAX_VALUE);
-        messageList.setPadding(new Insets(8, 0, 12, 0));
-        messageList.setFillWidth(true);
-
-        chatScrollPane = new ScrollPane(messageList);
-        chatScrollPane.setFitToWidth(true);
-        chatScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        chatScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        chatScrollPane.getStyleClass().add("chat-scroll");
-        VBox.setVgrow(chatScrollPane, Priority.ALWAYS);
-
-        chatPanel.getChildren().addAll(chatHeading, chatScrollPane);
-        return chatPanel;
-    }
-
-    /**
-     * Creates the command composer at the bottom of the window.
-     */
-    private Node createComposer() {
-        VBox composer = new VBox(9);
-        composer.getStyleClass().add("composer");
-        composer.getChildren().addAll(createCheatsheet(), createComposerRow(), createSuggestions());
-        return composer;
-    }
-
-    /**
-     * Creates the input field and send action on a shared row.
-     */
-    private Node createComposerRow() {
-        HBox composerRow = new HBox(10);
-        composerRow.setAlignment(Pos.CENTER_LEFT);
-
-        commandField = createCommandField();
-        HBox.setHgrow(commandField, Priority.ALWAYS);
-        composerRow.getChildren().addAll(commandField, createSendButton());
-        return composerRow;
-    }
-
-    /**
-     * Creates the command field with submission and history keyboard actions.
-     */
-    private TextField createCommandField() {
-        TextField field = new TextField();
-        field.setPromptText("Type a command, then press Enter");
-        field.setAccessibleText("Wangsa command input");
-        field.setMinWidth(0);
-        field.setMinHeight(48);
-        field.setPrefHeight(48);
-        field.setMaxHeight(48);
-        field.getStyleClass().add("command-field");
-        field.setOnKeyPressed(event -> {
-            if (event.getCode() == KeyCode.ENTER) {
-                handleCommand();
-                event.consume();
-            } else if (event.getCode() == KeyCode.UP || event.getCode() == KeyCode.DOWN) {
-                navigateHistory(event.getCode());
-                event.consume();
-            }
-        });
-        return field;
-    }
-
-    /**
-     * Creates the default action for submitting a command.
-     */
-    private Button createSendButton() {
-        Button sendButton = new Button("SEND  ↗");
-        sendButton.setMinWidth(92);
-        sendButton.setMinHeight(48);
-        sendButton.setPrefHeight(48);
-        sendButton.setMaxHeight(48);
-        sendButton.getStyleClass().add("send-button");
-        sendButton.setDefaultButton(true);
-        sendButton.setOnAction(event -> handleCommand());
-        return sendButton;
-    }
-
-    /**
-     * Creates command shortcuts and the keyboard reminder.
-     */
-    private Node createSuggestions() {
-        HBox suggestions = new HBox(7);
-        suggestions.setAlignment(Pos.CENTER_LEFT);
-        Label suggestionLabel = new Label("TRY");
-        suggestionLabel.getStyleClass().add("try-label");
-        suggestions.getChildren().addAll(
-                suggestionLabel,
-                createSuggestion("list", "list"),
-                createSuggestion("new todo", "todo "),
-                createSuggestion("find", "find "),
-                createSuggestion("mark #", "mark "),
-                createSuggestion("ask AI", "@ai "));
-        Region suggestionSpacer = new Region();
-        HBox.setHgrow(suggestionSpacer, Priority.ALWAYS);
-        Label keyboardHint = new Label("ENTER TO SEND");
-        keyboardHint.getStyleClass().add("keyboard-hint");
-        suggestions.getChildren().addAll(suggestionSpacer, keyboardHint);
-
-        return suggestions;
-    }
-
-    /**
-     * Creates the compact command reference above the composer.
-     */
-    private Node createCheatsheet() {
-        GridPane cheatsheet = new GridPane();
-        cheatsheet.setHgap(10);
-        cheatsheet.setVgap(3);
-        cheatsheet.getStyleClass().add("cheatsheet");
-        ColumnConstraints category = new ColumnConstraints(48);
-        ColumnConstraints examples = new ColumnConstraints();
-        examples.setMinWidth(0);
-        examples.setHgrow(Priority.ALWAYS);
-        cheatsheet.getColumnConstraints().addAll(category, examples);
-        addCheatsheetRow(cheatsheet, 0, "ADD", "todo <description>  ·  deadline <description> /by <yyyy-MM-dd>");
-        addCheatsheetRow(cheatsheet, 1, "EVENT", "event <description> /from <start> /to <end>");
-        addCheatsheetRow(cheatsheet, 2, "TASKS",
-                "list  ·  find <keyword>  ·  sort  ·  mark <#>  ·  unmark <#>  ·  delete <#>");
-        addCheatsheetRow(cheatsheet, 3, "HELP", "help  ·  @ai <question>  ·  bye");
-        return cheatsheet;
-    }
-
-    /**
-     * Aligns command groups in real columns so wrapped text keeps its indentation.
-     */
-    private void addCheatsheetRow(GridPane grid, int row, String category, String examples) {
-        Label heading = new Label(category);
-        heading.getStyleClass().add("cheatsheet-title");
-        Label commands = new Label(examples);
-        commands.setMinWidth(0);
-        commands.setMaxWidth(Double.MAX_VALUE);
-        commands.setWrapText(true);
-        commands.getStyleClass().add("cheatsheet-text");
-        grid.addRow(row, heading, commands);
-    }
-
-    /**
-     * Creates a small command suggestion button.
-     */
-    private Button createSuggestion(String label, String command) {
-        Button button = new Button(label);
-        button.getStyleClass().add("suggestion-chip");
-        button.setOnAction(event -> {
-            prepareCommand(command);
-            if (command.equals("list")) {
-                handleCommand();
-            }
-        });
-        return button;
     }
 
     /**
@@ -371,11 +118,11 @@ public class Main extends Application {
      * Parses and executes the command currently entered in the command field.
      */
     private void handleCommand() {
-        String command = commandField.getText().trim();
+        String command = view.getCommand().trim();
         if (command.isEmpty()) {
             return;
         }
-        commandField.clear();
+        view.clearCommand();
         appendUser(command);
         try {
             execute(command);
@@ -390,9 +137,18 @@ public class Main extends Application {
      * Places a command in the composer without executing it.
      */
     private void prepareCommand(String command) {
-        commandField.setText(command);
-        commandField.positionCaret(command.length());
-        commandField.requestFocus();
+        view.setCommand(command);
+        view.requestCommandFocus();
+    }
+
+    /**
+     * Prepares a shortcut and immediately submits it when it requests the task list.
+     */
+    private void selectSuggestion(String command) {
+        prepareCommand(command);
+        if (command.equals("list")) {
+            handleCommand();
+        }
     }
 
     /**
@@ -414,8 +170,7 @@ public class Main extends Application {
         }
         historyIndex += direction == KeyCode.UP ? -1 : 1;
         historyIndex = Math.max(0, Math.min(historyIndex, commandHistory.size()));
-        commandField.setText(historyIndex == commandHistory.size() ? "" : commandHistory.get(historyIndex));
-        commandField.positionCaret(commandField.getText().length());
+        view.setCommand(historyIndex == commandHistory.size() ? "" : commandHistory.get(historyIndex));
     }
 
     /**
@@ -423,21 +178,14 @@ public class Main extends Application {
      */
     private void execute(String command) throws WangsaException, StorageException {
         Command parsedCommand = parser.parse(command);
-        if (taskService == null && parsedCommand.type() != Parser.CommandType.BYE
-                && parsedCommand.type() != Parser.CommandType.HELP) {
-            throw new StorageException("Your saved task list is unavailable. Fix the startup error and restart "
-                    + "Wangsa before using task commands.");
-        }
+        requireAvailableTasks(parsedCommand.type());
         switch (parsedCommand.type()) {
             case BYE -> {
                 appendAssistant("See you next time!");
                 Platform.exit();
             }
             case LIST -> appendTasks(TaskView.tasks(taskService.getTasks()));
-            case HELP -> {
-                messageList.getChildren().add(ChatMessage.help());
-                scrollToLatestMessage();
-            }
+            case HELP -> view.appendMessage(ChatMessage.help());
             case AI -> askAi(((Command.AiQuestion) parsedCommand).question());
             case FIND -> appendTasks(TaskView.matches(
                     taskService.findMatches(((Command.Search) parsedCommand).keyword())));
@@ -446,6 +194,16 @@ public class Main extends Application {
             case DELETE -> deleteTask((Command.TaskNumber) parsedCommand);
             case ADD_TASK -> addTask((Command.AddTask) parsedCommand);
             default -> throw new IllegalStateException("Unsupported command type: " + parsedCommand.type());
+        }
+    }
+
+    /**
+     * Blocks task commands after a startup error while keeping help and exit available.
+     */
+    private void requireAvailableTasks(Parser.CommandType commandType) throws StorageException {
+        if (taskService == null && commandType != Parser.CommandType.BYE && commandType != Parser.CommandType.HELP) {
+            throw new StorageException("Your saved task list is unavailable. Fix the startup error and restart "
+                    + "Wangsa before using task commands.");
         }
     }
 
@@ -483,8 +241,7 @@ public class Main extends Application {
             throw new WangsaException("I'm still checking your last question. You can keep using task commands.");
         }
         Node pendingMessage = createMessage("Let me check that for you...", false);
-        messageList.getChildren().add(pendingMessage);
-        scrollToLatestMessage();
+        view.appendMessage(pendingMessage);
 
         javafx.concurrent.Task<String> request = new javafx.concurrent.Task<>() {
             @Override
@@ -505,10 +262,8 @@ public class Main extends Application {
      * Replaces the loading bubble on the JavaFX thread, keeping the answer beside its question.
      */
     private void finishAiRequest(Node pendingMessage, String answer) {
-        int messageIndex = messageList.getChildren().indexOf(pendingMessage);
-        messageList.getChildren().set(messageIndex, createMessage(answer, false));
+        view.replaceMessage(pendingMessage, createMessage(answer, false));
         aiRequest = null;
-        scrollToLatestMessage();
     }
 
     /**
@@ -526,46 +281,37 @@ public class Main extends Application {
      * Refreshes the live status copy after loading or mutating tasks.
      */
     private void refreshHeader() {
-        if (statusText == null || taskStats == null) {
-            return;
-        }
         if (taskService == null) {
-            statusText.setText("STORAGE UNAVAILABLE");
-            taskStats.setText("TASK COMMANDS BLOCKED");
+            view.setStatus("STORAGE UNAVAILABLE", "TASK COMMANDS BLOCKED");
             return;
         }
-        statusText.setText("SYSTEM READY");
-        taskStats.setText(TaskFormatter.formatHeaderStats(taskService.getTasks()));
+        view.setStatus("SYSTEM READY", TaskFormatter.formatHeaderStats(taskService.getTasks()));
     }
 
     /**
      * Adds an assistant message to the chat and scrolls to the latest entry.
      */
     private void appendAssistant(String message) {
-        messageList.getChildren().add(createMessage(message, false));
-        scrollToLatestMessage();
+        view.appendMessage(createMessage(message, false));
     }
 
     /** Adds a structured task snapshot using the same scrolling behavior as other replies. */
     private void appendTasks(TaskView tasks) {
-        messageList.getChildren().add(ChatMessage.tasks(tasks));
-        scrollToLatestMessage();
+        view.appendMessage(ChatMessage.tasks(tasks));
     }
 
     /**
      * Adds a user message to the chat and scrolls to the latest entry.
      */
     private void appendUser(String message) {
-        messageList.getChildren().add(createMessage(message, true));
-        scrollToLatestMessage();
+        view.appendMessage(createMessage(message, true));
     }
 
     /**
      * Makes failures distinguishable by both text and color, not color alone.
      */
     private void appendError(String message) {
-        messageList.getChildren().add(new ChatMessage(message, ChatMessage.Role.ERROR));
-        scrollToLatestMessage();
+        view.appendMessage(new ChatMessage(message, ChatMessage.Role.ERROR));
     }
 
     /**
@@ -573,20 +319,6 @@ public class Main extends Application {
      */
     private Node createMessage(String message, boolean isUser) {
         return new ChatMessage(message, isUser ? ChatMessage.Role.USER : ChatMessage.Role.ASSISTANT);
-    }
-
-    /**
-     * Reveals the start of a long reply so users can read it from the beginning.
-     */
-    private void scrollToLatestMessage() {
-        Platform.runLater(() -> {
-            chatScrollPane.getScene().getRoot().applyCss();
-            chatScrollPane.getScene().getRoot().layout();
-            double scrollableHeight = chatScrollPane.getContent().getBoundsInLocal().getHeight()
-                    - chatScrollPane.getViewportBounds().getHeight();
-            double lastMessageTop = messageList.getChildren().getLast().getBoundsInParent().getMinY();
-            chatScrollPane.setVvalue(scrollableHeight <= 0 ? 0 : Math.min(1, lastMessageTop / scrollableHeight));
-        });
     }
 
 }

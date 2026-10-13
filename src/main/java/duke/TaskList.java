@@ -218,6 +218,10 @@ public class TaskList {
         if (task instanceof Deadline deadline && deadline.getBy() == null) {
             throw new WangsaException("A deadline must have a date.");
         }
+        if (task instanceof Deadline deadline && (deadline.getBy().getYear() < 0
+                || deadline.getBy().getYear() > 9999)) {
+            throw new WangsaException("A deadline year must have four digits (0000 to 9999).");
+        }
         if (task instanceof Event event && (event.getFrom() == null || event.getFrom().isBlank()
                 || event.getTo() == null || event.getTo().isBlank())) {
             throw new WangsaException("An event must have a start and an end.");

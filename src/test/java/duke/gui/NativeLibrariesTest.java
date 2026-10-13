@@ -1,17 +1,51 @@
 package duke.gui;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
- * Checks platform selection without loading libraries for another computer.
+ * Checks platform selection and cache recovery without loading foreign native libraries.
  */
 class NativeLibrariesTest {
+    @TempDir
+    Path temporaryDirectory;
+
+    @Test
+    void cacheLibrary_identicalBytes_reusesFileWithoutRewriting() throws IOException {
+        Path library = temporaryDirectory.resolve("test.dll");
+        byte[] bundledBytes = {1, 2, 3};
+        NativeLibraries.cacheLibrary(library, new ByteArrayInputStream(bundledBytes));
+        Files.setLastModifiedTime(library, FileTime.fromMillis(1000));
+        FileTime originalTime = Files.getLastModifiedTime(library);
+
+        NativeLibraries.cacheLibrary(library, new ByteArrayInputStream(bundledBytes));
+
+        assertArrayEquals(bundledBytes, Files.readAllBytes(library));
+        assertEquals(originalTime, Files.getLastModifiedTime(library));
+    }
+
+    @Test
+    void cacheLibrary_damagedBytes_restoresBundledCopy() throws IOException {
+        Path library = temporaryDirectory.resolve("test.dll");
+        Files.write(library, new byte[] {0});
+        byte[] bundledBytes = {1, 2, 3};
+
+        NativeLibraries.cacheLibrary(library, new ByteArrayInputStream(bundledBytes));
+
+        assertArrayEquals(bundledBytes, Files.readAllBytes(library));
+    }
+
     @Test
     void selectPlatform_supportedComputers_selectsMatchingLibraries() throws IOException {
         assertEquals("win", NativeLibraries.selectPlatform("Windows 11", "amd64"));

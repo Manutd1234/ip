@@ -1,10 +1,9 @@
 package duke;
 
-import java.net.URISyntaxException;
 import java.nio.file.Path;
 
 /**
- * Keeps downloaded users' task files beside the JAR, independent of the launch folder.
+ * Keeps task files inside the launch folder, as required by the course's file-writing constraint.
  */
 public final class SaveLocation {
     private SaveLocation() {
@@ -13,21 +12,14 @@ public final class SaveLocation {
     /**
      * Returns the normal save path for the packaged app or a source-code run.
      *
-     * @return Text file under the JAR's folder, or under the working folder when running from source.
+     * @return Text file under the current working folder for both packaged and source runs.
      */
     public static Path getDefaultFile() {
-        try {
-            Path codeLocation = Path.of(SaveLocation.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-            return resolve(codeLocation, Path.of("").toAbsolutePath());
-        } catch (URISyntaxException exception) {
-            throw new IllegalStateException("The application location is not a valid file path.", exception);
-        }
+        return resolve(Path.of("").toAbsolutePath());
     }
 
-    /** Separates path selection from the running JVM so both launch modes can be tested. */
-    static Path resolve(Path codeLocation, Path workingDirectory) {
-        Path appFolder = codeLocation.getFileName().toString().endsWith(".jar")
-                ? codeLocation.toAbsolutePath().getParent() : workingDirectory;
-        return appFolder.resolve("data").resolve("wangsa.txt");
+    /** Resolves a save path without consulting or changing the location of the application JAR. */
+    static Path resolve(Path workingDirectory) {
+        return workingDirectory.resolve("data").resolve("wangsa.txt");
     }
 }

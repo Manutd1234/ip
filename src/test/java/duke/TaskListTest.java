@@ -16,7 +16,8 @@ class TaskListTest {
     @Test
     void invalidTaskFields_areRejectedAtEveryCollectionEntryPoint() throws WangsaException {
         List<Task> invalidTasks = List.of(new Todo(null), new Todo("  "),
-                new Deadline("missing date", null), new Event("missing start", " ", "4pm"),
+                new Deadline("missing date", null), new Deadline("negative year", LocalDate.of(-1, 1, 1)),
+                new Deadline("five-digit year", LocalDate.of(10000, 1, 1)), new Event("missing start", " ", "4pm"),
                 new Event("missing end", "2pm", null));
         TaskList tasks = new TaskList();
         for (Task task : invalidTasks) {

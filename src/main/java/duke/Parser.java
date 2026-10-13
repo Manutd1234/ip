@@ -113,7 +113,7 @@ public class Parser {
         command = command.trim();
         String[] parts = command.split("\\s+");
         if (parts.length != 2) {
-            throw new WangsaException("" + parts[0] + " expects one task number.");
+            throw new WangsaException(parts[0] + " expects one task number.");
         }
 
         try {
@@ -258,7 +258,7 @@ public class Parser {
             fieldStart = matcher.end();
         }
         if (fields.size() != expectedMarkers.length) {
-            throw new WangsaException("" + formatHint);
+            throw new WangsaException(formatHint);
         }
         fields.add(content.substring(fieldStart).trim());
         return fields;

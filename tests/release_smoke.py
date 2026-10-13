@@ -86,16 +86,23 @@ def main():
         command = ["java", "--enable-native-access=ALL-UNNAMED", "-ea", "-cp",
                    os.pathsep.join((str(classes), str(jar))), "duke.gui.ReleaseSmoke"]
         run(command + ["normal"], folder, environment)
-        assert (app_folder / "data/wangsa.txt").is_file()
-        assert not (folder / "data").exists()
+        assert (folder / "data/wangsa.txt").is_file()
+        assert not (app_folder / "data/wangsa.txt").exists()
+        native_cache = folder / ".wangsa/javafx-natives"
+        assert native_cache.is_dir()
+        cached_libraries = list(native_cache.glob("*/*"))
+        assert cached_libraries, "The JAR must extract natives inside its launch folder"
+        cache_times = {path: path.stat().st_mtime_ns for path in cached_libraries}
         assert old_database.read_bytes() == b"old database must not block the text-file app"
         run(command + ["reload"], folder, environment)
+        assert cache_times == {path: path.stat().st_mtime_ns for path in cached_libraries}
         output = run(["java", "--enable-native-access=ALL-UNNAMED", "-cp", str(jar), "duke.Wangsa"],
                      folder, environment, "list\n@ai How do I add a task?\nbye\n")
         assert "[D][X] submit report" in output and "[E][ ] team meeting" in output
         assert "Offline help:" in output and "todo DESCRIPTION" in output
         assert "•" not in output and "—" not in output
-        print("PASS: GUI/CLI share text saves beside the JAR, even from a different launch folder")
+        print("PASS: GUI/CLI share text saves inside the launch folder without writing beside a remote JAR")
+        print("PASS: native libraries stay inside the launch folder and are reused without rewriting")
         print("PASS: old databases remain untouched and optional AI falls back with console-safe text")
         blocked = folder / "blocked"
         (blocked / "data").mkdir(parents=True)
@@ -106,7 +113,7 @@ def main():
         shutil.copy2(source_jar, blocked_jar)
         blocked_command = ["java", "--enable-native-access=ALL-UNNAMED", "-ea", "-cp",
                            os.pathsep.join((str(classes), str(blocked_jar))), "duke.gui.ReleaseSmoke"]
-        run(blocked_command + ["blocked"], folder, environment)
+        run(blocked_command + ["blocked"], blocked, environment)
         assert save_file.read_bytes() == invalid_data
         print("PASS: startup errors preserve the original data")
 

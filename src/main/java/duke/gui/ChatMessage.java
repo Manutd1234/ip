@@ -38,6 +38,18 @@ final class ChatMessage extends HBox {
         setMaxWidth(Double.MAX_VALUE);
         getStyleClass().add("message-row");
 
+        VBox bubble = createBubble(body, role);
+        MessageIcon icon = new MessageIcon(isUser);
+        if (isUser) {
+            getChildren().addAll(bubble, icon);
+        } else {
+            getChildren().addAll(icon, bubble);
+        }
+    }
+
+    /** Creates a wrapping bubble whose speaker label and metadata distinguish errors and user messages. */
+    private VBox createBubble(Region body, Role role) {
+        boolean isUser = role == Role.USER;
         VBox bubble = new VBox(6);
         bubble.setMinWidth(0);
         bubble.maxWidthProperty().bind(Bindings.max(0,
@@ -57,13 +69,7 @@ final class ChatMessage extends HBox {
             metadata.getStyleClass().add("message-metadata");
             bubble.getChildren().add(metadata);
         }
-
-        MessageIcon icon = new MessageIcon(isUser);
-        if (isUser) {
-            getChildren().addAll(bubble, icon);
-        } else {
-            getChildren().addAll(icon, bubble);
-        }
+        return bubble;
     }
 
     /** Keeps ordinary replies as literal text so task descriptions are never interpreted as markup. */

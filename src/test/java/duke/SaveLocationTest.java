@@ -7,23 +7,21 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/** Tests stable save paths for downloaded and source-code launches. */
+/** Tests that save paths stay inside the supplied launch folder. */
 class SaveLocationTest {
     @TempDir
     Path temporaryDirectory;
 
     @Test
-    void resolve_jarInFolderWithSpaces_usesJarFolderNotWorkingFolder() {
-        Path appFolder = temporaryDirectory.resolve("My tasks 王");
-        Path workingFolder = temporaryDirectory.resolve("unrelated");
+    void resolve_launchFolderWithSpacesAndUnicode_keepsDataInsideThatFolder() {
+        Path workingFolder = temporaryDirectory.resolve("My tasks 王");
 
-        assertEquals(appFolder.resolve("data/wangsa.txt"),
-                SaveLocation.resolve(appFolder.resolve("Wangsa.jar"), workingFolder));
+        assertEquals(workingFolder.resolve("data/wangsa.txt"), SaveLocation.resolve(workingFolder));
     }
 
     @Test
     void resolve_sourceRun_usesProjectWorkingFolder() {
         assertEquals(temporaryDirectory.resolve("data/wangsa.txt"),
-                SaveLocation.resolve(temporaryDirectory.resolve("build/classes/java/main"), temporaryDirectory));
+                SaveLocation.resolve(temporaryDirectory));
     }
 }

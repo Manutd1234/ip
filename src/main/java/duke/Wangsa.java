@@ -59,23 +59,30 @@ public class Wangsa {
                 return;
             }
 
-            while (ui.hasNextCommand()) {
-                String command = ui.readCommand();
-                ui.showLine();
-                try {
-                    if (executeCommand(command, tasks)) {
-                        ui.showLine();
-                        return;
-                    }
-                } catch (WangsaException exception) {
-                    ui.showError(exception.getMessage());
-                } catch (StorageException exception) {
-                    ui.showError(exception.getMessage());
+            runCommands(tasks);
+        }
+    }
+
+    /**
+     * Processes terminal input, recovering from invalid commands and stopping after an exit or save failure.
+     */
+    private void runCommands(TaskService tasks) {
+        while (ui.hasNextCommand()) {
+            String command = ui.readCommand();
+            ui.showLine();
+            try {
+                if (executeCommand(command, tasks)) {
                     ui.showLine();
                     return;
                 }
+            } catch (WangsaException exception) {
+                ui.showError(exception.getMessage());
+            } catch (StorageException exception) {
+                ui.showError(exception.getMessage());
                 ui.showLine();
+                return;
             }
+            ui.showLine();
         }
     }
 
@@ -107,7 +114,7 @@ public class Wangsa {
     }
 
     /**
-     * Saves and displays a task status change.
+     * Updates a task's completion status and displays confirmation after saving.
      */
     private void updateTaskStatus(Command.TaskNumber command, TaskService tasks)
             throws WangsaException, StorageException {
@@ -117,7 +124,7 @@ public class Wangsa {
     }
 
     /**
-     * Deletes, saves, and displays a task removal.
+     * Removes a task and displays confirmation after saving.
      */
     private void deleteTask(Command.TaskNumber command, TaskService tasks) throws WangsaException, StorageException {
         Task removedTask = tasks.delete(command.taskNumber());
@@ -125,7 +132,7 @@ public class Wangsa {
     }
 
     /**
-     * Adds, saves, and displays a new task.
+     * Adds a task and displays confirmation after saving.
      */
     private void addTask(Command.AddTask command, TaskService tasks) throws WangsaException, StorageException {
         Task task = tasks.add(command.task());
@@ -133,7 +140,7 @@ public class Wangsa {
     }
 
     /**
-     * Sorts, saves, and displays tasks by deadline.
+     * Sorts tasks by deadline and displays the saved order.
      */
     private void sortTasks(TaskService tasks) throws StorageException {
         tasks.sortByDeadline();
@@ -141,7 +148,7 @@ public class Wangsa {
     }
 
     /**
-     * Starts Wangsa using the normal save file beside the JAR or in the source project.
+     * Starts Wangsa using the save file in the current working folder.
      *
      * @param args Command-line arguments (unused).
      */

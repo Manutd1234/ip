@@ -66,10 +66,7 @@ public class Storage implements TaskRepository {
     @Override
     public void saveTasks(List<Task> tasks) throws StorageException {
         validateTasks(tasks);
-        List<String> lines = new ArrayList<>();
-        for (Task task : tasks) {
-            lines.add(formatTask(task));
-        }
+        List<String> lines = tasks.stream().map(this::formatTask).toList();
 
         Path temporaryFile = null;
         try {
@@ -86,13 +83,19 @@ public class Storage implements TaskRepository {
             throw new StorageException("I couldn't save this change to " + filePath.toAbsolutePath() + ".\n"
                     + "Close other copies of Wangsa. Check folder access and free space, then try again.", exception);
         } finally {
-            if (temporaryFile != null) {
-                try {
-                    Files.deleteIfExists(temporaryFile);
-                } catch (IOException exception) {
-                    // A leftover temporary file is harmless; do not misreport a completed save as failed.
-                }
-            }
+            deleteTemporaryFile(temporaryFile);
+        }
+    }
+
+    /** Removes a staging file without misreporting an already-completed save as failed. */
+    private void deleteTemporaryFile(Path temporaryFile) {
+        if (temporaryFile == null) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(temporaryFile);
+        } catch (IOException exception) {
+            // A leftover staging file is harmless; the save result is determined by replacing the destination.
         }
     }
 
@@ -145,7 +148,7 @@ public class Storage implements TaskRepository {
 
         boolean isDone = parseStatus(fields.get(1), lineNumber);
         String description = fields.get(2);
-        if (description.isEmpty()) {
+        if (description.isBlank()) {
             throw createInvalidLineException(lineNumber, "task description cannot be empty");
         }
 
@@ -185,7 +188,7 @@ public class Storage implements TaskRepository {
             }
             case "E" -> {
                 requireFieldCount(fields, 5, lineNumber);
-                if (fields.get(3).isEmpty() || fields.get(4).isEmpty()) {
+                if (fields.get(3).isBlank() || fields.get(4).isBlank()) {
                     throw createInvalidLineException(lineNumber, "event start and end values cannot be empty");
                 }
                 yield new Event(description, fields.get(3), fields.get(4));
@@ -235,30 +238,42 @@ public class Storage implements TaskRepository {
 
         for (int i = 0; i < line.length(); i++) {
             char character = line.charAt(i);
-            if (isEscaped) {
-                char decoded = switch (character) {
-                    case '\\', '|' -> character;
-                    case 'n' -> '\n';
-                    case 'r' -> '\r';
-                    default -> throw createInvalidLineException(lineNumber, "invalid escape sequence");
-                };
-                currentField.append(decoded);
-                isEscaped = false;
-            } else if (character == '\\') {
-                isEscaped = true;
-            } else if (character == '|') {
-                fields.add(currentField.toString().trim());
+            if (character == '|' && !isEscaped) {
+                fields.add(decodeField(currentField.toString(), lineNumber));
                 currentField.setLength(0);
             } else {
                 currentField.append(character);
+                isEscaped = character == '\\' && !isEscaped;
             }
         }
 
         if (isEscaped) {
             throw createInvalidLineException(lineNumber, "unfinished escape sequence");
         }
-        fields.add(currentField.toString().trim());
+        fields.add(decodeField(currentField.toString(), lineNumber));
         return fields;
+    }
+
+    /** Decodes escapes after removing format padding, preserving escaped line breaks at field edges. */
+    private String decodeField(String field, int lineNumber) throws StorageException {
+        String encoded = field.trim();
+        StringBuilder decoded = new StringBuilder();
+        for (int i = 0; i < encoded.length(); i++) {
+            char character = encoded.charAt(i);
+            if (character == '\\') {
+                if (++i == encoded.length()) {
+                    throw createInvalidLineException(lineNumber, "unfinished escape sequence");
+                }
+                character = switch (encoded.charAt(i)) {
+                    case '\\', '|' -> encoded.charAt(i);
+                    case 'n' -> '\n';
+                    case 'r' -> '\r';
+                    default -> throw createInvalidLineException(lineNumber, "invalid escape sequence");
+                };
+            }
+            decoded.append(character);
+        }
+        return decoded.toString();
     }
 
     /**

@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Locale;
 
 /**
@@ -29,22 +30,34 @@ final class NativeLibraries {
 
         String platform = selectPlatform(System.getProperty("os.name"), System.getProperty("os.arch"));
         String resourceFolder = "/javafx-natives/" + platform + "/";
-        Path directory = Files.createTempDirectory("wangsa-javafx-");
-        directory.toFile().deleteOnExit();
+        Path directory = Path.of(".wangsa", "javafx-natives", platform).toAbsolutePath();
+        Files.createDirectories(directory);
         try (InputStream index = openResource(resourceFolder + "libraries.list");
                 BufferedReader reader = new BufferedReader(new InputStreamReader(index, StandardCharsets.UTF_8))) {
             for (String name : reader.lines().toList()) {
                 Path library = directory.resolve(name);
                 try (InputStream content = openResource(resourceFolder + name)) {
-                    Files.copy(content, library);
+                    cacheLibrary(library, content);
                 }
-                library.toFile().deleteOnExit();
             }
         }
 
         // JavaFX reads this property when loading each library, including after the JVM has started.
         String previousPath = System.getProperty("java.library.path", "");
         System.setProperty("java.library.path", directory + File.pathSeparator + previousPath);
+    }
+
+    /**
+     * Reuses identical native libraries inside the launch folder and replaces stale or damaged copies.
+     *
+     * <p>Windows locks loaded DLLs, so unchanged files must not be rewritten on every launch.
+     * A fixed cache location also avoids leaving a new temporary directory behind on every run.</p>
+     */
+    static void cacheLibrary(Path library, InputStream content) throws IOException {
+        byte[] bundledBytes = content.readAllBytes();
+        if (!Files.exists(library) || !Arrays.equals(Files.readAllBytes(library), bundledBytes)) {
+            Files.write(library, bundledBytes);
+        }
     }
 
     /**

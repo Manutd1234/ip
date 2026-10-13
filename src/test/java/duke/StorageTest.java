@@ -30,6 +30,8 @@ class StorageTest {
         "T | 0 | task | extra;unexpected number of fields",
         "D | 0 | task | ;deadline value cannot be empty",
         "E | 0 | task | start | ;event start and end values cannot be empty",
+        "T | 0 | \\n;task description cannot be empty",
+        "E | 0 | task | \\r | end;event start and end values cannot be empty",
         "X | 0 | task;unknown task type"
     })
     void loadTasks_invalidFields_reportsReasonAndLine(String line, String reason) throws Exception {
@@ -93,6 +95,30 @@ class StorageTest {
         assertEquals(event.getDescription(), reloaded.getDescription());
         assertEquals(event.getFrom(), reloaded.getFrom());
         assertEquals(event.getTo(), reloaded.getTo());
+    }
+
+    @Test
+    void saveAndLoadTasks_escapedLineBreaksAtFieldEdges_preservesText() throws Exception {
+        Storage storage = new Storage(temporaryDirectory.resolve("tasks.txt"));
+        Event event = new Event("\nread notes\r", "\rstart\n", "\nend\r");
+
+        storage.saveTasks(List.of(event));
+        Event reloaded = (Event) storage.loadTasks().getFirst();
+
+        assertEquals(event.getDescription(), reloaded.getDescription());
+        assertEquals(event.getFrom(), reloaded.getFrom());
+        assertEquals(event.getTo(), reloaded.getTo());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 9999})
+    void saveAndLoadTasks_fourDigitYearBoundaries_preservesDate(int year) throws Exception {
+        Storage storage = new Storage(temporaryDirectory.resolve("tasks.txt"));
+        Deadline deadline = new Deadline("boundary date", LocalDate.of(year, 1, 1));
+
+        storage.saveTasks(List.of(deadline));
+
+        assertEquals(deadline.getBy(), ((Deadline) storage.loadTasks().getFirst()).getBy());
     }
 
     @Test

@@ -15,7 +15,7 @@ import javafx.scene.layout.VBox;
 /** Displays task snapshots with a separate marker column and aligned, wrapping detail lines. */
 final class TaskView extends VBox {
     /** Builds a snapshot so later task changes cannot rewrite an earlier chat reply. */
-    private TaskView(String heading, List<TaskMatch> matches, boolean numbered, String footer) {
+    private TaskView(String heading, List<TaskMatch> matches, boolean isNumbered, String footer) {
         super(12);
         getStyleClass().add("task-view");
         StringBuilder accessible = new StringBuilder(heading);
@@ -23,7 +23,7 @@ final class TaskView extends VBox {
             getChildren().add(text(heading, "task-heading"));
         }
         if (!matches.isEmpty()) {
-            getChildren().add(createRows(matches, numbered, accessible));
+            getChildren().add(createRows(matches, isNumbered, accessible));
         }
         if (!footer.isEmpty()) {
             getChildren().add(text(footer, "task-summary"));
@@ -62,8 +62,8 @@ final class TaskView extends VBox {
         return new TaskView(tasks.isEmpty() ? TaskFormatter.renderTasks(tasks) : heading, matches, true, "");
     }
 
-    /** A shared grid column accommodates bullets and numbers of any supported width. */
-    private GridPane createRows(List<TaskMatch> matches, boolean numbered, StringBuilder accessible) {
+    /** Creates a shared marker column for bullets and numbers of any supported width. */
+    private GridPane createRows(List<TaskMatch> matches, boolean isNumbered, StringBuilder accessible) {
         GridPane rows = new GridPane();
         rows.setHgap(8);
         rows.setVgap(14);
@@ -75,7 +75,7 @@ final class TaskView extends VBox {
         rows.getColumnConstraints().addAll(markerColumn, contentColumn);
         for (int i = 0; i < matches.size(); i++) {
             TaskMatch match = matches.get(i);
-            String marker = numbered ? match.taskNumber() + "." : "•";
+            String marker = isNumbered ? match.taskNumber() + "." : "•";
             Label markerLabel = text(marker, "task-marker");
             markerLabel.setMinWidth(Region.USE_PREF_SIZE);
             GridPane.setValignment(markerLabel, javafx.geometry.VPos.TOP);
